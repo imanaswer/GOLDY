@@ -465,11 +465,35 @@ async def create_jobcard(jobcard_data: dict, current_user: User = Depends(get_cu
     await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard.id, "create")
     return jobcard
 
+@api_router.get("/jobcards/{jobcard_id}", response_model=JobCard)
+async def get_jobcard(jobcard_id: str, current_user: User = Depends(get_current_user)):
+    jobcard = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False}, {"_id": 0})
+    if not jobcard:
+        raise HTTPException(status_code=404, detail="Job card not found")
+    return JobCard(**jobcard)
+
 @api_router.patch("/jobcards/{jobcard_id}")
 async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+    existing = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Job card not found")
+    
     await db.jobcards.update_one({"id": jobcard_id}, {"$set": update_data})
     await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "update", update_data)
     return {"message": "Updated successfully"}
+
+@api_router.delete("/jobcards/{jobcard_id}")
+async def delete_jobcard(jobcard_id: str, current_user: User = Depends(get_current_user)):
+    existing = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Job card not found")
+    
+    await db.jobcards.update_one(
+        {"id": jobcard_id},
+        {"$set": {"is_deleted": True}}
+    )
+    await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "delete")
+    return {"message": "Job card deleted successfully"}
 
 @api_router.post("/jobcards/{jobcard_id}/convert-to-invoice")
 async def convert_jobcard_to_invoice(jobcard_id: str, current_user: User = Depends(get_current_user)):
