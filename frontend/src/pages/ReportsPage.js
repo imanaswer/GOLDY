@@ -1,49 +1,202 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { API } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { BarChart3 } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { toast } from 'sonner';
+import { Download, FileSpreadsheet, TrendingUp, DollarSign, Package } from 'lucide-react';
 
 export default function ReportsPage() {
+  const [loading, setLoading] = useState(false);
+  const [financialSummary, setFinancialSummary] = useState(null);
+
+  useEffect(() => {
+    loadFinancialSummary();
+  }, []);
+
+  const loadFinancialSummary = async () => {
+    try {
+      const response = await axios.get(`${API}/reports/financial-summary`);
+      setFinancialSummary(response.data);
+    } catch (error) {
+      console.error('Failed to load financial summary');
+    }
+  };
+
+  const handleExport = async (type) => {
+    try {
+      setLoading(true);
+      const endpoints = {
+        inventory: '/reports/inventory-export',
+        parties: '/reports/parties-export',
+        invoices: '/reports/invoices-export'
+      };
+
+      const response = await axios.get(`${API}${endpoints[type]}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${type}_export.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} exported successfully`);
+    } catch (error) {
+      toast.error('Failed to export data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div data-testid="reports-page">
       <div className="mb-8">
         <h1 className="text-4xl font-serif font-semibold text-gray-900 mb-2">Reports</h1>
-        <p className="text-muted-foreground">Generate and export business reports</p>
+        <p className="text-muted-foreground">Financial reports and data exports</p>
       </div>
 
-      <Card>
+      {financialSummary && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Sales</CardTitle>
+              <TrendingUp className="w-4 h-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{financialSummary.total_sales.toFixed(2)} OMR</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Purchases</CardTitle>
+              <Package className="w-4 h-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{financialSummary.total_purchases.toFixed(2)} OMR</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Net Profit</CardTitle>
+              <DollarSign className="w-4 h-4 text-purple-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{financialSummary.net_profit.toFixed(2)} OMR</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Outstanding</CardTitle>
+              <TrendingUp className="w-4 h-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{financialSummary.total_outstanding.toFixed(2)} OMR</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-serif flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Inventory Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Export all inventory movements and stock levels to Excel
+            </p>
+            <Button 
+              onClick={() => handleExport('inventory')} 
+              disabled={loading}
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Export Inventory
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-serif flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Parties Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Export all customers and vendors with their details
+            </p>
+            <Button 
+              onClick={() => handleExport('parties')} 
+              disabled={loading}
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Export Parties
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-serif flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Invoices Report
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              Export all invoices with payment status and amounts
+            </p>
+            <Button 
+              onClick={() => handleExport('invoices')} 
+              disabled={loading}
+              className="w-full"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              <FileSpreadsheet className="w-4 h-4 mr-2" />
+              Export Invoices
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-6">
         <CardHeader>
-          <CardTitle className="text-xl font-serif flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Available Reports
-          </CardTitle>
+          <CardTitle className="text-xl font-serif">Financial Summary</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-6 border rounded-lg hover:border-accent transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">Inventory Summary</h3>
-              <p className="text-sm text-muted-foreground">Stock levels by category with value</p>
+          {financialSummary ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Credit</p>
+                <p className="text-lg font-bold">{financialSummary.total_credit.toFixed(2)} OMR</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Debit</p>
+                <p className="text-lg font-bold">{financialSummary.total_debit.toFixed(2)} OMR</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Account Balance</p>
+                <p className="text-lg font-bold">{financialSummary.total_account_balance.toFixed(2)} OMR</p>
+              </div>
             </div>
-            <div className="p-6 border rounded-lg hover:border-accent transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">Fast Moving Items</h3>
-              <p className="text-sm text-muted-foreground">Top selling items by period</p>
-            </div>
-            <div className="p-6 border rounded-lg hover:border-accent transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">Outstanding Report</h3>
-              <p className="text-sm text-muted-foreground">Customer dues and aging</p>
-            </div>
-            <div className="p-6 border rounded-lg hover:border-accent transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">Sales Summary</h3>
-              <p className="text-sm text-muted-foreground">Revenue by period and category</p>
-            </div>
-            <div className="p-6 border rounded-lg hover:border-accent transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">Transaction Report</h3>
-              <p className="text-sm text-muted-foreground">Cash flow and payment history</p>
-            </div>
-            <div className="p-6 border rounded-lg hover:border-accent transition-colors cursor-pointer">
-              <h3 className="font-semibold mb-2">Job Card Report</h3>
-              <p className="text-sm text-muted-foreground">Work orders by status</p>
-            </div>
-          </div>
+          ) : (
+            <p className="text-muted-foreground">Loading financial summary...</p>
+          )}
         </CardContent>
       </Card>
     </div>
