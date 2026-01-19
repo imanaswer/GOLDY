@@ -98,9 +98,21 @@ export default function JobCardsPage() {
         weight_out: 0,
         purity: 916,
         work_type: 'polish',
-        remarks: ''
+        remarks: '',
+        making_charge_type: 'flat',
+        making_charge_value: 0,
+        vat_percent: 5
       }]
     });
+  };
+
+  const removeItem = (index) => {
+    if (formData.items.length > 1) {
+      const newItems = formData.items.filter((_, idx) => idx !== index);
+      setFormData({ ...formData, items: newItems });
+    } else {
+      toast.error('At least one item is required');
+    }
   };
 
   const updateItem = (index, field, value) => {
