@@ -1035,8 +1035,281 @@ async def export_invoices(
         headers={"Content-Disposition": "attachment; filename=invoices_export.xlsx"}
     )
 
+# New VIEW endpoints for displaying reports in UI
+@api_router.get("/reports/inventory-view")
+async def view_inventory_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    movement_type: Optional[str] = None,
+    category: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """View inventory movements with filters - returns JSON for UI"""
+    query = {"is_deleted": False}
+    if start_date:
+        query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in query:
+            query['date']['$lte'] = end_dt
+        else:
+            query['date'] = {"$lte": end_dt}
+    if movement_type:
+        query['movement_type'] = movement_type
+    if category:
+        query['header_name'] = category
+    
+    movements = await db.stock_movements.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    
+    # Calculate totals
+    total_in = sum(m.get('qty_delta', 0) for m in movements if m.get('qty_delta', 0) > 0)
+    total_out = sum(abs(m.get('qty_delta', 0)) for m in movements if m.get('qty_delta', 0) < 0)
+    total_weight_in = sum(m.get('weight_delta', 0) for m in movements if m.get('weight_delta', 0) > 0)
+    total_weight_out = sum(abs(m.get('weight_delta', 0)) for m in movements if m.get('weight_delta', 0) < 0)
+    
+    return {
+        "movements": movements,
+        "summary": {
+            "total_in": total_in,
+            "total_out": total_out,
+            "total_weight_in": total_weight_in,
+            "total_weight_out": total_weight_out,
+            "net_quantity": total_in - total_out,
+            "net_weight": total_weight_in - total_weight_out
+        },
+        "count": len(movements)
+    }
+
+@api_router.get("/reports/parties-view")
+async def view_parties_report(
+    party_type: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """View parties with filters - returns JSON for UI"""
+    query = {"is_deleted": False}
+    if party_type:
+        query['party_type'] = party_type
+    
+    parties = await db.parties.find(query, {"_id": 0}).to_list(10000)
+    
+    # Get outstanding amounts for each party
+    for party in parties:
+        invoices = await db.invoices.find(
+            {"customer_id": party['id'], "is_deleted": False},
+            {"_id": 0, "balance_due": 1}
+        ).to_list(1000)
+        party['outstanding'] = sum(inv.get('balance_due', 0) for inv in invoices)
+    
+    return {
+        "parties": parties,
+        "count": len(parties)
+    }
+
+@api_router.get("/reports/invoices-view")
+async def view_invoices_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    invoice_type: Optional[str] = None,
+    payment_status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """View invoices with filters - returns JSON for UI"""
+    query = {"is_deleted": False}
+    if start_date:
+        query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in query:
+            query['date']['$lte'] = end_dt
+        else:
+            query['date'] = {"$lte": end_dt}
+    if invoice_type:
+        query['invoice_type'] = invoice_type
+    if payment_status:
+        query['payment_status'] = payment_status
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    
+    # Calculate totals
+    total_amount = sum(inv.get('grand_total', 0) for inv in invoices)
+    total_paid = sum(inv.get('paid_amount', 0) for inv in invoices)
+    total_balance = sum(inv.get('balance_due', 0) for inv in invoices)
+    
+    return {
+        "invoices": invoices,
+        "summary": {
+            "total_amount": total_amount,
+            "total_paid": total_paid,
+            "total_balance": total_balance
+        },
+        "count": len(invoices)
+    }
+
+@api_router.get("/reports/transactions-view")
+async def view_transactions_report(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    transaction_type: Optional[str] = None,
+    account_id: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """View financial transactions with filters - returns JSON for UI"""
+    query = {"is_deleted": False}
+    if start_date:
+        query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in query:
+            query['date']['$lte'] = end_dt
+        else:
+            query['date'] = {"$lte": end_dt}
+    if transaction_type:
+        query['transaction_type'] = transaction_type
+    if account_id:
+        query['account_id'] = account_id
+    
+    transactions = await db.transactions.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    
+    # Calculate totals
+    total_credit = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'credit')
+    total_debit = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'debit')
+    
+    return {
+        "transactions": transactions,
+        "summary": {
+            "total_credit": total_credit,
+            "total_debit": total_debit,
+            "net_balance": total_credit - total_debit
+        },
+        "count": len(transactions)
+    }
+
+@api_router.get("/reports/invoice/{invoice_id}")
+async def get_invoice_report(invoice_id: str, current_user: User = Depends(get_current_user)):
+    """Get detailed report for a single invoice"""
+    invoice = await db.invoices.find_one({"id": invoice_id, "is_deleted": False}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Get related payments/transactions
+    transactions = await db.transactions.find(
+        {"party_id": invoice.get('customer_id'), "is_deleted": False},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    return {
+        "invoice": invoice,
+        "transactions": transactions
+    }
+
+@api_router.get("/reports/party/{party_id}/ledger-report")
+async def get_party_ledger_report(
+    party_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get detailed ledger report for a party with date filtering"""
+    party = await db.parties.find_one({"id": party_id, "is_deleted": False}, {"_id": 0})
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+    
+    # Build query for invoices
+    invoice_query = {"customer_id": party_id, "is_deleted": False}
+    if start_date:
+        invoice_query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in invoice_query:
+            invoice_query['date']['$lte'] = end_dt
+        else:
+            invoice_query['date'] = {"$lte": end_dt}
+    
+    invoices = await db.invoices.find(invoice_query, {"_id": 0}).sort("date", -1).to_list(1000)
+    
+    # Build query for transactions
+    txn_query = {"party_id": party_id, "is_deleted": False}
+    if start_date:
+        txn_query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in txn_query:
+            txn_query['date']['$lte'] = end_dt
+        else:
+            txn_query['date'] = {"$lte": end_dt}
+    
+    transactions = await db.transactions.find(txn_query, {"_id": 0}).sort("date", -1).to_list(1000)
+    
+    # Calculate totals
+    total_invoiced = sum(inv.get('grand_total', 0) for inv in invoices)
+    total_paid = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'debit')
+    total_outstanding = sum(inv.get('balance_due', 0) for inv in invoices)
+    
+    return {
+        "party": party,
+        "invoices": invoices,
+        "transactions": transactions,
+        "summary": {
+            "total_invoiced": total_invoiced,
+            "total_paid": total_paid,
+            "total_outstanding": total_outstanding
+        }
+    }
+
+@api_router.get("/reports/inventory/{header_id}/stock-report")
+async def get_inventory_stock_report(
+    header_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get detailed stock report for a specific inventory category"""
+    header = await db.inventory_headers.find_one({"id": header_id, "is_deleted": False}, {"_id": 0})
+    if not header:
+        raise HTTPException(status_code=404, detail="Inventory category not found")
+    
+    # Build query for movements
+    query = {"header_id": header_id, "is_deleted": False}
+    if start_date:
+        query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in query:
+            query['date']['$lte'] = end_dt
+        else:
+            query['date'] = {"$lte": end_dt}
+    
+    movements = await db.stock_movements.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    
+    # Calculate stock totals
+    total_in = sum(m.get('qty_delta', 0) for m in movements if m.get('qty_delta', 0) > 0)
+    total_out = sum(abs(m.get('qty_delta', 0)) for m in movements if m.get('qty_delta', 0) < 0)
+    current_stock = total_in - total_out
+    
+    total_weight_in = sum(m.get('weight_delta', 0) for m in movements if m.get('weight_delta', 0) > 0)
+    total_weight_out = sum(abs(m.get('weight_delta', 0)) for m in movements if m.get('weight_delta', 0) < 0)
+    current_weight = total_weight_in - total_weight_out
+    
+    return {
+        "header": header,
+        "movements": movements,
+        "summary": {
+            "total_in": total_in,
+            "total_out": total_out,
+            "current_stock": current_stock,
+            "total_weight_in": total_weight_in,
+            "total_weight_out": total_weight_out,
+            "current_weight": current_weight
+        },
+        "count": len(movements)
+    }
+
 @api_router.get("/reports/financial-summary")
-async def get_financial_summary(current_user: User = Depends(get_current_user)):
+async def get_financial_summary(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
     # Get totals for financial summary
     invoices = await db.invoices.find({"is_deleted": False}, {"_id": 0}).to_list(10000)
     transactions = await db.transactions.find({"is_deleted": False}, {"_id": 0}).to_list(10000)
