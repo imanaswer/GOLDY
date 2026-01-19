@@ -462,10 +462,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Complete all CRUD operations for backend"
-    - "Add edit/delete functionality to frontend"
-    - "Add security enhancements"
-    - "Add confirmation dialogs and validation"
+    - "Test enhanced reports API with filtering"
+    - "Test reports UI with date range, status, and type filters"
+    - "Test individual report views (invoice details, party ledger, stock report)"
+    - "Test export functionality with filters"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
