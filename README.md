@@ -1,1 +1,5 @@
-# Here are your Instructions
+# Gold Inventory
+
+Project description...
+
+Backend and frontend structure...
