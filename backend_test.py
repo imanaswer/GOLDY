@@ -585,7 +585,14 @@ class GoldShopERPTester:
             "Transactions": self.test_transactions(),
             "Job Cards": self.test_jobcards(),
             "Invoices": self.test_invoices(),
-            "Audit Logs": self.test_audit_logs()
+            "Audit Logs": self.test_audit_logs(),
+            "Financial Summary Reports": self.test_reports_financial_summary(),
+            "Inventory View Reports": self.test_reports_inventory_view(),
+            "Invoices View Reports": self.test_reports_invoices_view(),
+            "Parties View Reports": self.test_reports_parties_view(),
+            "Transactions View Reports": self.test_reports_transactions_view(),
+            "Export Endpoints": self.test_reports_export_endpoints(),
+            "Individual Reports": self.test_reports_individual_reports()
         }
 
         # Print results summary
