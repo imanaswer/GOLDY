@@ -429,15 +429,66 @@ class GoldShopERPTester:
         
         return all(results) if results else False
 
-    def test_invoices(self):
-        """Test invoices"""
-        # Get all invoices
-        success, invoices = self.run_test(
-            "Get All Invoices",
+    def test_daily_closing(self):
+        """Test daily closing APIs"""
+        # Get existing daily closings
+        success1, closings = self.run_test(
+            "Get Daily Closings",
             "GET",
-            "invoices",
+            "daily-closings",
             200
         )
+        
+        if not success1:
+            return False
+        
+        # Create new daily closing with sample data
+        closing_data = {
+            "date": "2025-01-10T00:00:00Z",
+            "opening_cash": 1000.00,
+            "total_credit": 2500.00,
+            "total_debit": 800.00,
+            "expected_closing": 2700.00,  # opening + credit - debit
+            "actual_closing": 2650.00,
+            "difference": -50.00,  # actual - expected
+            "is_locked": False,
+            "notes": "Test daily closing with sample calculations"
+        }
+        
+        success2, closing = self.run_test(
+            "Create Daily Closing",
+            "POST",
+            "daily-closings",
+            200,
+            data=closing_data
+        )
+        
+        if success2:
+            print(f"   Daily closing created with:")
+            print(f"   - Expected: {closing_data['expected_closing']}")
+            print(f"   - Actual: {closing_data['actual_closing']}")
+            print(f"   - Difference: {closing_data['difference']}")
+        
+        return success1 and success2
+
+    def test_invoice_pdf_generation(self):
+        """Test invoice PDF generation"""
+        if not self.created_resources['invoices']:
+            return False
+        
+        invoice_id = self.created_resources['invoices'][0]
+        
+        # Test PDF generation endpoint
+        success, pdf_response = self.run_test(
+            "Generate Invoice PDF",
+            "GET",
+            f"invoices/{invoice_id}/pdf",
+            200
+        )
+        
+        if success:
+            print(f"   PDF generation successful for invoice: {invoice_id}")
+        
         return success
 
     def test_audit_logs(self):
