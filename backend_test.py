@@ -342,6 +342,225 @@ class GoldShopERPTester:
         )
         return success
 
+    def test_reports_financial_summary(self):
+        """Test financial summary endpoint with date filtering"""
+        # Test without filters
+        success1, summary1 = self.run_test(
+            "Financial Summary (No Filters)",
+            "GET",
+            "reports/financial-summary",
+            200
+        )
+        
+        # Test with date filters
+        success2, summary2 = self.run_test(
+            "Financial Summary (With Date Filters)",
+            "GET",
+            "reports/financial-summary",
+            200,
+            params={"start_date": "2024-01-01", "end_date": "2024-12-31"}
+        )
+        
+        return success1 and success2
+
+    def test_reports_inventory_view(self):
+        """Test inventory view endpoint with filters"""
+        # Test without filters
+        success1, inventory1 = self.run_test(
+            "Inventory View (No Filters)",
+            "GET",
+            "reports/inventory-view",
+            200
+        )
+        
+        # Test with date and type filters
+        success2, inventory2 = self.run_test(
+            "Inventory View (With Filters)",
+            "GET",
+            "reports/inventory-view",
+            200,
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-12-31",
+                "movement_type": "Stock IN"
+            }
+        )
+        
+        # Test with category filter
+        success3, inventory3 = self.run_test(
+            "Inventory View (Category Filter)",
+            "GET",
+            "reports/inventory-view",
+            200,
+            params={"category": "Gold"}
+        )
+        
+        return success1 and success2 and success3
+
+    def test_reports_invoices_view(self):
+        """Test invoices view endpoint with filters"""
+        # Test without filters
+        success1, invoices1 = self.run_test(
+            "Invoices View (No Filters)",
+            "GET",
+            "reports/invoices-view",
+            200
+        )
+        
+        # Test with date and status filters
+        success2, invoices2 = self.run_test(
+            "Invoices View (With Filters)",
+            "GET",
+            "reports/invoices-view",
+            200,
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-12-31",
+                "invoice_type": "sale",
+                "payment_status": "unpaid"
+            }
+        )
+        
+        return success1 and success2
+
+    def test_reports_parties_view(self):
+        """Test parties view endpoint"""
+        # Test without filters
+        success1, parties1 = self.run_test(
+            "Parties View (No Filters)",
+            "GET",
+            "reports/parties-view",
+            200
+        )
+        
+        # Test with party type filter
+        success2, parties2 = self.run_test(
+            "Parties View (Customer Filter)",
+            "GET",
+            "reports/parties-view",
+            200,
+            params={"party_type": "customer"}
+        )
+        
+        return success1 and success2
+
+    def test_reports_transactions_view(self):
+        """Test transactions view endpoint with filters"""
+        # Test without filters
+        success1, transactions1 = self.run_test(
+            "Transactions View (No Filters)",
+            "GET",
+            "reports/transactions-view",
+            200
+        )
+        
+        # Test with date and type filters
+        success2, transactions2 = self.run_test(
+            "Transactions View (With Filters)",
+            "GET",
+            "reports/transactions-view",
+            200,
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-12-31",
+                "transaction_type": "credit"
+            }
+        )
+        
+        return success1 and success2
+
+    def test_reports_export_endpoints(self):
+        """Test export endpoints with filters"""
+        # Test inventory export
+        success1, _ = self.run_test(
+            "Inventory Export (With Filters)",
+            "GET",
+            "reports/inventory-export",
+            200,
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-12-31",
+                "movement_type": "Stock IN"
+            }
+        )
+        
+        # Test parties export
+        success2, _ = self.run_test(
+            "Parties Export",
+            "GET",
+            "reports/parties-export",
+            200,
+            params={"party_type": "customer"}
+        )
+        
+        # Test invoices export
+        success3, _ = self.run_test(
+            "Invoices Export (With Filters)",
+            "GET",
+            "reports/invoices-export",
+            200,
+            params={
+                "start_date": "2024-01-01",
+                "end_date": "2024-12-31",
+                "invoice_type": "sale"
+            }
+        )
+        
+        return success1 and success2 and success3
+
+    def test_reports_individual_reports(self):
+        """Test individual report endpoints if data exists"""
+        results = []
+        
+        # Test invoice report if we have invoices
+        if self.created_resources['invoices']:
+            invoice_id = self.created_resources['invoices'][0]
+            success1, invoice_report = self.run_test(
+                "Individual Invoice Report",
+                "GET",
+                f"reports/invoice/{invoice_id}",
+                200
+            )
+            results.append(success1)
+        
+        # Test party ledger report if we have parties
+        if self.created_resources['parties']:
+            party_id = self.created_resources['parties'][0]
+            success2, ledger_report = self.run_test(
+                "Party Ledger Report",
+                "GET",
+                f"reports/party/{party_id}/ledger-report",
+                200
+            )
+            success3, ledger_with_dates = self.run_test(
+                "Party Ledger Report (With Dates)",
+                "GET",
+                f"reports/party/{party_id}/ledger-report",
+                200,
+                params={"start_date": "2024-01-01", "end_date": "2024-12-31"}
+            )
+            results.extend([success2, success3])
+        
+        # Test inventory stock report if we have headers
+        if self.created_resources['headers']:
+            header_id = self.created_resources['headers'][0]
+            success4, stock_report = self.run_test(
+                "Inventory Stock Report",
+                "GET",
+                f"reports/inventory/{header_id}/stock-report",
+                200
+            )
+            success5, stock_with_dates = self.run_test(
+                "Inventory Stock Report (With Dates)",
+                "GET",
+                f"reports/inventory/{header_id}/stock-report",
+                200,
+                params={"start_date": "2024-01-01", "end_date": "2024-12-31"}
+            )
+            results.extend([success4, success5])
+        
+        return all(results) if results else True
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Gold Shop ERP Backend Tests")
