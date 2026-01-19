@@ -973,13 +973,34 @@ async def export_parties(
     )
 
 @api_router.get("/reports/invoices-export")
-async def export_invoices(current_user: User = Depends(get_current_user)):
+async def export_invoices(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    invoice_type: Optional[str] = None,
+    payment_status: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
     from fastapi.responses import StreamingResponse
     from io import BytesIO
     import openpyxl
     from openpyxl.styles import Font, PatternFill
     
-    invoices = await db.invoices.find({"is_deleted": False}, {"_id": 0}).sort("date", -1).to_list(10000)
+    # Build query with filters
+    query = {"is_deleted": False}
+    if start_date:
+        query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in query:
+            query['date']['$lte'] = end_dt
+        else:
+            query['date'] = {"$lte": end_dt}
+    if invoice_type:
+        query['invoice_type'] = invoice_type
+    if payment_status:
+        query['payment_status'] = payment_status
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
     
     wb = openpyxl.Workbook()
     ws = wb.active
