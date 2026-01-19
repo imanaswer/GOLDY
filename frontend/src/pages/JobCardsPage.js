@@ -248,7 +248,20 @@ export default function JobCardsPage() {
                 </Button>
               </div>
               {formData.items.map((item, idx) => (
-                <div key={idx} className="grid grid-cols-4 gap-3 mb-4 p-4 border rounded-md">
+                <div key={idx} className="grid grid-cols-4 gap-3 mb-4 p-4 border rounded-md relative">
+                  {/* Remove button */}
+                  {formData.items.length > 1 && (
+                    <Button
+                      data-testid={`remove-item-${idx}`}
+                      size="sm"
+                      variant="ghost"
+                      className="absolute top-2 right-2 h-8 w-8 p-0"
+                      onClick={() => removeItem(idx)}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  )}
+                  
                   <div>
                     <Label className="text-xs">Category</Label>
                     <Input
@@ -306,6 +319,50 @@ export default function JobCardsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  
+                  {/* Making Charge Type */}
+                  <div>
+                    <Label className="text-xs">Making Charge Type</Label>
+                    <Select 
+                      value={item.making_charge_type || 'flat'} 
+                      onValueChange={(val) => updateItem(idx, 'making_charge_type', val)}
+                    >
+                      <SelectTrigger data-testid={`making-charge-type-${idx}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="flat">Flat Rate</SelectItem>
+                        <SelectItem value="per_gram">Per Gram</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Making Charge Value */}
+                  <div>
+                    <Label className="text-xs">
+                      Making Charge ({item.making_charge_type === 'per_gram' ? 'OMR/g' : 'OMR'})
+                    </Label>
+                    <Input
+                      data-testid={`making-charge-value-${idx}`}
+                      type="number"
+                      step="0.001"
+                      value={item.making_charge_value || 0}
+                      onChange={(e) => updateItem(idx, 'making_charge_value', e.target.value)}
+                    />
+                  </div>
+                  
+                  {/* VAT Percent */}
+                  <div>
+                    <Label className="text-xs">VAT %</Label>
+                    <Input
+                      data-testid={`vat-percent-${idx}`}
+                      type="number"
+                      step="0.1"
+                      value={item.vat_percent || 5}
+                      onChange={(e) => updateItem(idx, 'vat_percent', e.target.value)}
+                    />
+                  </div>
+                  
                   <div className="col-span-2">
                     <Label className="text-xs">Remarks</Label>
                     <Input
