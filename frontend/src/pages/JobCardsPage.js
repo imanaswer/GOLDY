@@ -9,12 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, FileText, Trash2 } from 'lucide-react';
+import { Plus, FileText, Trash2, Edit, AlertTriangle } from 'lucide-react';
 
 export default function JobCardsPage() {
   const [jobcards, setJobcards] = useState([]);
   const [parties, setParties] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
+  const [editingJobCard, setEditingJobCard] = useState(null);
   const [formData, setFormData] = useState({
     card_type: 'individual',
     customer_id: '',
