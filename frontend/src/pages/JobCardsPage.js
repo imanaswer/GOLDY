@@ -151,6 +151,7 @@ export default function JobCardsPage() {
       worker_id: '',
       delivery_date: '',
       notes: '',
+      status: 'created',
       items: [{
         category: defaultCategory,
         description: '',
