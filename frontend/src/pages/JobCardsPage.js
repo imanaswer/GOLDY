@@ -217,7 +217,11 @@ export default function JobCardsPage() {
     
     setFormData({
       card_type: 'individual',
+      customer_type: 'saved',
       customer_id: '',
+      customer_name: '',
+      walk_in_name: '',
+      walk_in_phone: '',
       worker_id: '',
       delivery_date: '',
       notes: '',
