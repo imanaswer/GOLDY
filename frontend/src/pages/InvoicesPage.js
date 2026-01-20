@@ -292,7 +292,18 @@ export default function InvoicesPage() {
                   <tr key={inv.id} className="border-t hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono font-semibold">{inv.invoice_number}</td>
                     <td className="px-4 py-3 text-sm">{new Date(inv.date).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">{inv.customer_name || '-'}</td>
+                    <td className="px-4 py-3">
+                      {inv.customer_type === 'walk_in' ? (
+                        <div>
+                          <div>{inv.walk_in_name || 'Walk-in Customer'}</div>
+                          <Badge variant="outline" className="mt-1 text-xs bg-amber-50 text-amber-700">
+                            Walk-in
+                          </Badge>
+                        </div>
+                      ) : (
+                        inv.customer_name || '-'
+                      )}
+                    </td>
                     <td className="px-4 py-3 capitalize text-sm">{inv.invoice_type}</td>
                     <td className="px-4 py-3 text-right font-mono">{inv.grand_total.toFixed(3)}</td>
                     <td className="px-4 py-3 text-right font-mono">{inv.balance_due.toFixed(3)}</td>
@@ -314,6 +325,17 @@ export default function InvoicesPage() {
                             ) : (
                               <><CheckCircle className="w-4 h-4 mr-1" /> Finalize</>
                             )}
+                          </Button>
+                        )}
+                        {inv.balance_due > 0 && (
+                          <Button
+                            data-testid={`payment-${inv.invoice_number}`}
+                            size="sm"
+                            variant="outline"
+                            className="text-blue-600 hover:text-blue-700"
+                            onClick={() => handleOpenPaymentDialog(inv)}
+                          >
+                            <DollarSign className="w-4 h-4 mr-1" /> Add Payment
                           </Button>
                         )}
                         <Button
