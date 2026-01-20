@@ -1610,6 +1610,8 @@ async def view_invoices_report(
     end_date: Optional[str] = None,
     invoice_type: Optional[str] = None,
     payment_status: Optional[str] = None,
+    party_id: Optional[str] = None,  # NEW: Filter by specific party
+    sort_by: Optional[str] = None,  # NEW: "date_asc", "date_desc", "amount_desc", "outstanding_desc"
     current_user: User = Depends(get_current_user)
 ):
     """View invoices with filters - returns JSON for UI"""
@@ -1626,8 +1628,27 @@ async def view_invoices_report(
         query['invoice_type'] = invoice_type
     if payment_status:
         query['payment_status'] = payment_status
+    if party_id:
+        query['customer_id'] = party_id
     
-    invoices = await db.invoices.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    # Apply sorting
+    sort_field = "date"
+    sort_direction = -1  # Default: newest first
+    
+    if sort_by == "date_asc":
+        sort_field = "date"
+        sort_direction = 1
+    elif sort_by == "date_desc":
+        sort_field = "date"
+        sort_direction = -1
+    elif sort_by == "amount_desc":
+        sort_field = "grand_total"
+        sort_direction = -1
+    elif sort_by == "outstanding_desc":
+        sort_field = "balance_due"
+        sort_direction = -1
+    
+    invoices = await db.invoices.find(query, {"_id": 0}).sort(sort_field, sort_direction).to_list(10000)
     
     # Calculate totals
     total_amount = sum(inv.get('grand_total', 0) for inv in invoices)
