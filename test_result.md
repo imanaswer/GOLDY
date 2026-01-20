@@ -172,6 +172,54 @@ backend:
         agent: "main"
         comment: "IMPLEMENTED - Walk-in vs Saved customer handling with payment tracking. Backend changes: (1) Updated Invoice model - Added customer_type field ('saved' or 'walk_in'), walk_in_name, walk_in_phone fields for walk-in customers only. Customer_id/customer_name now only for saved customers. (2) Modified POST /api/jobcards/{jobcard_id}/convert-to-invoice - Now accepts customer_type in request body. For saved: requires customer_id. For walk_in: requires walk_in_name. Validates customer data based on type. (3) Created NEW endpoint POST /api/invoices/{invoice_id}/add-payment - Accepts amount, payment_mode (Cash/Bank Transfer/Card/UPI/Online/Cheque), account_id (where money goes), notes. Creates Transaction record for ALL payments. For saved customers: links to party_id. For walk-in: party_id=None, party_name includes '(Walk-in)' suffix. Updates invoice paid_amount and balance_due. Returns warning flag is_walk_in_partial_payment if walk-in customer has outstanding balance. All payments now properly tracked in finance system. Ready for testing."
 
+  - task: "Reports & Filters - Outstanding Report API"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "IMPLEMENTED - Outstanding Report endpoint GET /api/reports/outstanding. Features: (1) Added due_date field to Invoice model (optional, defaults to invoice_date for overdue calculations). (2) Party-wise outstanding calculation with total_invoiced, total_paid, total_outstanding per party. (3) Separate Customer Due (receivable) vs Vendor Payable breakdown. (4) Overdue buckets based on balance_due > 0: 0-7 days, 8-30 days, 31+ days. Overdue calculated from due_date (or invoice_date if due_date null). (5) Last invoice date and last payment date tracking. (6) Filters: party_id (specific party), party_type (customer/vendor), start_date, end_date, include_paid flag. (7) Returns summary totals plus party-wise details array. Ready for testing."
+
+  - task: "Reports & Filters - Enhanced Financial Summary"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "IMPLEMENTED - Enhanced Financial Summary endpoint GET /api/reports/financial-summary with NEW fields: (1) cash_balance - sum of all accounts where account_type contains 'cash'. (2) bank_balance - sum of all accounts where account_type contains 'bank'. (3) net_flow - calculated as total_credit minus total_debit. (4) daily_closing_difference - gets DailyClosing records for selected date range, calculates sum of (actual_closing - expected_closing). Defaults to today if no date range provided. All existing fields (total_sales, total_purchases, total_outstanding, total_credit, total_debit, net_profit) preserved. Ready for testing."
+
+  - task: "Reports & Filters - Global Filters on View Endpoints"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "IMPLEMENTED - Added global filter support to all report view endpoints. Changes: (1) GET /api/reports/invoices-view - Added party_id filter, sort_by parameter (date_asc, date_desc, amount_desc, outstanding_desc). (2) GET /api/reports/transactions-view - Added party_id filter, sort_by parameter. (3) GET /api/reports/parties-view - Added sort_by parameter (outstanding_desc, name_asc). (4) GET /api/reports/inventory-view - Added sort_by parameter (date_asc, date_desc). All endpoints now support filtering by specific party and sorting options for consistent UX across all reports. Ready for testing."
+
+  - task: "Reports & Filters - PDF Export Endpoints"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "IMPLEMENTED - Created 5 PDF export endpoints using ReportLab: (1) GET /api/reports/outstanding-pdf - Exports outstanding report with summary cards, overdue buckets, party-wise table. (2) GET /api/reports/invoices-pdf - Exports invoice report with summary and invoice table. (3) GET /api/reports/parties-pdf - Exports parties report with outstanding amounts. (4) GET /api/reports/transactions-pdf - Exports transactions with credit/debit breakdown. (5) GET /api/reports/inventory-pdf - Exports inventory movements with in/out totals. All PDFs use tabular format with A4 layout, header with date range, styled tables with proper colors, summary sections. Respect all applied filters (date, party, type, sorting). Ready for testing."
+
   - task: "Job Card Schema Enhancement - Making Charge & VAT"
     implemented: true
     working: true
