@@ -575,6 +575,126 @@ export default function JobCardsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Convert to Invoice Dialog */}
+      <Dialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Convert to Invoice - Select Customer Type</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Customer Type Selection */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold">Customer Type *</Label>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="customer_type"
+                    value="saved"
+                    checked={convertData.customer_type === 'saved'}
+                    onChange={(e) => setConvertData({...convertData, customer_type: e.target.value})}
+                    className="w-4 h-4"
+                  />
+                  <span className="font-medium">Saved Customer</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="customer_type"
+                    value="walk_in"
+                    checked={convertData.customer_type === 'walk_in'}
+                    onChange={(e) => setConvertData({...convertData, customer_type: e.target.value})}
+                    className="w-4 h-4"
+                  />
+                  <span className="font-medium">Walk-in Customer</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Saved Customer Section */}
+            {convertData.customer_type === 'saved' && (
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 text-blue-700 text-sm font-medium">
+                  <span>📋</span>
+                  <span>Saved customers allow ledger tracking and outstanding balance</span>
+                </div>
+                <div className="space-y-2">
+                  <Label>Select Customer *</Label>
+                  <Select 
+                    value={convertData.customer_id} 
+                    onValueChange={(value) => {
+                      const selected = parties.find(p => p.id === value);
+                      setConvertData({
+                        ...convertData, 
+                        customer_id: value,
+                        customer_name: selected?.name || ''
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {parties.map(party => (
+                        <SelectItem key={party.id} value={party.id}>
+                          {party.name} {party.phone && `- ${party.phone}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {/* Walk-in Customer Section */}
+            {convertData.customer_type === 'walk_in' && (
+              <div className="space-y-3 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div className="flex items-center gap-2 text-amber-700 text-sm font-medium">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Walk-in customers are NOT saved in Parties. Full payment recommended.</span>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Customer Name *</Label>
+                    <Input
+                      value={convertData.walk_in_name}
+                      onChange={(e) => setConvertData({...convertData, walk_in_name: e.target.value})}
+                      placeholder="Enter customer name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Phone Number</Label>
+                    <Input
+                      value={convertData.walk_in_phone}
+                      onChange={(e) => setConvertData({...convertData, walk_in_phone: e.target.value})}
+                      placeholder="Enter phone number (optional)"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowConvertDialog(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmConvert}
+                className="flex-1"
+              >
+                Convert to Invoice
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
