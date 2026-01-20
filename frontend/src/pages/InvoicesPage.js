@@ -133,6 +133,25 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleFinalizeInvoice = async (invoiceId, invoiceNumber) => {
+    if (!window.confirm(`Are you sure you want to finalize invoice ${invoiceNumber}?\n\nThis will:\n• Deduct stock from inventory\n• Lock the invoice (cannot be edited or deleted)\n• Lock any linked job card\n• Create customer ledger entry\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    setFinalizing(invoiceId);
+    try {
+      await axios.post(`${API}/invoices/${invoiceId}/finalize`);
+      toast.success('Invoice finalized successfully! Stock has been deducted.');
+      loadInvoices(); // Reload to show updated status
+    } catch (error) {
+      console.error('Error finalizing invoice:', error);
+      const errorMsg = error.response?.data?.detail || 'Failed to finalize invoice';
+      toast.error(errorMsg);
+    } finally {
+      setFinalizing(null);
+    }
+  };
+
   const getPaymentStatusBadge = (status) => {
     const variants = {
       unpaid: 'bg-red-100 text-red-800',
@@ -140,6 +159,13 @@ export default function InvoicesPage() {
       paid: 'bg-green-100 text-green-800'
     };
     return <Badge className={variants[status] || 'bg-gray-100 text-gray-800'}>{status}</Badge>;
+  };
+
+  const getInvoiceStatusBadge = (status) => {
+    if (status === 'finalized') {
+      return <Badge className="bg-emerald-100 text-emerald-800"><Lock className="w-3 h-3 mr-1 inline" />Finalized</Badge>;
+    }
+    return <Badge className="bg-blue-100 text-blue-800">Draft</Badge>;
   };
 
   return (
