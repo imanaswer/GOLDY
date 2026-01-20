@@ -1636,6 +1636,640 @@ class GoldShopERPTester:
         
         return all(results) if results else True
 
+    def test_job_card_locking_admin_override_setup(self):
+        """Setup Phase: Create admin user, staff user, job card, invoice, and finalize"""
+        print("\n🔒 TESTING JOB CARD LOCKING ADMIN OVERRIDE - SETUP PHASE")
+        
+        # Create staff user for testing non-admin scenarios
+        staff_register_success, staff_response = self.run_test(
+            "Register Staff User",
+            "POST",
+            "auth/register",
+            200,
+            data={
+                "username": "staff_user",
+                "password": "staff123",
+                "email": "staff@goldshop.com",
+                "full_name": "Staff Member",
+                "role": "staff"
+            }
+        )
+        
+        # Create customer for job card
+        customer_data = {
+            "name": f"Lock Test Customer {datetime.now().strftime('%H%M%S')}",
+            "phone": "+968 7777 8888",
+            "address": "Lock Test Address",
+            "party_type": "customer",
+            "notes": "Customer for job card locking tests"
+        }
+        
+        success, customer = self.run_test(
+            "Create Customer for Lock Test",
+            "POST",
+            "parties",
+            200,
+            data=customer_data
+        )
+        
+        if not success:
+            return False
+        
+        customer_id = customer['id']
+        
+        # Create job card
+        jobcard_data = {
+            "card_type": "individual",
+            "customer_id": customer_id,
+            "customer_name": customer['name'],
+            "delivery_date": "2025-01-30",
+            "notes": "Job card for admin override testing",
+            "items": [{
+                "category": "Ring",
+                "description": "Gold ring for lock testing",
+                "qty": 1,
+                "weight_in": 8.500,
+                "weight_out": 8.200,
+                "purity": 916,
+                "work_type": "polish",
+                "remarks": "Polish for lock test",
+                "making_charge_type": "flat",
+                "making_charge_value": 12.0,
+                "vat_percent": 5.0
+            }]
+        }
+        
+        success, jobcard = self.run_test(
+            "Create Job Card for Lock Test",
+            "POST",
+            "jobcards",
+            200,
+            data=jobcard_data
+        )
+        
+        if not success:
+            return False
+        
+        jobcard_id = jobcard['id']
+        
+        # Convert to invoice
+        success, invoice = self.run_test(
+            "Convert Job Card to Invoice for Lock Test",
+            "POST",
+            f"jobcards/{jobcard_id}/convert-to-invoice",
+            200
+        )
+        
+        if not success:
+            return False
+        
+        invoice_id = invoice['id']
+        
+        # Finalize invoice to lock job card
+        success, finalized_invoice = self.run_test(
+            "Finalize Invoice to Lock Job Card",
+            "POST",
+            f"invoices/{invoice_id}/finalize",
+            200
+        )
+        
+        if not success:
+            return False
+        
+        # Verify job card is locked
+        success, locked_jobcard = self.run_test(
+            "Verify Job Card is Locked",
+            "GET",
+            f"jobcards/{jobcard_id}",
+            200
+        )
+        
+        if not success:
+            return False
+        
+        if not locked_jobcard.get('locked'):
+            print(f"❌ Job card should be locked after invoice finalization")
+            return False
+        
+        print(f"✅ Setup complete: Job card locked (locked={locked_jobcard.get('locked')})")
+        
+        # Store test data for other tests
+        self.admin_override_test_data = {
+            'customer_id': customer_id,
+            'jobcard_id': jobcard_id,
+            'invoice_id': invoice_id,
+            'locked_at': locked_jobcard.get('locked_at'),
+            'locked_by': locked_jobcard.get('locked_by'),
+            'jobcard_number': locked_jobcard.get('job_card_number'),
+            'customer_name': customer['name']
+        }
+        
+        return True
+
+    def test_job_card_locking_non_admin_edit_attempt(self):
+        """Test Scenario 1: Non-Admin Edit Attempt (Should FAIL)"""
+        print("\n🔒 TESTING JOB CARD LOCKING - NON-ADMIN EDIT ATTEMPT")
+        
+        if not hasattr(self, 'admin_override_test_data'):
+            print("❌ Admin override test data not available, run setup first")
+            return False
+        
+        jobcard_id = self.admin_override_test_data['jobcard_id']
+        
+        # Login as staff user
+        success, staff_login_response = self.run_test(
+            "Login as Staff User",
+            "POST",
+            "auth/login",
+            200,
+            data={"username": "staff_user", "password": "staff123"}
+        )
+        
+        if not success:
+            return False
+        
+        # Store admin token and switch to staff token
+        admin_token = self.token
+        self.token = staff_login_response['access_token']
+        
+        # Attempt to edit locked job card as staff (should get 403)
+        success, error_response = self.run_test(
+            "Staff Edit Locked Job Card (Should Fail with 403)",
+            "PATCH",
+            f"jobcards/{jobcard_id}",
+            403,  # Expecting 403 Forbidden
+            data={"notes": "Staff attempting to edit locked job card"}
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if not success:
+            print(f"❌ Expected 403 Forbidden error for staff editing locked job card")
+            return False
+        
+        # Verify error message mentions admin override
+        if 'admin' not in str(error_response).lower():
+            print(f"❌ Error message should mention admin override requirement")
+            return False
+        
+        print(f"✅ Staff user correctly blocked from editing locked job card (403 Forbidden)")
+        return True
+
+    def test_job_card_locking_non_admin_delete_attempt(self):
+        """Test Scenario 2: Non-Admin Delete Attempt (Should FAIL)"""
+        print("\n🔒 TESTING JOB CARD LOCKING - NON-ADMIN DELETE ATTEMPT")
+        
+        if not hasattr(self, 'admin_override_test_data'):
+            print("❌ Admin override test data not available")
+            return False
+        
+        jobcard_id = self.admin_override_test_data['jobcard_id']
+        
+        # Login as staff user
+        success, staff_login_response = self.run_test(
+            "Login as Staff User for Delete Test",
+            "POST",
+            "auth/login",
+            200,
+            data={"username": "staff_user", "password": "staff123"}
+        )
+        
+        if not success:
+            return False
+        
+        # Store admin token and switch to staff token
+        admin_token = self.token
+        self.token = staff_login_response['access_token']
+        
+        # Attempt to delete locked job card as staff (should get 403)
+        success, error_response = self.run_test(
+            "Staff Delete Locked Job Card (Should Fail with 403)",
+            "DELETE",
+            f"jobcards/{jobcard_id}",
+            403,  # Expecting 403 Forbidden
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if not success:
+            print(f"❌ Expected 403 Forbidden error for staff deleting locked job card")
+            return False
+        
+        # Verify error message mentions admin override
+        if 'admin' not in str(error_response).lower():
+            print(f"❌ Error message should mention admin override requirement")
+            return False
+        
+        print(f"✅ Staff user correctly blocked from deleting locked job card (403 Forbidden)")
+        return True
+
+    def test_job_card_locking_admin_edit_override(self):
+        """Test Scenario 3: Admin Edit Override (Should SUCCEED)"""
+        print("\n🔒 TESTING JOB CARD LOCKING - ADMIN EDIT OVERRIDE")
+        
+        if not hasattr(self, 'admin_override_test_data'):
+            print("❌ Admin override test data not available")
+            return False
+        
+        jobcard_id = self.admin_override_test_data['jobcard_id']
+        
+        # Admin edit locked job card (should succeed with warning)
+        success, edit_response = self.run_test(
+            "Admin Edit Locked Job Card (Should Succeed)",
+            "PATCH",
+            f"jobcards/{jobcard_id}",
+            200,  # Should succeed
+            data={"notes": "Admin override edit of locked job card"}
+        )
+        
+        if not success:
+            return False
+        
+        # Verify response contains warning message
+        response_str = str(edit_response)
+        if 'locked' not in response_str.lower() or 'finalized invoice' not in response_str.lower():
+            print(f"❌ Response should contain warning about locked job card and finalized invoice")
+            return False
+        
+        print(f"✅ Admin successfully edited locked job card with warning message")
+        
+        # Verify audit log was created for admin override edit
+        success, audit_logs = self.run_test(
+            "Get Audit Logs for Admin Override Edit",
+            "GET",
+            "audit-logs",
+            200,
+            params={"module": "jobcard"}
+        )
+        
+        if not success:
+            return False
+        
+        # Find the admin override edit log
+        override_edit_log = None
+        for log in audit_logs:
+            if (log.get('record_id') == jobcard_id and 
+                log.get('action') == 'admin_override_edit'):
+                override_edit_log = log
+                break
+        
+        if not override_edit_log:
+            print(f"❌ No admin_override_edit audit log found for job card {jobcard_id}")
+            return False
+        
+        # Verify audit log contains required details
+        changes = override_edit_log.get('changes', {})
+        if not changes.get('reason'):
+            print(f"❌ Audit log should contain reason")
+            return False
+        
+        if not changes.get('locked_at'):
+            print(f"❌ Audit log should contain locked_at timestamp")
+            return False
+        
+        if not changes.get('locked_by'):
+            print(f"❌ Audit log should contain locked_by user ID")
+            return False
+        
+        if not changes.get('changes'):
+            print(f"❌ Audit log should contain the actual changes made")
+            return False
+        
+        print(f"✅ Admin override edit audit log created with all required details:")
+        print(f"   - Action: {override_edit_log.get('action')}")
+        print(f"   - User: {override_edit_log.get('user_name')}")
+        print(f"   - Reason: {changes.get('reason')}")
+        
+        return True
+
+    def test_job_card_locking_admin_delete_override(self):
+        """Test Scenario 4: Admin Delete Override (Should SUCCEED)"""
+        print("\n🔒 TESTING JOB CARD LOCKING - ADMIN DELETE OVERRIDE")
+        
+        # Create another locked job card for delete test
+        # (We need a separate one since the previous test modified the original)
+        
+        # Create customer for second job card
+        customer_data = {
+            "name": f"Delete Test Customer {datetime.now().strftime('%H%M%S')}",
+            "phone": "+968 9999 0000",
+            "address": "Delete Test Address",
+            "party_type": "customer",
+            "notes": "Customer for delete override test"
+        }
+        
+        success, customer = self.run_test(
+            "Create Customer for Delete Override Test",
+            "POST",
+            "parties",
+            200,
+            data=customer_data
+        )
+        
+        if not success:
+            return False
+        
+        # Create job card
+        jobcard_data = {
+            "card_type": "individual",
+            "customer_id": customer['id'],
+            "customer_name": customer['name'],
+            "delivery_date": "2025-02-01",
+            "notes": "Job card for delete override testing",
+            "items": [{
+                "category": "Bracelet",
+                "description": "Gold bracelet for delete test",
+                "qty": 1,
+                "weight_in": 15.500,
+                "weight_out": 15.200,
+                "purity": 916,
+                "work_type": "repair",
+                "remarks": "Repair for delete test"
+            }]
+        }
+        
+        success, jobcard = self.run_test(
+            "Create Job Card for Delete Override Test",
+            "POST",
+            "jobcards",
+            200,
+            data=jobcard_data
+        )
+        
+        if not success:
+            return False
+        
+        jobcard_id = jobcard['id']
+        jobcard_number = jobcard['job_card_number']
+        
+        # Convert to invoice and finalize to lock
+        success, invoice = self.run_test(
+            "Convert Job Card to Invoice for Delete Test",
+            "POST",
+            f"jobcards/{jobcard_id}/convert-to-invoice",
+            200
+        )
+        
+        if not success:
+            return False
+        
+        success, finalized = self.run_test(
+            "Finalize Invoice to Lock Job Card for Delete Test",
+            "POST",
+            f"invoices/{invoice['id']}/finalize",
+            200
+        )
+        
+        if not success:
+            return False
+        
+        # Verify job card is locked
+        success, locked_jobcard = self.run_test(
+            "Verify Job Card is Locked for Delete Test",
+            "GET",
+            f"jobcards/{jobcard_id}",
+            200
+        )
+        
+        if not success or not locked_jobcard.get('locked'):
+            print(f"❌ Job card should be locked for delete test")
+            return False
+        
+        # Admin delete locked job card (should succeed with warning)
+        success, delete_response = self.run_test(
+            "Admin Delete Locked Job Card (Should Succeed)",
+            "DELETE",
+            f"jobcards/{jobcard_id}",
+            200  # Should succeed
+        )
+        
+        if not success:
+            return False
+        
+        # Verify response contains warning message
+        response_str = str(delete_response)
+        if 'locked' not in response_str.lower() or 'finalized invoice' not in response_str.lower():
+            print(f"❌ Response should contain warning about locked job card and finalized invoice")
+            return False
+        
+        print(f"✅ Admin successfully deleted locked job card with warning message")
+        
+        # Verify audit log was created for admin override delete
+        success, audit_logs = self.run_test(
+            "Get Audit Logs for Admin Override Delete",
+            "GET",
+            "audit-logs",
+            200,
+            params={"module": "jobcard"}
+        )
+        
+        if not success:
+            return False
+        
+        # Find the admin override delete log
+        override_delete_log = None
+        for log in audit_logs:
+            if (log.get('record_id') == jobcard_id and 
+                log.get('action') == 'admin_override_delete'):
+                override_delete_log = log
+                break
+        
+        if not override_delete_log:
+            print(f"❌ No admin_override_delete audit log found for job card {jobcard_id}")
+            return False
+        
+        # Verify audit log contains required details
+        changes = override_delete_log.get('changes', {})
+        if not changes.get('reason'):
+            print(f"❌ Audit log should contain reason")
+            return False
+        
+        if not changes.get('locked_at'):
+            print(f"❌ Audit log should contain locked_at timestamp")
+            return False
+        
+        if not changes.get('locked_by'):
+            print(f"❌ Audit log should contain locked_by user ID")
+            return False
+        
+        if not changes.get('jobcard_number'):
+            print(f"❌ Audit log should contain jobcard_number")
+            return False
+        
+        if not changes.get('customer_name'):
+            print(f"❌ Audit log should contain customer_name")
+            return False
+        
+        print(f"✅ Admin override delete audit log created with all required details:")
+        print(f"   - Action: {override_delete_log.get('action')}")
+        print(f"   - User: {override_delete_log.get('user_name')}")
+        print(f"   - Reason: {changes.get('reason')}")
+        print(f"   - Job Card: {changes.get('jobcard_number')}")
+        print(f"   - Customer: {changes.get('customer_name')}")
+        
+        return True
+
+    def test_job_card_locking_audit_log_verification(self):
+        """Test Scenario 5: Audit Log Verification"""
+        print("\n🔒 TESTING JOB CARD LOCKING - AUDIT LOG VERIFICATION")
+        
+        # Get all audit logs for jobcard module
+        success, audit_logs = self.run_test(
+            "Get All Job Card Audit Logs",
+            "GET",
+            "audit-logs",
+            200,
+            params={"module": "jobcard"}
+        )
+        
+        if not success:
+            return False
+        
+        # Count admin override actions
+        override_edit_logs = [log for log in audit_logs if log.get('action') == 'admin_override_edit']
+        override_delete_logs = [log for log in audit_logs if log.get('action') == 'admin_override_delete']
+        
+        print(f"✅ Found {len(override_edit_logs)} admin override edit logs")
+        print(f"✅ Found {len(override_delete_logs)} admin override delete logs")
+        
+        # Verify each override log has complete override_details
+        all_logs_valid = True
+        
+        for log in override_edit_logs + override_delete_logs:
+            changes = log.get('changes', {})
+            required_fields = ['reason', 'locked_at', 'locked_by']
+            
+            if log.get('action') == 'admin_override_delete':
+                required_fields.extend(['jobcard_number', 'customer_name'])
+            elif log.get('action') == 'admin_override_edit':
+                required_fields.append('changes')
+            
+            for field in required_fields:
+                if not changes.get(field):
+                    print(f"❌ Audit log {log.get('id')} missing required field: {field}")
+                    all_logs_valid = False
+        
+        if not all_logs_valid:
+            return False
+        
+        print(f"✅ All admin override audit logs contain complete override_details")
+        return True
+
+    def test_job_card_locking_normal_operations(self):
+        """Test Scenario 6: Normal Job Card Operations (Should Work)"""
+        print("\n🔒 TESTING JOB CARD LOCKING - NORMAL OPERATIONS")
+        
+        # Create customer for normal operations test
+        customer_data = {
+            "name": f"Normal Ops Customer {datetime.now().strftime('%H%M%S')}",
+            "phone": "+968 1111 3333",
+            "address": "Normal Operations Address",
+            "party_type": "customer",
+            "notes": "Customer for normal operations test"
+        }
+        
+        success, customer = self.run_test(
+            "Create Customer for Normal Operations",
+            "POST",
+            "parties",
+            200,
+            data=customer_data
+        )
+        
+        if not success:
+            return False
+        
+        # Create unlocked job card
+        jobcard_data = {
+            "card_type": "individual",
+            "customer_id": customer['id'],
+            "customer_name": customer['name'],
+            "delivery_date": "2025-02-05",
+            "notes": "Normal unlocked job card",
+            "items": [{
+                "category": "Chain",
+                "description": "Gold chain for normal operations",
+                "qty": 1,
+                "weight_in": 20.500,
+                "weight_out": 20.200,
+                "purity": 916,
+                "work_type": "clean",
+                "remarks": "Simple cleaning"
+            }]
+        }
+        
+        success, jobcard = self.run_test(
+            "Create Unlocked Job Card",
+            "POST",
+            "jobcards",
+            200,
+            data=jobcard_data
+        )
+        
+        if not success:
+            return False
+        
+        jobcard_id = jobcard['id']
+        
+        # Verify job card is not locked
+        if jobcard.get('locked'):
+            print(f"❌ New job card should not be locked")
+            return False
+        
+        print(f"✅ Created unlocked job card (locked={jobcard.get('locked', False)})")
+        
+        # Login as staff user to test normal operations
+        success, staff_login_response = self.run_test(
+            "Login as Staff for Normal Operations",
+            "POST",
+            "auth/login",
+            200,
+            data={"username": "staff_user", "password": "staff123"}
+        )
+        
+        if not success:
+            return False
+        
+        # Store admin token and switch to staff token
+        admin_token = self.token
+        self.token = staff_login_response['access_token']
+        
+        # Edit unlocked job card as staff (should succeed)
+        success, edit_response = self.run_test(
+            "Staff Edit Unlocked Job Card (Should Succeed)",
+            "PATCH",
+            f"jobcards/{jobcard_id}",
+            200,
+            data={"notes": "Staff edited unlocked job card successfully"}
+        )
+        
+        if not success:
+            print(f"❌ Staff should be able to edit unlocked job card")
+            self.token = admin_token
+            return False
+        
+        print(f"✅ Staff successfully edited unlocked job card")
+        
+        # Delete unlocked job card as staff (should succeed)
+        success, delete_response = self.run_test(
+            "Staff Delete Unlocked Job Card (Should Succeed)",
+            "DELETE",
+            f"jobcards/{jobcard_id}",
+            200
+        )
+        
+        # Restore admin token
+        self.token = admin_token
+        
+        if not success:
+            print(f"❌ Staff should be able to delete unlocked job card")
+            return False
+        
+        print(f"✅ Staff successfully deleted unlocked job card")
+        return True
+
     def run_all_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Gold Shop ERP Backend Tests")
