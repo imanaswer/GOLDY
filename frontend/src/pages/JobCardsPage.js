@@ -90,6 +90,67 @@ export default function JobCardsPage() {
     }
   };
 
+  const handleEditJobCard = (jobcard) => {
+    setEditingJobCard(jobcard);
+    // Format delivery_date to YYYY-MM-DD for input
+    const deliveryDate = jobcard.delivery_date ? new Date(jobcard.delivery_date).toISOString().split('T')[0] : '';
+    setFormData({
+      card_type: jobcard.card_type,
+      customer_id: jobcard.customer_id || '',
+      worker_id: jobcard.worker_id || '',
+      delivery_date: deliveryDate,
+      notes: jobcard.notes || '',
+      items: jobcard.items.map(item => ({
+        ...item,
+        making_charge_type: item.making_charge_type || 'flat',
+        making_charge_value: item.making_charge_value || 0,
+        vat_percent: item.vat_percent || 5
+      }))
+    });
+    setShowDialog(true);
+  };
+
+  const handleDeleteJobCard = async (jobcardId, jobcardNumber) => {
+    if (!window.confirm(`Are you sure you want to delete job card ${jobcardNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API}/jobcards/${jobcardId}`);
+      toast.success('Job card deleted successfully');
+      loadData();
+    } catch (error) {
+      const errorMsg = error.response?.data?.detail || 'Failed to delete job card';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setShowDialog(false);
+    setEditingJobCard(null);
+    // Reset form to default
+    setFormData({
+      card_type: 'individual',
+      customer_id: '',
+      worker_id: '',
+      delivery_date: '',
+      notes: '',
+      items: [{
+        category: 'Chain',
+        description: '',
+        qty: 1,
+        weight_in: 0,
+        weight_out: 0,
+        purity: 916,
+        work_type: 'polish',
+        remarks: '',
+        making_charge_type: 'flat',
+        making_charge_value: 0,
+        vat_percent: 5
+      }]
+    });
+  };
+
   const addItem = () => {
     setFormData({
       ...formData,
