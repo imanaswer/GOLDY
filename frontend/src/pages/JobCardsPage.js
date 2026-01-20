@@ -71,12 +71,21 @@ export default function JobCardsPage() {
         }))
       };
       
-      await axios.post(`${API}/jobcards`, data);
-      toast.success('Job card created successfully');
-      setShowDialog(false);
+      if (editingJobCard) {
+        // Update existing job card
+        await axios.patch(`${API}/jobcards/${editingJobCard.id}`, data);
+        toast.success('Job card updated successfully');
+      } else {
+        // Create new job card
+        await axios.post(`${API}/jobcards`, data);
+        toast.success('Job card created successfully');
+      }
+      
+      handleCloseDialog();
       loadData();
     } catch (error) {
-      toast.error('Failed to create job card');
+      const errorMsg = error.response?.data?.detail || `Failed to ${editingJobCard ? 'update' : 'create'} job card`;
+      toast.error(errorMsg);
     }
   };
 
