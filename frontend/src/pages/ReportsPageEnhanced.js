@@ -179,7 +179,7 @@ export default function ReportsPageEnhanced() {
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
       if (movementType) params.movement_type = movementType;
-      if (category) params.category = category;
+      if (category && category !== 'all') params.category = category;
       if (sortBy) params.sort_by = sortBy;
       
       const response = await axios.get(`${API}/reports/inventory-view`, { params });
@@ -256,7 +256,7 @@ export default function ReportsPageEnhanced() {
       if (paymentStatus && paymentStatus !== 'all') params.payment_status = paymentStatus;
       if (partyType && partyType !== 'all') params.party_type = partyType;
       if (movementType) params.movement_type = movementType;
-      if (category) params.category = category;
+      if (category && category !== 'all') params.category = category;
       if (transactionType) params.transaction_type = transactionType;
       
       const response = await axios.get(`${API}/reports/${reportType}-pdf`, {
@@ -288,7 +288,7 @@ export default function ReportsPageEnhanced() {
       if (paymentStatus && paymentStatus !== 'all') params.payment_status = paymentStatus;
       if (partyType && partyType !== 'all') params.party_type = partyType;
       if (movementType) params.movement_type = movementType;
-      if (category) params.category = category;
+      if (category && category !== 'all') params.category = category;
       if (transactionType) params.transaction_type = transactionType;
       
       const response = await axios.get(`${API}/reports/${reportType}-export`, {
