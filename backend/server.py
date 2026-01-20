@@ -1846,6 +1846,35 @@ async def get_financial_summary(
     
     total_account_balance = sum(acc.get('current_balance', 0) for acc in accounts)
     
+    # NEW: Calculate cash and bank balances separately
+    cash_balance = sum(acc.get('current_balance', 0) for acc in accounts 
+                      if 'cash' in acc.get('account_type', '').lower())
+    bank_balance = sum(acc.get('current_balance', 0) for acc in accounts 
+                      if 'bank' in acc.get('account_type', '').lower())
+    
+    # NEW: Calculate net flow
+    net_flow = total_credit - total_debit
+    
+    # NEW: Get daily closing difference for today (or selected date range)
+    daily_closing_difference = 0
+    closing_query = {"is_deleted": False}
+    if start_date and end_date:
+        # If date range provided, get all closings in range
+        closing_query['date'] = {
+            "$gte": datetime.fromisoformat(start_date),
+            "$lte": datetime.fromisoformat(end_date)
+        }
+    else:
+        # Default to today
+        today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        closing_query['date'] = {"$gte": today}
+    
+    closings = await db.daily_closings.find(closing_query, {"_id": 0}).to_list(100)
+    for closing in closings:
+        expected = closing.get('expected_closing', 0)
+        actual = closing.get('actual_closing', 0)
+        daily_closing_difference += (actual - expected)
+    
     return {
         "total_sales": total_sales,
         "total_purchases": total_purchases,
@@ -1853,7 +1882,167 @@ async def get_financial_summary(
         "total_credit": total_credit,
         "total_debit": total_debit,
         "total_account_balance": total_account_balance,
+        "cash_balance": cash_balance,
+        "bank_balance": bank_balance,
+        "net_flow": net_flow,
+        "daily_closing_difference": daily_closing_difference,
         "net_profit": total_sales - total_purchases
+    }
+
+
+@api_router.get("/reports/outstanding")
+async def get_outstanding_report(
+    party_id: Optional[str] = None,
+    party_type: Optional[str] = None,  # "customer", "vendor", or None for both
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    include_paid: bool = False,  # Include fully paid invoices
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get outstanding report with overdue buckets
+    Shows total invoiced, paid, outstanding per party
+    Includes overdue buckets: 0-7, 8-30, 31+ days
+    """
+    # Build invoice query
+    invoice_query = {"is_deleted": False, "status": "finalized"}
+    
+    if not include_paid:
+        # Only include invoices with outstanding balance
+        invoice_query['balance_due'] = {"$gt": 0}
+    
+    if start_date:
+        invoice_query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in invoice_query:
+            invoice_query['date']['$lte'] = end_dt
+        else:
+            invoice_query['date'] = {"$lte": end_dt}
+    
+    # Get all invoices
+    invoices = await db.invoices.find(invoice_query, {"_id": 0}).to_list(10000)
+    
+    # Get all transactions for payment tracking
+    transactions = await db.transactions.find(
+        {"is_deleted": False, "category": {"$in": ["Sales Invoice", "Purchase Invoice"]}},
+        {"_id": 0}
+    ).to_list(10000)
+    
+    # Calculate today for overdue calculations
+    today = datetime.now(timezone.utc)
+    
+    # Group by party
+    party_data = {}
+    
+    for inv in invoices:
+        # Determine party info
+        if inv.get('customer_type') == 'walk_in':
+            party_key = f"walk_in_{inv.get('walk_in_name', 'Unknown')}"
+            party_name = f"{inv.get('walk_in_name', 'Unknown')} (Walk-in)"
+            ptype = "customer"
+        elif inv.get('customer_id'):
+            party_key = inv['customer_id']
+            party_name = inv.get('customer_name', 'Unknown')
+            ptype = "customer" if inv.get('invoice_type') == 'sale' else "vendor"
+        else:
+            continue
+        
+        # Filter by party_id if specified
+        if party_id and party_key != party_id:
+            continue
+        
+        # Filter by party_type if specified
+        if party_type and ptype != party_type:
+            continue
+        
+        # Initialize party data
+        if party_key not in party_data:
+            party_data[party_key] = {
+                "party_id": party_key,
+                "party_name": party_name,
+                "party_type": ptype,
+                "total_invoiced": 0,
+                "total_paid": 0,
+                "total_outstanding": 0,
+                "overdue_0_7": 0,
+                "overdue_8_30": 0,
+                "overdue_31_plus": 0,
+                "last_invoice_date": None,
+                "last_payment_date": None,
+                "invoice_count": 0
+            }
+        
+        # Update totals
+        party_data[party_key]['total_invoiced'] += inv.get('grand_total', 0)
+        party_data[party_key]['total_paid'] += inv.get('paid_amount', 0)
+        party_data[party_key]['total_outstanding'] += inv.get('balance_due', 0)
+        party_data[party_key]['invoice_count'] += 1
+        
+        # Update last invoice date
+        inv_date = inv.get('date')
+        if inv_date:
+            if isinstance(inv_date, str):
+                inv_date = datetime.fromisoformat(inv_date)
+            if not party_data[party_key]['last_invoice_date'] or inv_date > party_data[party_key]['last_invoice_date']:
+                party_data[party_key]['last_invoice_date'] = inv_date
+        
+        # Calculate overdue only if balance_due > 0
+        if inv.get('balance_due', 0) > 0:
+            # Use due_date if available, else fallback to invoice date
+            due_date = inv.get('due_date') or inv.get('date')
+            if due_date:
+                if isinstance(due_date, str):
+                    due_date = datetime.fromisoformat(due_date)
+                
+                overdue_days = (today - due_date).days
+                
+                if overdue_days >= 0:  # Only count if actually overdue
+                    outstanding_amount = inv.get('balance_due', 0)
+                    if 0 <= overdue_days <= 7:
+                        party_data[party_key]['overdue_0_7'] += outstanding_amount
+                    elif 8 <= overdue_days <= 30:
+                        party_data[party_key]['overdue_8_30'] += outstanding_amount
+                    elif overdue_days > 30:
+                        party_data[party_key]['overdue_31_plus'] += outstanding_amount
+    
+    # Get last payment dates from transactions
+    for txn in transactions:
+        party_key = txn.get('party_id')
+        if party_key and party_key in party_data:
+            txn_date = txn.get('date')
+            if txn_date:
+                if isinstance(txn_date, str):
+                    txn_date = datetime.fromisoformat(txn_date)
+                if not party_data[party_key]['last_payment_date'] or txn_date > party_data[party_key]['last_payment_date']:
+                    party_data[party_key]['last_payment_date'] = txn_date
+    
+    # Convert dates to ISO strings for JSON serialization
+    for party in party_data.values():
+        if party['last_invoice_date']:
+            party['last_invoice_date'] = party['last_invoice_date'].isoformat()
+        if party['last_payment_date']:
+            party['last_payment_date'] = party['last_payment_date'].isoformat()
+    
+    # Calculate summary totals
+    customer_due = sum(p['total_outstanding'] for p in party_data.values() if p['party_type'] == 'customer')
+    vendor_payable = sum(p['total_outstanding'] for p in party_data.values() if p['party_type'] == 'vendor')
+    total_outstanding = customer_due + vendor_payable
+    
+    total_overdue_0_7 = sum(p['overdue_0_7'] for p in party_data.values())
+    total_overdue_8_30 = sum(p['overdue_8_30'] for p in party_data.values())
+    total_overdue_31_plus = sum(p['overdue_31_plus'] for p in party_data.values())
+    
+    return {
+        "summary": {
+            "customer_due": customer_due,
+            "vendor_payable": vendor_payable,
+            "total_outstanding": total_outstanding,
+            "total_overdue_0_7": total_overdue_0_7,
+            "total_overdue_8_30": total_overdue_8_30,
+            "total_overdue_31_plus": total_overdue_31_plus
+        },
+        "parties": list(party_data.values())
     }
 
 app.include_router(api_router)
