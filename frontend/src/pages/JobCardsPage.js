@@ -14,6 +14,7 @@ import { Plus, FileText, Trash2, Edit, AlertTriangle } from 'lucide-react';
 export default function JobCardsPage() {
   const [jobcards, setJobcards] = useState([]);
   const [parties, setParties] = useState([]);
+  const [inventoryHeaders, setInventoryHeaders] = useState([]);
   const [showDialog, setShowDialog] = useState(false);
   const [editingJobCard, setEditingJobCard] = useState(null);
   const [formData, setFormData] = useState({
@@ -43,12 +44,14 @@ export default function JobCardsPage() {
 
   const loadData = async () => {
     try {
-      const [jobcardsRes, partiesRes] = await Promise.all([
+      const [jobcardsRes, partiesRes, headersRes] = await Promise.all([
         axios.get(`${API}/jobcards`),
-        axios.get(`${API}/parties?party_type=customer`)
+        axios.get(`${API}/parties?party_type=customer`),
+        axios.get(`${API}/inventory/headers`)
       ]);
       setJobcards(jobcardsRes.data);
       setParties(partiesRes.data);
+      setInventoryHeaders(headersRes.data);
     } catch (error) {
       toast.error('Failed to load data');
     }
