@@ -545,6 +545,13 @@ async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User 
     if not existing:
         raise HTTPException(status_code=404, detail="Job card not found")
     
+    # Prevent editing locked job cards
+    if existing.get("locked", False):
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot edit locked job card. This job card is linked to a finalized invoice."
+        )
+    
     await db.jobcards.update_one({"id": jobcard_id}, {"$set": update_data})
     await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "update", update_data)
     return {"message": "Updated successfully"}
