@@ -303,7 +303,9 @@ export default function JobCardsPage() {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Job Card</DialogTitle>
+            <DialogTitle>
+              {editingJobCard ? 'Edit Job Card' : 'Create New Job Card'}
+            </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4">
             <div className="grid grid-cols-2 gap-4">
