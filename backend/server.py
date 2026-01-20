@@ -589,7 +589,7 @@ async def convert_jobcard_to_invoice(jobcard_id: str, current_user: User = Depen
             making_value = 5.0  # Default
         
         # Use VAT from job card if provided, otherwise use default
-        item_vat_percent = item.get('vat_percent', vat_percent)
+        item_vat_percent = item.get('vat_percent') or vat_percent
         vat_amount = (gold_value + making_value) * item_vat_percent / 100
         line_total = gold_value + making_value + vat_amount
         
