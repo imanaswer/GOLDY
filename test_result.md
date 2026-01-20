@@ -228,6 +228,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Added making charge type dropdown (Flat/Per-Gram), making charge value input, and VAT % input for each item in job card form. All fields properly integrated with form submission."
+      - working: "NA"
+        agent: "main"
+        comment: "USER REPORTED ISSUES FIX - Two critical issues fixed: (1) EDIT/DELETE FUNCTIONALITY: Added missing Edit and Delete buttons in the Actions column of job cards table. Previously, the handleEditJobCard and handleDeleteJobCard functions existed but had no UI buttons to trigger them. Now shows Edit and Delete buttons for all unlocked job cards. Locked job cards display 'Locked' badge instead. Updated dialog title to show 'Edit Job Card' vs 'Create New Job Card' and button text changes to 'Update Job Card' vs 'Create Job Card'. (2) CATEGORY DROPDOWN: Replaced plain text Input field with Select dropdown for item categories. Now loads inventory headers from GET /api/inventory/headers and populates dropdown with available categories. Users can select from existing inventory categories (e.g., Gold 24K, Gold 22K, Silver, etc.) instead of manually typing. Default category uses first inventory header if available, fallback to 'Chain'. Both issues are now fully functional and ready for testing."
   
   - task: "Job Card Form - Remove Items"
     implemented: true
