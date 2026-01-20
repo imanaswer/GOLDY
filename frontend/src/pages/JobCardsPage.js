@@ -140,7 +140,9 @@ export default function JobCardsPage() {
   const handleCloseDialog = () => {
     setShowDialog(false);
     setEditingJobCard(null);
-    // Reset form to default
+    // Reset form to default - use first inventory header if available
+    const defaultCategory = inventoryHeaders.length > 0 ? inventoryHeaders[0].name : 'Chain';
+    
     setFormData({
       card_type: 'individual',
       customer_id: '',
@@ -148,7 +150,7 @@ export default function JobCardsPage() {
       delivery_date: '',
       notes: '',
       items: [{
-        category: 'Chain',
+        category: defaultCategory,
         description: '',
         qty: 1,
         weight_in: 0,
