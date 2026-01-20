@@ -164,10 +164,13 @@ export default function JobCardsPage() {
   };
 
   const addItem = () => {
+    // Use first inventory header as default category if available
+    const defaultCategory = inventoryHeaders.length > 0 ? inventoryHeaders[0].name : 'Chain';
+    
     setFormData({
       ...formData,
       items: [...formData.items, {
-        category: 'Chain',
+        category: defaultCategory,
         description: '',
         qty: 1,
         weight_in: 0,
