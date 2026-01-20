@@ -102,13 +102,53 @@ export default function JobCardsPage() {
     }
   };
 
-  const handleConvertToInvoice = async (jobcardId) => {
+  const handleConvertToInvoice = async (jobcard) => {
+    // Open dialog to select customer type
+    setConvertingJobCard(jobcard);
+    setConvertData({
+      customer_type: 'saved',
+      customer_id: jobcard.customer_id || '',
+      customer_name: jobcard.customer_name || '',
+      walk_in_name: '',
+      walk_in_phone: ''
+    });
+    setShowConvertDialog(true);
+  };
+
+  const handleConfirmConvert = async () => {
     try {
-      const response = await axios.post(`${API}/jobcards/${jobcardId}/convert-to-invoice`);
+      const payload = {
+        customer_type: convertData.customer_type,
+      };
+
+      if (convertData.customer_type === 'saved') {
+        if (!convertData.customer_id) {
+          toast.error('Please select a customer');
+          return;
+        }
+        payload.customer_id = convertData.customer_id;
+        payload.customer_name = convertData.customer_name;
+      } else {
+        if (!convertData.walk_in_name.trim()) {
+          toast.error('Please enter customer name for walk-in');
+          return;
+        }
+        payload.walk_in_name = convertData.walk_in_name;
+        payload.walk_in_phone = convertData.walk_in_phone;
+      }
+
+      const response = await axios.post(
+        `${API}/jobcards/${convertingJobCard.id}/convert-to-invoice`, 
+        payload
+      );
+      
       toast.success(`Invoice ${response.data.invoice_number} created successfully`);
+      setShowConvertDialog(false);
+      setConvertingJobCard(null);
       loadData();
     } catch (error) {
-      toast.error('Failed to convert to invoice');
+      const errorMsg = error.response?.data?.detail || 'Failed to convert to invoice';
+      toast.error(errorMsg);
     }
   };
 
