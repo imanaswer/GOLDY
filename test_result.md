@@ -234,6 +234,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "CONFIRMED WORKING - User tested and confirmed all fixes are working correctly: (1) Login issue resolved with admin user creation. (2) Edit/Delete buttons visible and functional for unlocked job cards. (3) Category dropdown populated from inventory headers. (4) Convert to Invoice button restored for all completed job cards (original behavior maintained). All features working as expected."
+      - working: "NA"
+        agent: "main"
+        comment: "USER FEEDBACK - Convert to Invoice button not showing. ROOT CAUSE: Button only appears for job cards with status='completed', but user's job cards have status='created'. FIX IMPLEMENTED: Added Status dropdown field in job card create/edit form with options: Created, In Progress, Completed, Delivered, Cancelled. Users can now: (1) Edit existing job cards and change status to 'Completed'. (2) Set status when creating new job cards. (3) Convert to Invoice button will appear once status is set to 'Completed'. This gives users full control over job card workflow status."
   
   - task: "Job Card Form - Remove Items"
     implemented: true
