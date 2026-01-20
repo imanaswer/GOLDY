@@ -374,12 +374,17 @@ class InvoiceStateManagementTester:
             return self.log_result("Delete Draft Invoice", False, "Failed to delete draft invoice")
         
         # Verify invoice is marked as deleted (should return 404)
-        success, deleted_invoice = self.make_request("GET", f"invoices/{invoice_id}")
-        
-        if success and deleted_invoice.get('status_code') != 404:
-            return self.log_result("Delete Draft Invoice", False, "Invoice should not be accessible after deletion")
-        
-        return self.log_result("Delete Draft Invoice", True, f"Successfully deleted draft invoice {invoice_id}")
+        try:
+            url = f"{self.base_url}/api/invoices/{invoice_id}"
+            headers = {'Authorization': f'Bearer {self.token}'}
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 404:
+                return self.log_result("Delete Draft Invoice", True, f"Successfully deleted draft invoice {invoice_id}")
+            else:
+                return self.log_result("Delete Draft Invoice", False, f"Invoice still accessible after deletion (status: {response.status_code})")
+        except Exception as e:
+            return self.log_result("Delete Draft Invoice", False, f"Error checking deleted invoice: {str(e)}")
 
     def run_all_tests(self):
         """Run all invoice state management tests"""
