@@ -175,8 +175,11 @@ class Invoice(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     invoice_number: str
     date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    customer_id: Optional[str] = None
-    customer_name: Optional[str] = None
+    customer_type: str = "saved"  # "saved" or "walk_in"
+    customer_id: Optional[str] = None  # For saved customers only
+    customer_name: Optional[str] = None  # For saved customers only
+    walk_in_name: Optional[str] = None  # For walk-in customers only
+    walk_in_phone: Optional[str] = None  # For walk-in customers only
     invoice_type: str = "sale"
     payment_status: str = "unpaid"
     status: str = "draft"  # "draft" or "finalized" - controls when stock is deducted
