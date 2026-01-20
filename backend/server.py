@@ -786,6 +786,8 @@ async def finalize_invoice(invoice_id: str, current_user: User = Depends(get_cur
                 "account_type": "asset",
                 "opening_balance": 0,
                 "current_balance": 0,
+                "created_by": current_user.id,
+                "created_at": finalized_at,
                 "is_deleted": False
             }
             await db.accounts.insert_one(default_account)
