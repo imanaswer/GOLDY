@@ -22,19 +22,19 @@ export default function ReportsPageEnhanced() {
   const [activeTab, setActiveTab] = useState('overview');
   
   // Global Filter states
-  const [datePreset, setDatePreset] = useState('');
+  const [datePreset, setDatePreset] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [selectedPartyId, setSelectedPartyId] = useState('');
+  const [selectedPartyId, setSelectedPartyId] = useState('all');
   const [sortBy, setSortBy] = useState('date_desc');
   
   // Type filters
-  const [invoiceType, setInvoiceType] = useState('');
-  const [paymentStatus, setPaymentStatus] = useState('');
-  const [partyType, setPartyType] = useState('');
-  const [movementType, setMovementType] = useState('');
-  const [category, setCategory] = useState('');
-  const [transactionType, setTransactionType] = useState('');
+  const [invoiceType, setInvoiceType] = useState('all');
+  const [paymentStatus, setPaymentStatus] = useState('all');
+  const [partyType, setPartyType] = useState('all');
+  const [movementType, setMovementType] = useState('all');
+  const [category, setCategory] = useState('all');
+  const [transactionType, setTransactionType] = useState('all');
   
   // Data states
   const [inventoryData, setInventoryData] = useState(null);
