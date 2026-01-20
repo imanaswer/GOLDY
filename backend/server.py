@@ -545,13 +545,42 @@ async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User 
     if not existing:
         raise HTTPException(status_code=404, detail="Job card not found")
     
-    # Prevent editing locked job cards
+    # Check if job card is locked (linked to finalized invoice)
     if existing.get("locked", False):
-        raise HTTPException(
-            status_code=400, 
-            detail="Cannot edit locked job card. This job card is linked to a finalized invoice."
-        )
+        # Admin override: Allow admins to edit locked job cards
+        if current_user.role == 'admin':
+            # Perform the update
+            await db.jobcards.update_one({"id": jobcard_id}, {"$set": update_data})
+            
+            # Log admin override with special action
+            override_details = {
+                "action": "admin_override_edit_locked_jobcard",
+                "reason": "Admin edited a locked job card that is linked to a finalized invoice",
+                "locked_at": existing.get("locked_at"),
+                "locked_by": existing.get("locked_by"),
+                "changes": update_data
+            }
+            await create_audit_log(
+                current_user.id, 
+                current_user.full_name, 
+                "jobcard", 
+                jobcard_id, 
+                "admin_override_edit", 
+                override_details
+            )
+            
+            return {
+                "message": "Job card updated successfully (admin override)",
+                "warning": "This job card is locked and linked to a finalized invoice"
+            }
+        else:
+            # Non-admin users cannot edit locked job cards
+            raise HTTPException(
+                status_code=403, 
+                detail="Cannot edit locked job card. This job card is linked to a finalized invoice. Only admins can override."
+            )
     
+    # Normal update for unlocked job cards
     await db.jobcards.update_one({"id": jobcard_id}, {"$set": update_data})
     await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "update", update_data)
     return {"message": "Updated successfully"}
