@@ -158,6 +158,7 @@ class JobCard(BaseModel):
 
 class InvoiceItem(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    category: Optional[str] = None  # Inventory category for stock tracking
     description: str
     qty: int
     weight: float
