@@ -178,7 +178,7 @@ export default function ReportsPageEnhanced() {
       const params = {};
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
-      if (movementType) params.movement_type = movementType;
+      if (movementType && movementType !== 'all') params.movement_type = movementType;
       if (category && category !== 'all') params.category = category;
       if (sortBy) params.sort_by = sortBy;
       
@@ -255,7 +255,7 @@ export default function ReportsPageEnhanced() {
       if (invoiceType && invoiceType !== 'all') params.invoice_type = invoiceType;
       if (paymentStatus && paymentStatus !== 'all') params.payment_status = paymentStatus;
       if (partyType && partyType !== 'all') params.party_type = partyType;
-      if (movementType) params.movement_type = movementType;
+      if (movementType && movementType !== 'all') params.movement_type = movementType;
       if (category && category !== 'all') params.category = category;
       if (transactionType) params.transaction_type = transactionType;
       
@@ -287,7 +287,7 @@ export default function ReportsPageEnhanced() {
       if (invoiceType && invoiceType !== 'all') params.invoice_type = invoiceType;
       if (paymentStatus && paymentStatus !== 'all') params.payment_status = paymentStatus;
       if (partyType && partyType !== 'all') params.party_type = partyType;
-      if (movementType) params.movement_type = movementType;
+      if (movementType && movementType !== 'all') params.movement_type = movementType;
       if (category && category !== 'all') params.category = category;
       if (transactionType) params.transaction_type = transactionType;
       
