@@ -175,6 +175,56 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleOpenPaymentDialog = (invoice) => {
+    setSelectedInvoice(invoice);
+    setPaymentData({
+      amount: invoice.balance_due.toFixed(3),  // Default to full balance
+      payment_mode: 'Cash',
+      account_id: accounts.length > 0 ? accounts[0].id : '',
+      notes: ''
+    });
+    setShowPaymentDialog(true);
+  };
+
+  const handleAddPayment = async () => {
+    if (!paymentData.amount || parseFloat(paymentData.amount) <= 0) {
+      toast.error('Please enter a valid payment amount');
+      return;
+    }
+
+    if (!paymentData.account_id) {
+      toast.error('Please select an account');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API}/invoices/${selectedInvoice.id}/add-payment`,
+        {
+          amount: parseFloat(paymentData.amount),
+          payment_mode: paymentData.payment_mode,
+          account_id: paymentData.account_id,
+          notes: paymentData.notes
+        }
+      );
+
+      // Show warning for walk-in partial payments
+      if (response.data.is_walk_in_partial_payment) {
+        toast.warning('⚠️ Walk-in customer with outstanding balance. Full payment is recommended.');
+      } else {
+        toast.success(`Payment added successfully! Transaction #${response.data.transaction_number}`);
+      }
+
+      setShowPaymentDialog(false);
+      loadInvoices(); // Reload to show updated payment status
+    } catch (error) {
+      console.error('Error adding payment:', error);
+      const errorMsg = error.response?.data?.detail || 'Failed to add payment';
+      toast.error(errorMsg);
+    }
+  };
+
+
   const getPaymentStatusBadge = (status) => {
     const variants = {
       unpaid: 'bg-red-100 text-red-800',
