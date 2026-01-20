@@ -233,7 +233,7 @@ export default function ReportsPageEnhanced() {
       const params = {};
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
-      if (transactionType) params.transaction_type = transactionType;
+      if (transactionType && transactionType !== 'all') params.transaction_type = transactionType;
       if (selectedPartyId && selectedPartyId !== 'all') params.party_id = selectedPartyId;
       if (sortBy) params.sort_by = sortBy;
       
@@ -257,7 +257,7 @@ export default function ReportsPageEnhanced() {
       if (partyType && partyType !== 'all') params.party_type = partyType;
       if (movementType && movementType !== 'all') params.movement_type = movementType;
       if (category && category !== 'all') params.category = category;
-      if (transactionType) params.transaction_type = transactionType;
+      if (transactionType && transactionType !== 'all') params.transaction_type = transactionType;
       
       const response = await axios.get(`${API}/reports/${reportType}-pdf`, {
         params,
@@ -289,7 +289,7 @@ export default function ReportsPageEnhanced() {
       if (partyType && partyType !== 'all') params.party_type = partyType;
       if (movementType && movementType !== 'all') params.movement_type = movementType;
       if (category && category !== 'all') params.category = category;
-      if (transactionType) params.transaction_type = transactionType;
+      if (transactionType && transactionType !== 'all') params.transaction_type = transactionType;
       
       const response = await axios.get(`${API}/reports/${reportType}-export`, {
         params,
