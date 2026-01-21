@@ -19,9 +19,17 @@ export default function PartiesPage() {
   const [editingParty, setEditingParty] = useState(null);
   const [deletingParty, setDeleteingParty] = useState(null);
   const [ledgerData, setLedgerData] = useState(null);
+  const [goldEntries, setGoldEntries] = useState([]);
+  const [moneyLedger, setMoneyLedger] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
+  
+  // Filters for party detail view
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [ledgerSearchTerm, setLedgerSearchTerm] = useState('');
+  
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
