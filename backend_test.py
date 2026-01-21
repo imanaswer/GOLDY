@@ -2609,6 +2609,7 @@ class GoldShopERPTester:
             "Transactions": self.test_transactions(),
             "Job Cards (New Fields)": self.test_jobcards(),
             "Job Card to Invoice Conversion": self.test_jobcard_to_invoice_conversion(),
+            "Party Summary Endpoint (Module 2/10)": self.test_party_summary_endpoint(),  # NEW TEST
             "Daily Closing APIs": self.test_daily_closing(),
             "Invoice PDF Generation": self.test_invoice_pdf_generation(),
             "Audit Logs": self.test_audit_logs(),
