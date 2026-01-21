@@ -566,6 +566,135 @@ async def get_party_ledger(party_id: str, current_user: User = Depends(get_curre
     
     return {"invoices": invoices, "transactions": transactions, "outstanding": outstanding}
 
+# Gold Ledger Endpoints
+@api_router.post("/gold-ledger", response_model=GoldLedgerEntry)
+async def create_gold_ledger_entry(entry_data: dict, current_user: User = Depends(get_current_user)):
+    # Validate required fields
+    if 'party_id' not in entry_data:
+        raise HTTPException(status_code=400, detail="party_id is required")
+    if 'type' not in entry_data or entry_data['type'] not in ['IN', 'OUT']:
+        raise HTTPException(status_code=400, detail="type must be 'IN' or 'OUT'")
+    if 'weight_grams' not in entry_data:
+        raise HTTPException(status_code=400, detail="weight_grams is required")
+    if 'purity_entered' not in entry_data:
+        raise HTTPException(status_code=400, detail="purity_entered is required")
+    if 'purpose' not in entry_data or entry_data['purpose'] not in ['job_work', 'exchange', 'advance_gold', 'adjustment']:
+        raise HTTPException(status_code=400, detail="purpose must be one of: job_work, exchange, advance_gold, adjustment")
+    
+    # Verify party exists
+    party = await db.parties.find_one({"id": entry_data['party_id'], "is_deleted": False})
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+    
+    # Round weight to 3 decimal places
+    weight_grams = round(float(entry_data['weight_grams']), 3)
+    
+    # Create entry
+    entry = GoldLedgerEntry(
+        party_id=entry_data['party_id'],
+        date=entry_data.get('date', datetime.now(timezone.utc)),
+        type=entry_data['type'],
+        weight_grams=weight_grams,
+        purity_entered=int(entry_data['purity_entered']),
+        purpose=entry_data['purpose'],
+        reference_type=entry_data.get('reference_type'),
+        reference_id=entry_data.get('reference_id'),
+        notes=entry_data.get('notes'),
+        created_by=current_user.id
+    )
+    
+    await db.gold_ledger.insert_one(entry.model_dump())
+    await create_audit_log(current_user.id, current_user.full_name, "gold_ledger", entry.id, "create")
+    return entry
+
+@api_router.get("/gold-ledger", response_model=List[GoldLedgerEntry])
+async def get_gold_ledger_entries(
+    party_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    query = {"is_deleted": False}
+    
+    # Filter by party_id
+    if party_id:
+        query['party_id'] = party_id
+    
+    # Filter by date range
+    if date_from or date_to:
+        date_query = {}
+        if date_from:
+            try:
+                date_query['$gte'] = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_from format. Use ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)")
+        if date_to:
+            try:
+                date_query['$lte'] = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date_to format. Use ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)")
+        query['date'] = date_query
+    
+    entries = await db.gold_ledger.find(query, {"_id": 0}).sort("date", -1).to_list(1000)
+    return entries
+
+@api_router.delete("/gold-ledger/{entry_id}")
+async def delete_gold_ledger_entry(entry_id: str, current_user: User = Depends(get_current_user)):
+    # Check if entry exists
+    entry = await db.gold_ledger.find_one({"id": entry_id, "is_deleted": False})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Gold ledger entry not found")
+    
+    # Soft delete
+    await db.gold_ledger.update_one(
+        {"id": entry_id},
+        {"$set": {
+            "is_deleted": True,
+            "deleted_at": datetime.now(timezone.utc),
+            "deleted_by": current_user.id
+        }}
+    )
+    
+    await create_audit_log(current_user.id, current_user.full_name, "gold_ledger", entry_id, "delete")
+    return {"message": "Gold ledger entry deleted successfully"}
+
+@api_router.get("/parties/{party_id}/gold-summary")
+async def get_party_gold_summary(party_id: str, current_user: User = Depends(get_current_user)):
+    # Verify party exists
+    party = await db.parties.find_one({"id": party_id, "is_deleted": False})
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+    
+    # Get all gold ledger entries for this party
+    entries = await db.gold_ledger.find({"party_id": party_id, "is_deleted": False}, {"_id": 0}).to_list(1000)
+    
+    # Calculate gold balance
+    gold_due_from_party = 0.0  # Party owes shop (IN entries - shop received from party)
+    gold_due_to_party = 0.0     # Shop owes party (OUT entries - shop gave to party)
+    
+    for entry in entries:
+        weight = round(entry.get('weight_grams', 0), 3)
+        if entry.get('type') == 'IN':
+            # Shop received gold from party - party owes shop
+            gold_due_from_party += weight
+        elif entry.get('type') == 'OUT':
+            # Shop gave gold to party - shop owes party
+            gold_due_to_party += weight
+    
+    # Round to 3 decimal places
+    gold_due_from_party = round(gold_due_from_party, 3)
+    gold_due_to_party = round(gold_due_to_party, 3)
+    net_gold_balance = round(gold_due_from_party - gold_due_to_party, 3)
+    
+    return {
+        "party_id": party_id,
+        "party_name": party.get('name'),
+        "gold_due_from_party": gold_due_from_party,  # Party owes shop
+        "gold_due_to_party": gold_due_to_party,      # Shop owes party
+        "net_gold_balance": net_gold_balance,        # Positive = party owes shop, Negative = shop owes party
+        "total_entries": len(entries)
+    }
+
 @api_router.get("/jobcards", response_model=List[JobCard])
 async def get_jobcards(current_user: User = Depends(get_current_user)):
     jobcards = await db.jobcards.find({"is_deleted": False}, {"_id": 0}).sort("date_created", -1).to_list(1000)
