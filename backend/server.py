@@ -274,6 +274,31 @@ class GoldLedgerEntry(BaseModel):
     deleted_at: Optional[datetime] = None
     deleted_by: Optional[str] = None
 
+class Purchase(BaseModel):
+    """Purchase model for tracking gold purchases from vendors (Stock IN + Vendor Payable)"""
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    vendor_party_id: str  # Must be a vendor type party
+    date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    description: str
+    weight_grams: float  # 3 decimal precision - actual weight
+    entered_purity: int  # Purity as entered/claimed by vendor (e.g., 999, 995, 916)
+    valuation_purity_fixed: int = 916  # ALWAYS 916 for stock calculations and accounting
+    rate_per_gram: float  # Rate per gram for 916 purity - 2 decimal precision
+    amount_total: float  # Total amount = weight_grams * rate_per_gram - 2 decimal precision
+    status: str = "draft"  # "draft" or "finalized" - controls when stock IN and payable are created
+    finalized_at: Optional[datetime] = None
+    finalized_by: Optional[str] = None
+    locked: bool = False  # Finalized purchases are locked
+    locked_at: Optional[datetime] = None
+    locked_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str
+    is_deleted: bool = False
+    deleted_at: Optional[datetime] = None
+    deleted_by: Optional[str] = None
+
+
 async def create_audit_log(user_id: str, user_name: str, module: str, record_id: str, action: str, changes: Optional[Dict] = None):
     log = AuditLog(
         user_id=user_id,
