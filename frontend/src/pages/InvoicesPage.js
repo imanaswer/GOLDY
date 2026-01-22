@@ -460,24 +460,6 @@ export default function InvoicesPage() {
               {/* Payment Form */}
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Payment Amount (OMR) *</Label>
-                  <Input
-                    type="number"
-                    step="0.001"
-                    value={paymentData.amount}
-                    onChange={(e) => setPaymentData({...paymentData, amount: e.target.value})}
-                    placeholder="Enter payment amount"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPaymentData({...paymentData, amount: selectedInvoice.balance_due.toFixed(3)})}
-                    className="text-xs text-blue-600 hover:text-blue-700"
-                  >
-                    Set to full balance ({selectedInvoice.balance_due.toFixed(3)} OMR)
-                  </button>
-                </div>
-
-                <div className="space-y-2">
                   <Label>Payment Mode *</Label>
                   <Select 
                     value={paymentData.payment_mode} 
