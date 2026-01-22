@@ -1793,3 +1793,206 @@ agent_communication:
       6. Test purity badge colors
       7. Test empty state message
       8. Test Excel export button
+
+
+backend:
+  - task: "MODULE 6/10 - Purchase History Report Backend"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          MODULE 6 IMPLEMENTED - Purchase History Report endpoint with comprehensive filtering.
+          
+          Backend Implementation:
+          
+          1. ✅ GET /api/reports/purchase-history Endpoint (lines 3540-3637):
+             - Fetches ONLY finalized purchases (status="finalized")
+             - Returns detailed purchase records with vendor information
+             - Comprehensive filtering support
+             - Summary totals calculation
+          
+          Filters:
+          - date_from/date_to: Date range filter
+          - vendor_party_id: Filter by specific vendor (or "all" for all vendors)
+          - search: Search in vendor name, phone, or description
+          
+          Response Structure:
+          - purchase_records: Array of purchase records with:
+            * vendor_name: Vendor name from parties collection
+            * vendor_phone: Vendor phone from parties collection
+            * date: Purchase date (formatted YYYY-MM-DD)
+            * weight_grams: Weight with 3 decimal precision
+            * entered_purity: Purity as entered by vendor
+            * valuation_purity: Display as "22K" (converted from 916)
+            * amount_total: Total amount with 2 decimal precision
+          
+          - summary: Aggregated totals:
+            * total_amount: Sum of all amount_total (2 decimals)
+            * total_weight: Sum of all weight_grams (3 decimals)
+            * total_purchases: Count of purchases
+          
+          2. ✅ GET /api/reports/purchase-history-export Endpoint (lines 3640-3735):
+             - Excel export with applied filters
+             - Professional formatting with headers and summary section
+             - Proper column widths for readability
+             - Timestamped filename
+          
+          Excel Export Structure:
+          - Title row: "Purchase History Report (Finalized Purchases)"
+          - Generation timestamp
+          - Date range (if filtered)
+          - Summary row with totals
+          - Column headers with styling
+          - Data rows with proper formatting
+          
+          Key Business Rules:
+          - ✅ Only shows finalized purchases (draft excluded)
+          - ✅ Joins with parties collection for vendor details
+          - ✅ Converts valuation_purity 916 to "22K" display
+          - ✅ Search works across vendor name, phone, description
+          - ✅ Date filters applied correctly
+          - ✅ Vendor filter supports specific vendor or all
+          - ✅ Proper precision: 3 decimals for weight, 2 for money
+          - ✅ Sort by date descending (newest first)
+          
+          READY FOR TESTING
+
+frontend:
+  - task: "MODULE 6/10 - Purchase History Report UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ReportsPageEnhanced.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          MODULE 6 IMPLEMENTED - Purchase History tab in Reports page with full filtering.
+          
+          Frontend Implementation:
+          
+          1. ✅ Added state for purchase history data:
+             - purchaseHistoryData: Stores report data
+          
+          2. ✅ Created loadPurchaseHistoryReport function:
+             - Fetches data from /api/reports/purchase-history
+             - Applies filters: date_from, date_to, vendor_party_id, search
+             - Shows loading state during fetch
+             - Error handling with toast notification
+          
+          3. ✅ Added tab trigger:
+             - "Purchase History" tab added to TabsList
+             - Positioned after "Sales History" tab
+          
+          4. ✅ Created complete TabsContent for purchase-history:
+             - GlobalFilters component integration
+             - Search bar for vendor/description search
+             - Load Report button
+             - Loading spinner
+             - Summary cards section
+             - Purchase history table
+          
+          Summary Cards (3 cards):
+          - Total Purchases: Count of finalized purchases
+          - Total Weight: Sum of weight_grams with 3 decimals
+          - Total Amount: Sum of amount_total with 2 decimals (blue color)
+          
+          Purchase History Table Columns:
+          - Vendor Name
+          - Phone
+          - Date
+          - Weight (g) - right-aligned, 3 decimals, monospace font
+          - Entered Purity - gray badge
+          - Valuation Purity - amber badge, displays "22K"
+          - Amount (OMR) - right-aligned, 2 decimals, bold
+          
+          5. ✅ Excel export integration:
+             - Export button in GlobalFilters
+             - Calls /api/reports/purchase-history-export
+             - Downloads with applied filters
+             - Special handling added in exportExcel function
+          
+          6. ✅ Integrated with existing filter system:
+             - useEffect triggers loadPurchaseHistoryReport on filter changes
+             - Reuses existing date, party, and search filters
+             - vendor_party_id parameter used instead of party_id
+          
+          UI Features:
+          - ✅ Responsive design (mobile-friendly grid)
+          - ✅ Empty state message when no data
+          - ✅ Color-coded badges for purities
+          - ✅ Loading indicator
+          - ✅ Search functionality
+          - ✅ Export capability
+          
+          READY FOR TESTING
+
+test_plan:
+  current_focus:
+    - "MODULE 6/10 - Test Purchase History Report backend endpoint"
+    - "MODULE 6/10 - Test Purchase History Report UI"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      MODULE 6/10 - Purchase History Report has been fully implemented.
+      
+      Backend Changes:
+      1. Created GET /api/reports/purchase-history endpoint
+         - Filters: date_from, date_to, vendor_party_id, search
+         - Returns finalized purchases with vendor details
+         - Converts valuation_purity to "22K" display format
+      
+      2. Created GET /api/reports/purchase-history-export endpoint
+         - Excel export with professional formatting
+         - Includes summary section and filtered data
+      
+      Frontend Changes:
+      1. Added "Purchase History" tab to ReportsPageEnhanced.js
+      2. Implemented loadPurchaseHistoryReport function
+      3. Created complete tab content with:
+         - Global filters integration
+         - Search bar
+         - 3 summary cards
+         - Detailed table with 7 columns
+         - Export functionality
+      
+      Key Features:
+      - Only shows finalized purchases (draft excluded)
+      - Vendor name/phone lookup from parties collection
+      - Valuation purity displayed as "22K" (22 carat)
+      - Comprehensive filtering (date, vendor, search)
+      - Excel export with applied filters
+      - Proper precision (3 decimals weight, 2 decimals money)
+      
+      Ready for backend testing. Please test:
+      1. GET /api/reports/purchase-history response structure
+      2. Date range filtering
+      3. Vendor filtering (specific and "all")
+      4. Search functionality (vendor name, phone, description)
+      5. Summary totals calculation
+      6. Excel export generation
+      7. Only finalized purchases returned
+      8. Purity conversion (916 -> 22K)
+      
+      Frontend testing (after backend validation):
+      1. Tab displays correctly
+      2. Filters work properly
+      3. Search loads data
+      4. Summary cards show correct values
+      5. Table displays all columns correctly
+      6. Purity badges styled properly
+      7. Export button works
+      8. Empty state displays when no data
+
