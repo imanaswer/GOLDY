@@ -2888,13 +2888,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Test POST /api/gold-deposits endpoint"
-    - "Test GET /api/gold-deposits endpoint with filters"
-    - "Test gold deposit UI in party page"
-    - "Test form validation (frontend)"
-    - "Test API validation (backend)"
-    - "Test gold entry refresh after deposit"
-    - "Test summary update after deposit"
+    - "MODULE 10: Test GOLD_EXCHANGE payment mode for saved customers"
+    - "MODULE 10: Test gold balance validation"
+    - "MODULE 10: Test GoldLedgerEntry creation (type=OUT)"
+    - "MODULE 10: Test Transaction record creation"
+    - "MODULE 10: Test invoice payment update"
+    - "MODULE 10: Test validation errors (walk-in, insufficient gold, overpayment)"
+    - "MODULE 10: Test auto-calculation (gold_money_value)"
+    - "MODULE 10: Test audit logs creation"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
