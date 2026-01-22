@@ -2,5 +2,5 @@
 # Gold Inventory
 
 Project description...
-updated with module 10/10
+Testing everything Part 1
 Backend and frontend structure...
