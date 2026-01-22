@@ -460,6 +460,87 @@ async def create_inventory_header(header_data: dict, current_user: User = Depend
     await create_audit_log(current_user.id, current_user.full_name, "inventory_header", header.id, "create")
     return header
 
+@api_router.patch("/inventory/headers/{header_id}", response_model=InventoryHeader)
+async def update_inventory_header(
+    header_id: str, 
+    header_data: dict, 
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update an existing inventory header (category name)
+    Note: current_qty and current_weight are managed through stock movements
+    """
+    # Find existing header
+    existing_header = await db.inventory_headers.find_one({"id": header_id, "is_deleted": False}, {"_id": 0})
+    if not existing_header:
+        raise HTTPException(status_code=404, detail="Inventory header not found")
+    
+    # Prepare update data - only allow updating name and is_active
+    update_data = {}
+    if 'name' in header_data:
+        update_data['name'] = header_data['name']
+    if 'is_active' in header_data:
+        update_data['is_active'] = header_data['is_active']
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    # Update the header
+    await db.inventory_headers.update_one(
+        {"id": header_id},
+        {"$set": update_data}
+    )
+    
+    # Create audit log
+    await create_audit_log(
+        current_user.id, 
+        current_user.full_name, 
+        "inventory_header", 
+        header_id, 
+        "update",
+        details={"changes": update_data}
+    )
+    
+    # Fetch and return updated header
+    updated_header = await db.inventory_headers.find_one({"id": header_id}, {"_id": 0})
+    return InventoryHeader(**updated_header)
+
+@api_router.delete("/inventory/headers/{header_id}")
+async def delete_inventory_header(header_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Soft delete an inventory header
+    Note: This will not affect existing stock movements (audit trail preserved)
+    """
+    # Find existing header
+    existing_header = await db.inventory_headers.find_one({"id": header_id, "is_deleted": False}, {"_id": 0})
+    if not existing_header:
+        raise HTTPException(status_code=404, detail="Inventory header not found")
+    
+    # Check if header has current stock
+    if existing_header.get('current_qty', 0) > 0 or existing_header.get('current_weight', 0) > 0:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot delete inventory header with existing stock. Current: {existing_header.get('current_qty', 0)} qty, {existing_header.get('current_weight', 0)}g"
+        )
+    
+    # Soft delete the header
+    await db.inventory_headers.update_one(
+        {"id": header_id},
+        {"$set": {"is_deleted": True}}
+    )
+    
+    # Create audit log
+    await create_audit_log(
+        current_user.id, 
+        current_user.full_name, 
+        "inventory_header", 
+        header_id, 
+        "delete",
+        details={"header_name": existing_header.get('name')}
+    )
+    
+    return {"message": "Inventory header deleted successfully", "id": header_id}
+
 @api_router.get("/inventory/movements", response_model=List[StockMovement])
 async def get_stock_movements(header_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
     query = {"is_deleted": False}
