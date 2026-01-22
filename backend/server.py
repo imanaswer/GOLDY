@@ -3048,10 +3048,58 @@ async def update_daily_closing(closing_id: str, update_data: dict, current_user:
         raise HTTPException(status_code=400, detail=f"Failed to update daily closing: {str(e)}")
 
 @api_router.get("/audit-logs", response_model=List[AuditLog])
-async def get_audit_logs(module: Optional[str] = None, current_user: User = Depends(get_current_user)):
+async def get_audit_logs(
+    module: Optional[str] = None,
+    action: Optional[str] = None,
+    user_id: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get audit logs with comprehensive filtering options.
+    
+    Filters:
+    - module: Filter by module name (e.g., 'invoice', 'jobcard', 'party')
+    - action: Filter by action type (e.g., 'create', 'update', 'delete')
+    - user_id: Filter by user ID who performed the action
+    - date_from: Filter logs from this date (ISO format: YYYY-MM-DD)
+    - date_to: Filter logs up to this date (ISO format: YYYY-MM-DD)
+    """
     query = {}
+    
+    # Module filter
     if module:
         query['module'] = module
+    
+    # Action filter
+    if action:
+        query['action'] = action
+    
+    # User filter
+    if user_id:
+        query['user_id'] = user_id
+    
+    # Date range filter
+    if date_from or date_to:
+        date_query = {}
+        if date_from:
+            try:
+                from_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                date_query['$gte'] = from_date
+            except ValueError:
+                pass  # Skip invalid date format
+        if date_to:
+            try:
+                to_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                # Add time to include the entire end date
+                to_date = to_date.replace(hour=23, minute=59, second=59)
+                date_query['$lte'] = to_date
+            except ValueError:
+                pass  # Skip invalid date format
+        if date_query:
+            query['timestamp'] = date_query
+    
     logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(500).to_list(500)
     return logs
 
