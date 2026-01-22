@@ -14,7 +14,7 @@ export default function AuditLogsPage() {
   const loadLogs = async () => {
     try {
       const response = await axios.get(`${API}/audit-logs`);
-      setLogs(response.data);
+      setLogs(response.data.items || []);
     } catch (error) {
       console.error('Failed to load audit logs:', error);
     }
