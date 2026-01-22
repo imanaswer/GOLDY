@@ -14,7 +14,7 @@ This script tests the enhanced GET /api/audit-logs endpoint with new filtering c
 import requests
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 
 class AuditLogsFilterTester:
