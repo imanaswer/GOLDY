@@ -4287,4 +4287,127 @@ agent_communication:
       4. User testing of discount field in invoice conversion and PDF generation
       
       🎉 IMPLEMENTATION COMPLETE - All requested features fully implemented and ready for production use!
+  - agent: "main"
+    message: |
+      🎯 COMPREHENSIVE END-TO-END TESTING REQUEST - Tasks 3 & 4 to 10/10 Completion
+      
+      User requested to bring Task 3 (Gold Rate Field) and Task 4 (Discount Field) to 10/10 completion.
+      Both features have been implemented and basic verification done. Now requesting comprehensive 
+      end-to-end testing to ensure production readiness.
+      
+      TASK 3 - GOLD RATE FIELD (Module 8/10) COMPREHENSIVE TEST SCENARIOS:
+      1. ✅ Create job card WITH gold rate (e.g., 25.50 OMR/gram)
+         - Verify field accepts decimal input with 0.01 precision
+         - Verify gold_rate_at_jobcard stored in database
+         - Verify GET /api/jobcards returns gold_rate_at_jobcard
+      
+      2. ✅ Create job card WITHOUT gold rate (leave empty)
+         - Verify optional field behavior (null/empty accepted)
+         - Verify job card created successfully without gold rate
+      
+      3. ✅ Edit job card and UPDATE gold rate
+         - Load existing job card with gold rate
+         - Change gold rate to different value (e.g., 22.00)
+         - Verify PATCH /api/jobcards/{id} updates gold_rate_at_jobcard
+      
+      4. ✅ Convert job card WITH gold rate to invoice
+         - Use job card with gold_rate_at_jobcard = 25.50
+         - Open convert dialog - verify amber card displays "💰 Gold Rate from Job Card: 25.50 OMR/gram"
+         - Complete conversion WITHOUT providing metal_rate override
+         - Verify POST /api/jobcards/{id}/convert-to-invoice response
+         - Verify ALL invoice items use metal_rate = 25.50 (from job card)
+         - Verify calculations: gold_value = weight × purity_percent × 25.50
+      
+      5. ✅ Convert job card WITHOUT gold rate to invoice
+         - Use job card with gold_rate_at_jobcard = null
+         - Complete conversion
+         - Verify ALL invoice items use metal_rate = 20.0 (default fallback)
+      
+      6. ✅ Priority chain verification (Advanced scenario)
+         - Use job card with gold_rate_at_jobcard = 25.50
+         - In convert dialog, explicitly provide metal_rate override (e.g., 30.00)
+         - Verify invoice items use metal_rate = 30.0 (Priority 1: user override)
+         - This tests: Priority 1 (override) > Priority 2 (job card) > Priority 3 (default)
+      
+      7. ✅ Backward compatibility test
+         - Test with existing job cards (created before Module 8, no gold_rate_at_jobcard field)
+         - Verify conversion still works with default 20.0 rate
+      
+      8. ✅ Frontend validation test
+         - Try entering negative gold rate (min="0" should prevent)
+         - Verify helper text displays correctly
+         - Verify field positioning (after Status, before Notes)
+      
+      TASK 4 - DISCOUNT FIELD (Module 7/10) COMPREHENSIVE TEST SCENARIOS:
+      1. ✅ Convert job card to invoice WITH discount
+         - Use discount_amount = 10.500 OMR
+         - Verify POST /api/jobcards/{id}/convert-to-invoice accepts discount
+         - Verify invoice created with discount_amount = 10.500
+         - Verify calculation chain:
+           * Subtotal calculated correctly
+           * Taxable = Subtotal - 10.500
+           * VAT = Taxable × 5% (NOT Subtotal × 5%)
+           * Grand Total = Taxable + VAT
+      
+      2. ✅ Convert job card to invoice WITHOUT discount
+         - Leave discount_amount field empty (default 0)
+         - Verify invoice created with discount_amount = 0.0
+         - Verify calculation: VAT = Subtotal × 5%, Grand Total = Subtotal + VAT
+      
+      3. ✅ Discount validation - NEGATIVE discount
+         - Try discount_amount = -5.0
+         - Verify backend returns 400 error
+         - Verify error message: "Discount amount cannot be negative"
+      
+      4. ✅ Discount validation - EXCEEDS subtotal
+         - Calculate subtotal (e.g., 100.0 OMR)
+         - Try discount_amount = 150.0 (exceeds subtotal)
+         - Verify backend returns 400 error
+         - Verify error message includes both discount and subtotal values
+      
+      5. ✅ PDF generation WITH discount
+         - Create invoice with discount_amount = 10.500
+         - Generate PDF via GET /api/invoices/{id}/pdf
+         - Verify PDF includes discount line:
+           * Position: Between Subtotal and VAT Total
+           * Format: "Discount: -10.50 OMR" (with minus sign)
+           * Verify discount line is visible
+      
+      6. ✅ PDF generation WITHOUT discount
+         - Create invoice with discount_amount = 0.0
+         - Generate PDF
+         - Verify discount line is NOT displayed (conditional rendering)
+         - Verify PDF layout: Subtotal → VAT → Grand Total (no discount line)
+      
+      7. ✅ VAT calculation accuracy
+         - Test scenario: Subtotal = 100.0, Discount = 20.0, VAT = 5%
+         - Expected: Taxable = 80.0, VAT = 4.0, Grand Total = 84.0
+         - Verify backend calculates correctly
+         - Verify VAT distributed proportionally across items
+      
+      8. ✅ Backward compatibility
+         - Test with existing invoices (created before Module 7, no discount_amount field)
+         - Verify invoices display correctly with default 0 discount
+         - Verify PDF generation works for old invoices
+      
+      9. ✅ Frontend validation
+         - Verify input type="number", step="0.001", min="0" (3 decimal precision)
+         - Verify helper text: "Optional: Enter discount amount to be applied before VAT calculation"
+         - Verify field positioning in convert dialog (after customer details)
+      
+      TEST EXECUTION PRIORITY:
+      - Run ALL Task 3 scenarios first (8 test cases)
+      - Run ALL Task 4 scenarios second (9 test cases)
+      - Total: 17 comprehensive test scenarios
+      
+      SUCCESS CRITERIA FOR 10/10 COMPLETION:
+      - All 17 test scenarios must pass without errors
+      - All calculations must be mathematically accurate
+      - All validations must work correctly
+      - All edge cases handled properly
+      - Backward compatibility maintained
+      - Frontend and backend integration seamless
+      
+      READY FOR COMPREHENSIVE BACKEND TESTING - Please execute all 17 test scenarios systematically 
+      and report detailed results for each scenario.
 
