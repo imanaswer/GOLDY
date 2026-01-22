@@ -481,7 +481,7 @@ class DailyClosingTester:
 def main():
     """Main execution function"""
     # Configuration
-    BASE_URL = "https://errorfix-perm.preview.emergentagent.com"
+    BASE_URL = "https://page-by-page-1.preview.emergentagent.com"
     USERNAME = "admin"
     PASSWORD = "admin123"
     
