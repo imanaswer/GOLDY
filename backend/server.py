@@ -236,12 +236,12 @@ class DailyClosing(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     date: datetime
-    opening_cash: float
-    total_credit: float
-    total_debit: float
-    expected_closing: float
+    opening_cash: Optional[float] = 0.0
+    total_credit: Optional[float] = 0.0
+    total_debit: Optional[float] = 0.0
+    expected_closing: Optional[float] = 0.0
     actual_closing: float
-    difference: float
+    difference: Optional[float] = 0.0
     is_locked: bool = False
     closed_by: str
     notes: Optional[str] = None
