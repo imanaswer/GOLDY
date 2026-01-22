@@ -286,6 +286,13 @@ class Purchase(BaseModel):
     valuation_purity_fixed: int = 916  # ALWAYS 916 for stock calculations and accounting
     rate_per_gram: float  # Rate per gram for 916 purity - 2 decimal precision
     amount_total: float  # Total amount = weight_grams * rate_per_gram - 2 decimal precision
+    # MODULE 4: Payment and Gold Settlement fields
+    paid_amount_money: float = 0.0  # Amount paid during purchase (2 decimal precision)
+    balance_due_money: float = 0.0  # Auto-calculated: amount_total - paid_amount_money (2 decimal precision)
+    payment_mode: Optional[str] = None  # Cash | Bank Transfer | Card | UPI | Online | Cheque
+    account_id: Optional[str] = None  # Account from which payment was made
+    advance_in_gold_grams: Optional[float] = None  # Gold we gave vendor previously, now used as credit (3 decimals)
+    exchange_in_gold_grams: Optional[float] = None  # Gold exchanged from vendor during purchase (3 decimals)
     status: str = "draft"  # "draft" or "finalized" - controls when stock IN and payable are created
     finalized_at: Optional[datetime] = None
     finalized_by: Optional[str] = None
