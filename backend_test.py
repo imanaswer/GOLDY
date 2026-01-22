@@ -569,8 +569,8 @@ class PaginationTester:
     # ============================================================================
 
     def run_all_tests(self):
-        """Run comprehensive audit logs filtering tests"""
-        print("🎯 COMPREHENSIVE AUDIT LOGS FILTERING TESTS")
+        """Run comprehensive pagination tests for all 7 endpoints"""
+        print("🎯 COMPREHENSIVE PAGINATION TESTS - 7 ENDPOINTS")
         print("=" * 80)
         
         # Authenticate first
@@ -578,32 +578,35 @@ class PaginationTester:
             print("❌ Authentication failed. Cannot proceed with tests.")
             return
         
-        # Setup test data
-        if not self.setup_test_data():
+        # Create test data
+        if not self.create_test_data():
             print("❌ Setup failed. Cannot proceed with comprehensive tests.")
             return
         
-        print("\n📋 INDIVIDUAL FILTER TESTS")
+        print("\n📋 INDIVIDUAL ENDPOINT PAGINATION TESTS")
         print("-" * 60)
-        self.test_date_range_filters()
-        self.test_user_filter()
-        self.test_module_filter()
-        self.test_action_filters()
         
-        print("\n📋 COMBINED FILTER TESTS")
-        print("-" * 60)
-        self.test_combined_filters()
+        # Test all 7 pagination endpoints
+        endpoint_results = []
         
-        print("\n📋 EDGE CASE TESTS")
-        print("-" * 60)
-        self.test_edge_cases()
+        endpoint_results.append(self.test_parties_pagination())
+        endpoint_results.append(self.test_gold_ledger_pagination())
+        endpoint_results.append(self.test_purchases_pagination())
+        endpoint_results.append(self.test_jobcards_pagination())
+        endpoint_results.append(self.test_invoices_pagination())
+        endpoint_results.append(self.test_transactions_pagination())
+        endpoint_results.append(self.test_audit_logs_pagination())
         
-        print("\n📋 VERIFICATION CHECKLIST")
+        print("\n📋 COMPREHENSIVE PAGINATION VERIFICATION")
         print("-" * 60)
-        self.test_verification_checklist()
+        self.test_pagination_metadata_accuracy()
+        self.test_pagination_boundary_cases()
         
         # Print summary
         self.print_summary()
+        
+        # Return overall success
+        return all(endpoint_results)
 
     def print_summary(self):
         """Print comprehensive test summary"""
