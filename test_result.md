@@ -4411,3 +4411,202 @@ agent_communication:
       READY FOR COMPREHENSIVE BACKEND TESTING - Please execute all 17 test scenarios systematically 
       and report detailed results for each scenario.
 
+
+backend:
+  - task: "Daily Closing Auto-Calculation from Transactions"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py, frontend/src/pages/DailyClosingPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          DAILY CLOSING AUTO-CALCULATION IMPLEMENTED - Complete automation of daily closing values from actual transaction data.
+          
+          Backend Implementation:
+          
+          1. ✅ NEW ENDPOINT: GET /api/daily-closings/calculate/{date}
+             Purpose: Auto-calculate daily closing values for a specific date from actual transactions
+             
+             Parameters:
+             - date: Date string in YYYY-MM-DD format
+             
+             Calculations Performed:
+             a. Opening Cash:
+                - Queries previous day's closing record
+                - Uses previous_closing.actual_closing as opening_cash
+                - Returns 0.0 if no previous closing exists (first day)
+             
+             b. Total Credit:
+                - Queries all transactions for the target date
+                - Filters by: date range (00:00:00 to 23:59:59 UTC), is_deleted=False
+                - Sums all transactions where transaction_type = 'credit'
+                - Rounded to 3 decimal precision (OMR standard)
+             
+             c. Total Debit:
+                - Same date range query as credit
+                - Sums all transactions where transaction_type = 'debit'
+                - Rounded to 3 decimal precision
+             
+             d. Expected Closing:
+                - Calculated as: opening_cash + total_credit - total_debit
+                - Rounded to 3 decimal precision
+             
+             Response Structure:
+             {
+               "date": "2025-01-15",
+               "opening_cash": 1000.500,
+               "total_credit": 2500.750,
+               "total_debit": 500.250,
+               "expected_closing": 3001.000,
+               "transaction_count": 25,
+               "credit_count": 15,
+               "debit_count": 10,
+               "has_previous_closing": true
+             }
+             
+             Error Handling:
+             - 400 error for invalid date format
+             - 500 error with detailed message for other failures
+          
+          Frontend Implementation:
+          
+          1. ✅ Enhanced DailyClosingPage.js with Auto-Calculation Features:
+             
+             a. New State Variables:
+                - calculationData: Stores the auto-calculation response
+                - isCalculating: Loading state for calculation process
+             
+             b. autoCalculateFromTransactions() Function:
+                - Fetches calculation data from backend endpoint
+                - Auto-fills opening_cash, total_credit, total_debit
+                - Shows success toast with transaction count
+                - Graceful error handling (allows manual entry on failure)
+             
+             c. handleOpenDialog() Function:
+                - Auto-triggers calculation when dialog opens
+                - Sets today's date by default
+                - Displays transaction summary if data found
+                - 300ms delay to prevent race conditions
+             
+             d. Enhanced Dialog UI:
+                - NEW: "Auto-Calculate from Transactions" button with Calculator icon
+                - Shows loading spinner during calculation
+                - Blue info card displays calculation summary:
+                  * Total transactions count (credits + debits breakdown)
+                  * Previous closing status (found/not found)
+                  * Helpful hint about manual adjustment capability
+                - Date change automatically resets calculation data
+             
+             e. User Experience Improvements:
+                - Auto-calculation on dialog open for convenience
+                - Manual override capability maintained (can edit all fields)
+                - Clear visual feedback during calculation
+                - Informative success/error messages
+                - Reset calculation data on dialog close
+          
+          Key Business Rules Implemented:
+          - ✅ Opening cash = previous day's actual closing (automatic continuity)
+          - ✅ Credits/debits calculated from ACTUAL transaction records (no manual estimation)
+          - ✅ All non-deleted transactions included in calculation
+          - ✅ Date-specific calculations (00:00:00 to 23:59:59 UTC)
+          - ✅ Manual override capability preserved (users can adjust if needed)
+          - ✅ Proper precision: 3 decimals for all money values (OMR standard)
+          - ✅ Graceful handling of first day (no previous closing)
+          - ✅ Complete transaction count breakdown for verification
+          
+          Benefits:
+          1. Eliminates manual counting of transactions
+          2. Reduces human error in credit/debit totals
+          3. Ensures continuity from previous day's closing
+          4. Provides transparency with transaction counts
+          5. Maintains flexibility with manual override option
+          6. Speeds up daily closing process significantly
+          
+          READY FOR COMPREHENSIVE TESTING - Need to verify:
+          1. Create multiple transactions (credits and debits) for a specific date
+          2. Open daily closing dialog and verify auto-calculation triggers
+          3. Verify opening_cash matches previous day's actual_closing
+          4. Verify total_credit matches sum of credit transactions
+          5. Verify total_debit matches sum of debit transactions
+          6. Verify expected_closing = opening + credit - debit
+          7. Click "Auto-Calculate" button manually and verify it works
+          8. Change date in dialog and verify calculation updates
+          9. Test first day scenario (no previous closing, opening should be 0)
+          10. Test manual override (change auto-filled values)
+          11. Verify transaction count display accuracy
+          12. Test error handling (invalid date, no transactions)
+          13. Verify all values maintain 3 decimal precision
+          14. Verify calculation summary card shows correct breakdown
+
+frontend:
+  - task: "Daily Closing Auto-Calculation UI"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/DailyClosingPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Enhanced daily closing dialog with auto-calculation features:
+          - Added Calculator and RefreshCw icons from lucide-react
+          - Auto-calculate button with loading state
+          - Blue info card showing calculation summary
+          - Transaction count breakdown (total, credits, debits)
+          - Previous closing status indicator
+          - Auto-triggers calculation on dialog open
+          - Manual override capability maintained
+          - Date change resets calculation data
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Test daily closing auto-calculation endpoint"
+    - "Test opening cash from previous closing"
+    - "Test credit/debit summation from transactions"
+    - "Test expected closing calculation"
+    - "Test first day scenario (no previous closing)"
+    - "Test frontend auto-calculation on dialog open"
+    - "Test manual auto-calculate button"
+    - "Test date change behavior"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Daily Closing Auto-Calculation Feature Implemented.
+      
+      Backend:
+      - Created GET /api/daily-closings/calculate/{date} endpoint
+      - Auto-calculates opening cash from previous day's closing
+      - Auto-calculates total credit from actual transactions
+      - Auto-calculates total debit from actual transactions
+      - Returns comprehensive calculation summary
+      
+      Frontend:
+      - Enhanced DailyClosingPage with auto-calculation
+      - Auto-triggers on dialog open
+      - Manual auto-calculate button available
+      - Shows calculation summary with transaction breakdown
+      - Maintains manual override capability
+      
+      Ready for backend testing to verify:
+      1. Endpoint calculations are accurate
+      2. Previous day closing linkage works
+      3. Transaction summation is correct
+      4. First day scenario handled properly
+      5. All precision maintained at 3 decimals
+
