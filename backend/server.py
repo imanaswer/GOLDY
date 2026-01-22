@@ -3162,10 +3162,12 @@ async def get_audit_logs(
     user_id: Optional[str] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    page: int = 1,
+    per_page: int = 50,
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get audit logs with comprehensive filtering options.
+    Get audit logs with comprehensive filtering options and pagination.
     
     Filters:
     - module: Filter by module name (e.g., 'invoice', 'jobcard', 'party')
@@ -3173,6 +3175,8 @@ async def get_audit_logs(
     - user_id: Filter by user ID who performed the action
     - date_from: Filter logs from this date (ISO format: YYYY-MM-DD)
     - date_to: Filter logs up to this date (ISO format: YYYY-MM-DD)
+    - page: Page number (default: 1)
+    - per_page: Items per page (default: 50)
     """
     query = {}
     
@@ -3208,8 +3212,16 @@ async def get_audit_logs(
         if date_query:
             query['timestamp'] = date_query
     
-    logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).limit(500).to_list(500)
-    return logs
+    # Calculate skip value
+    skip = (page - 1) * per_page
+    
+    # Get total count for pagination
+    total_count = await db.audit_logs.count_documents(query)
+    
+    # Get paginated results
+    logs = await db.audit_logs.find(query, {"_id": 0}).sort("timestamp", -1).skip(skip).limit(per_page).to_list(per_page)
+    
+    return create_pagination_response(logs, total_count, page, per_page)
 
 @api_router.get("/reports/inventory-export")
 async def export_inventory(
