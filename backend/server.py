@@ -2870,10 +2870,76 @@ async def get_daily_closings(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/daily-closings", response_model=DailyClosing)
 async def create_daily_closing(closing_data: dict, current_user: User = Depends(get_current_user)):
-    closing = DailyClosing(**closing_data, closed_by=current_user.id)
-    await db.daily_closings.insert_one(closing.model_dump())
-    await create_audit_log(current_user.id, current_user.full_name, "daily_closing", closing.id, "create")
-    return closing
+    """
+    Create a new daily closing record.
+    If opening_cash, total_credit, total_debit, expected_closing, or difference are not provided,
+    they will be auto-calculated based on the date and transactions.
+    """
+    try:
+        # Parse the date from closing_data
+        closing_date = closing_data.get('date')
+        if isinstance(closing_date, str):
+            target_date = datetime.fromisoformat(closing_date.replace('Z', '+00:00'))
+        elif isinstance(closing_date, datetime):
+            target_date = closing_date
+        else:
+            raise ValueError("Invalid date format")
+        
+        # Check if we need to auto-calculate fields
+        needs_calculation = (
+            'opening_cash' not in closing_data or
+            'total_credit' not in closing_data or
+            'total_debit' not in closing_data or
+            'expected_closing' not in closing_data
+        )
+        
+        if needs_calculation:
+            # Auto-calculate missing fields
+            start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+            
+            # Get previous day's closing for opening_cash
+            previous_date = target_date - timedelta(days=1)
+            previous_closing = await db.daily_closings.find_one(
+                {"date": {"$gte": previous_date.replace(hour=0, minute=0, second=0, tzinfo=timezone.utc),
+                          "$lte": previous_date.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)}},
+                {"_id": 0}
+            )
+            opening_cash = round(previous_closing['actual_closing'], 3) if previous_closing else 0.0
+            
+            # Get all transactions for the target date
+            transactions = await db.transactions.find(
+                {
+                    "date": {"$gte": start_of_day, "$lte": end_of_day},
+                    "is_deleted": False
+                },
+                {"_id": 0}
+            ).to_list(None)
+            
+            # Calculate total credit and debit
+            total_credit = round(sum(t['amount'] for t in transactions if t['transaction_type'] == 'credit'), 3)
+            total_debit = round(sum(t['amount'] for t in transactions if t['transaction_type'] == 'debit'), 3)
+            expected_closing = round(opening_cash + total_credit - total_debit, 3)
+            
+            # Update closing_data with calculated values
+            closing_data['opening_cash'] = opening_cash
+            closing_data['total_credit'] = total_credit
+            closing_data['total_debit'] = total_debit
+            closing_data['expected_closing'] = expected_closing
+        
+        # Calculate difference: actual_closing - expected_closing
+        actual_closing = closing_data.get('actual_closing', 0.0)
+        expected_closing = closing_data.get('expected_closing', 0.0)
+        closing_data['difference'] = round(actual_closing - expected_closing, 3)
+        
+        # Create the closing record
+        closing = DailyClosing(**closing_data, closed_by=current_user.id)
+        await db.daily_closings.insert_one(closing.model_dump())
+        await create_audit_log(current_user.id, current_user.full_name, "daily_closing", closing.id, "create")
+        return closing
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to create daily closing: {str(e)}")
 
 @api_router.get("/daily-closings/calculate/{date}")
 async def calculate_daily_closing(date: str, current_user: User = Depends(get_current_user)):
