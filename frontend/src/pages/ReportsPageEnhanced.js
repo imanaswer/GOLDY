@@ -128,7 +128,7 @@ export default function ReportsPageEnhanced() {
   const loadParties = async () => {
     try {
       const response = await axios.get(`${API}/parties`);
-      setParties(response.data);
+      setParties(response.data.items || []);
     } catch (error) {
       console.error('Failed to load parties');
     }
