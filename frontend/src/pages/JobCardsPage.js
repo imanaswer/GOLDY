@@ -65,8 +65,8 @@ export default function JobCardsPage() {
         axios.get(`${API}/parties?party_type=customer`),
         axios.get(`${API}/inventory/headers`)
       ]);
-      setJobcards(jobcardsRes.data);
-      setParties(partiesRes.data);
+      setJobcards(jobcardsRes.data.items || []);
+      setParties(partiesRes.data.items || []);
       setInventoryHeaders(headersRes.data);
     } catch (error) {
       toast.error('Failed to load data');
