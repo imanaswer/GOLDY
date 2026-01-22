@@ -76,6 +76,8 @@ export default function ReportsPageEnhanced() {
       loadInvoicesReport();
     } else if (activeTab === 'transactions') {
       loadTransactionsReport();
+    } else if (activeTab === 'sales-history') {
+      loadSalesHistoryReport();
     }
   }, [datePreset, startDate, endDate, selectedPartyId, sortBy]);
 
