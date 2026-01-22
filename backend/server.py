@@ -1871,132 +1871,364 @@ async def add_payment_to_invoice(
     """
     Add payment to an invoice and create a transaction record.
     
-    Required fields in payment_data:
-    - amount: float
-    - payment_mode: str (Cash, Bank Transfer, Card, UPI/Online, Cheque)
-    - account_id: str (which account receives the payment)
-    - notes: Optional[str]
+    MODULE 10: GOLD_EXCHANGE Payment Mode
+    When payment_mode = "GOLD_EXCHANGE":
+    - Required: gold_weight_grams, rate_per_gram
+    - Auto-calculates: gold_money_value = gold_weight_grams × rate_per_gram
+    - Creates GoldLedgerEntry (type=OUT - customer uses their gold to pay)
+    - Creates Transaction record for financial trace
+    - Updates invoice paid_amount and balance_due
+    - Only works for saved customers (requires party_id for gold ledger)
+    
+    For other payment modes (Cash, Bank Transfer, Card, UPI/Online, Cheque):
+    - Required fields: amount, payment_mode, account_id
+    - Optional: notes
     
     For walk-in customers: Recommend full payment but allow partial
     For saved customers: Allow partial payments (outstanding tracked in ledger)
     """
-    # Validate required fields
-    if not payment_data.get('amount') or payment_data['amount'] <= 0:
-        raise HTTPException(status_code=400, detail="Payment amount must be greater than 0")
-    
-    if not payment_data.get('payment_mode'):
-        raise HTTPException(status_code=400, detail="Payment mode is required")
-    
-    if not payment_data.get('account_id'):
-        raise HTTPException(status_code=400, detail="Account ID is required")
-    
-    # Fetch invoice
+    # Fetch invoice first to determine payment mode requirements
     existing = await db.invoices.find_one({"id": invoice_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
     invoice = Invoice(**decimal_to_float(existing))
     
-    # Calculate new paid amount and balance
-    payment_amount = float(payment_data['amount'])
-    new_paid_amount = invoice.paid_amount + payment_amount
-    new_balance_due = invoice.grand_total - new_paid_amount
+    # Check payment mode
+    payment_mode = payment_data.get('payment_mode')
+    if not payment_mode:
+        raise HTTPException(status_code=400, detail="Payment mode is required")
     
-    # Validate payment doesn't exceed balance
-    if new_balance_due < -0.01:  # Allow small rounding errors
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Payment amount ({payment_amount}) exceeds remaining balance ({invoice.balance_due})"
+    # MODULE 10: Handle GOLD_EXCHANGE payment mode
+    if payment_mode == "GOLD_EXCHANGE":
+        # Validate GOLD_EXCHANGE is only for saved customers (need party_id for gold ledger)
+        if invoice.customer_type != "saved" or not invoice.customer_id:
+            raise HTTPException(
+                status_code=400, 
+                detail="GOLD_EXCHANGE payment mode is only available for saved customers (not walk-in)"
+            )
+        
+        # Validate required fields for GOLD_EXCHANGE
+        gold_weight_grams = payment_data.get('gold_weight_grams')
+        rate_per_gram = payment_data.get('rate_per_gram')
+        
+        if not gold_weight_grams or gold_weight_grams <= 0:
+            raise HTTPException(status_code=400, detail="gold_weight_grams must be greater than 0 for GOLD_EXCHANGE mode")
+        
+        if not rate_per_gram or rate_per_gram <= 0:
+            raise HTTPException(status_code=400, detail="rate_per_gram must be greater than 0 for GOLD_EXCHANGE mode")
+        
+        # Round to proper precision
+        gold_weight_grams = round(float(gold_weight_grams), 3)  # 3 decimals for gold
+        rate_per_gram = round(float(rate_per_gram), 2)  # 2 decimals for money
+        
+        # Auto-calculate gold money value
+        gold_money_value = round(gold_weight_grams * rate_per_gram, 2)
+        
+        # Calculate new paid amount and balance
+        payment_amount = gold_money_value
+        new_paid_amount = invoice.paid_amount + payment_amount
+        new_balance_due = invoice.grand_total - new_paid_amount
+        
+        # Validate payment doesn't exceed balance
+        if new_balance_due < -0.01:  # Allow small rounding errors
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Gold exchange value ({payment_amount:.2f} OMR) exceeds remaining balance ({invoice.balance_due:.2f} OMR)"
+            )
+        
+        # Check if customer has sufficient gold balance
+        gold_in_pipeline = db.gold_ledger.aggregate([
+            {
+                "$match": {
+                    "party_id": invoice.customer_id,
+                    "is_deleted": False
+                }
+            },
+            {
+                "$group": {
+                    "_id": None,
+                    "gold_in": {
+                        "$sum": {
+                            "$cond": [{"$eq": ["$type", "IN"]}, "$weight_grams", 0]
+                        }
+                    },
+                    "gold_out": {
+                        "$sum": {
+                            "$cond": [{"$eq": ["$type", "OUT"]}, "$weight_grams", 0]
+                        }
+                    }
+                }
+            }
+        ])
+        
+        gold_summary_list = await gold_in_pipeline.to_list(length=1)
+        if gold_summary_list:
+            gold_in = gold_summary_list[0].get("gold_in", 0)
+            gold_out = gold_summary_list[0].get("gold_out", 0)
+            gold_balance = round(gold_in - gold_out, 3)
+        else:
+            gold_balance = 0
+        
+        # Validate customer has sufficient gold
+        if gold_balance < gold_weight_grams:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient gold balance. Customer has {gold_balance:.3f}g available, but {gold_weight_grams:.3f}g requested for payment"
+            )
+        
+        # Get default purity (916 - 22K gold standard)
+        purity_entered = payment_data.get('purity_entered', 916)
+        
+        # Create GoldLedgerEntry (type=OUT - customer uses their gold, shop returns/settles gold)
+        gold_ledger_entry = GoldLedgerEntry(
+            party_id=invoice.customer_id,
+            type="OUT",  # OUT = shop gives gold to party (or party uses their gold with shop)
+            weight_grams=gold_weight_grams,
+            purity_entered=purity_entered,
+            purpose="exchange",  # Exchange purpose for payment settlement
+            reference_type="invoice",
+            reference_id=invoice_id,
+            notes=f"Gold exchange payment for invoice {invoice.invoice_number}. Rate: {rate_per_gram:.2f} OMR/g",
+            created_by=current_user.id
         )
-    
-    # Fetch account
-    account = await db.accounts.find_one({"id": payment_data['account_id'], "is_deleted": False}, {"_id": 0})
-    if not account:
-        raise HTTPException(status_code=404, detail="Account not found")
-    
-    # Determine party details based on customer type
-    party_id = None
-    party_name = ""
-    
-    if invoice.customer_type == "saved":
+        
+        # Insert gold ledger entry
+        await db.gold_ledger.insert_one(gold_ledger_entry.model_dump())
+        
+        # Fetch or create default account for gold exchange transactions
+        account = await db.accounts.find_one({"name": "Gold Exchange", "is_deleted": False}, {"_id": 0})
+        if not account:
+            # Create default Gold Exchange account
+            account = {
+                "id": str(uuid.uuid4()),
+                "name": "Gold Exchange",
+                "account_type": "asset",
+                "opening_balance": 0,
+                "current_balance": 0,
+                "created_at": datetime.now(timezone.utc),
+                "created_by": current_user.id,
+                "is_deleted": False
+            }
+            await db.accounts.insert_one(account)
+        
+        account_id = account['id']
+        account_name = account['name']
+        
+        # Determine party details
         party_id = invoice.customer_id
         party_name = invoice.customer_name or "Unknown Customer"
-    else:  # walk_in
-        party_id = None
-        party_name = f"{invoice.walk_in_name or 'Walk-in Customer'} (Walk-in)"
-    
-    # Generate transaction number
-    year = datetime.now(timezone.utc).year
-    count = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{year}"}})
-    transaction_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
-    
-    # Create transaction record with invoice reference
-    transaction = Transaction(
-        transaction_number=transaction_number,
-        transaction_type="credit",  # Money coming in
-        mode=payment_data['payment_mode'],
-        account_id=payment_data['account_id'],
-        account_name=account['name'],
-        party_id=party_id,
-        party_name=party_name,
-        amount=payment_amount,
-        category="Invoice Payment",
-        notes=f"Payment for {invoice.invoice_number}. {payment_data.get('notes', '')}".strip(),
-        reference_type="invoice",  # Link to invoice
-        reference_id=invoice_id,  # Invoice UUID
-        created_by=current_user.id
-    )
-    
-    # Insert transaction
-    await db.transactions.insert_one(transaction.model_dump())
-    
-    # Update invoice payment details
-    new_payment_status = "paid" if new_balance_due < 0.01 else "partial"
-    await db.invoices.update_one(
-        {"id": invoice_id},
-        {
-            "$set": {
-                "paid_amount": new_paid_amount,
-                "balance_due": max(0, new_balance_due),  # Ensure no negative balance
-                "payment_status": new_payment_status
+        
+        # Generate transaction number
+        year = datetime.now(timezone.utc).year
+        count = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{year}"}})
+        transaction_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
+        
+        # Create transaction record for financial trace
+        transaction = Transaction(
+            transaction_number=transaction_number,
+            transaction_type="credit",  # Money coming in (gold converted to money value)
+            mode="GOLD_EXCHANGE",
+            account_id=account_id,
+            account_name=account_name,
+            party_id=party_id,
+            party_name=party_name,
+            amount=payment_amount,
+            category="Invoice Payment",
+            notes=f"Gold exchange payment for {invoice.invoice_number}. {gold_weight_grams:.3f}g @ {rate_per_gram:.2f} OMR/g = {payment_amount:.2f} OMR. {payment_data.get('notes', '')}".strip(),
+            reference_type="invoice",
+            reference_id=invoice_id,
+            created_by=current_user.id
+        )
+        
+        # Insert transaction
+        await db.transactions.insert_one(transaction.model_dump())
+        
+        # Update invoice payment details
+        new_payment_status = "paid" if new_balance_due < 0.01 else "partial"
+        await db.invoices.update_one(
+            {"id": invoice_id},
+            {
+                "$set": {
+                    "paid_amount": new_paid_amount,
+                    "balance_due": max(0, new_balance_due),
+                    "payment_status": new_payment_status
+                }
             }
-        }
-    )
-    
-    # Create audit logs
-    await create_audit_log(
-        current_user.id,
-        current_user.full_name,
-        "transaction",
-        transaction.id,
-        "create",
-        {"invoice_id": invoice_id, "payment_amount": payment_amount}
-    )
-    
-    await create_audit_log(
-        current_user.id,
-        current_user.full_name,
-        "invoice",
-        invoice_id,
-        "add_payment",
-        {
-            "amount": payment_amount,
+        )
+        
+        # Create audit logs
+        await create_audit_log(
+            current_user.id,
+            current_user.full_name,
+            "gold_ledger",
+            gold_ledger_entry.id,
+            "create",
+            {
+                "invoice_id": invoice_id,
+                "gold_weight_grams": gold_weight_grams,
+                "rate_per_gram": rate_per_gram,
+                "gold_money_value": payment_amount
+            }
+        )
+        
+        await create_audit_log(
+            current_user.id,
+            current_user.full_name,
+            "transaction",
+            transaction.id,
+            "create",
+            {
+                "invoice_id": invoice_id,
+                "payment_mode": "GOLD_EXCHANGE",
+                "gold_weight_grams": gold_weight_grams,
+                "rate_per_gram": rate_per_gram,
+                "payment_amount": payment_amount
+            }
+        )
+        
+        await create_audit_log(
+            current_user.id,
+            current_user.full_name,
+            "invoice",
+            invoice_id,
+            "add_payment_gold_exchange",
+            {
+                "gold_weight_grams": gold_weight_grams,
+                "rate_per_gram": rate_per_gram,
+                "gold_money_value": payment_amount,
+                "new_paid_amount": new_paid_amount,
+                "new_balance_due": max(0, new_balance_due),
+                "gold_balance_before": gold_balance,
+                "gold_balance_after": round(gold_balance - gold_weight_grams, 3)
+            }
+        )
+        
+        # Return success response with GOLD_EXCHANGE details
+        return {
+            "message": "Gold exchange payment added successfully",
+            "payment_mode": "GOLD_EXCHANGE",
+            "gold_ledger_entry_id": gold_ledger_entry.id,
+            "gold_weight_grams": gold_weight_grams,
+            "rate_per_gram": rate_per_gram,
+            "gold_money_value": payment_amount,
+            "transaction_id": transaction.id,
+            "transaction_number": transaction_number,
             "new_paid_amount": new_paid_amount,
             "new_balance_due": max(0, new_balance_due),
-            "payment_mode": payment_data['payment_mode']
+            "payment_status": new_payment_status,
+            "customer_gold_balance_remaining": round(gold_balance - gold_weight_grams, 3)
         }
-    )
     
-    # Return success response with updated invoice details
-    return {
-        "message": "Payment added successfully",
-        "transaction_id": transaction.id,
-        "transaction_number": transaction_number,
-        "new_paid_amount": new_paid_amount,
-        "new_balance_due": max(0, new_balance_due),
-        "payment_status": new_payment_status,
-        "is_walk_in_partial_payment": invoice.customer_type == "walk_in" and new_balance_due > 0.01
-    }
+    # Standard payment modes (Cash, Bank Transfer, Card, UPI/Online, Cheque)
+    else:
+        # Validate required fields for standard payment modes
+        if not payment_data.get('amount') or payment_data['amount'] <= 0:
+            raise HTTPException(status_code=400, detail="Payment amount must be greater than 0")
+        
+        if not payment_data.get('account_id'):
+            raise HTTPException(status_code=400, detail="Account ID is required")
+        
+        # Calculate new paid amount and balance
+        payment_amount = float(payment_data['amount'])
+        new_paid_amount = invoice.paid_amount + payment_amount
+        new_balance_due = invoice.grand_total - new_paid_amount
+        
+        # Validate payment doesn't exceed balance
+        if new_balance_due < -0.01:  # Allow small rounding errors
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Payment amount ({payment_amount}) exceeds remaining balance ({invoice.balance_due})"
+            )
+        
+        # Fetch account
+        account = await db.accounts.find_one({"id": payment_data['account_id'], "is_deleted": False}, {"_id": 0})
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found")
+        
+        # Determine party details based on customer type
+        party_id = None
+        party_name = ""
+        
+        if invoice.customer_type == "saved":
+            party_id = invoice.customer_id
+            party_name = invoice.customer_name or "Unknown Customer"
+        else:  # walk_in
+            party_id = None
+            party_name = f"{invoice.walk_in_name or 'Walk-in Customer'} (Walk-in)"
+        
+        # Generate transaction number
+        year = datetime.now(timezone.utc).year
+        count = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{year}"}})
+        transaction_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
+        
+        # Create transaction record with invoice reference
+        transaction = Transaction(
+            transaction_number=transaction_number,
+            transaction_type="credit",  # Money coming in
+            mode=payment_data['payment_mode'],
+            account_id=payment_data['account_id'],
+            account_name=account['name'],
+            party_id=party_id,
+            party_name=party_name,
+            amount=payment_amount,
+            category="Invoice Payment",
+            notes=f"Payment for {invoice.invoice_number}. {payment_data.get('notes', '')}".strip(),
+            reference_type="invoice",  # Link to invoice
+            reference_id=invoice_id,  # Invoice UUID
+            created_by=current_user.id
+        )
+        
+        # Insert transaction
+        await db.transactions.insert_one(transaction.model_dump())
+        
+        # Update invoice payment details
+        new_payment_status = "paid" if new_balance_due < 0.01 else "partial"
+        await db.invoices.update_one(
+            {"id": invoice_id},
+            {
+                "$set": {
+                    "paid_amount": new_paid_amount,
+                    "balance_due": max(0, new_balance_due),  # Ensure no negative balance
+                    "payment_status": new_payment_status
+                }
+            }
+        )
+        
+        # Create audit logs
+        await create_audit_log(
+            current_user.id,
+            current_user.full_name,
+            "transaction",
+            transaction.id,
+            "create",
+            {"invoice_id": invoice_id, "payment_amount": payment_amount}
+        )
+        
+        await create_audit_log(
+            current_user.id,
+            current_user.full_name,
+            "invoice",
+            invoice_id,
+            "add_payment",
+            {
+                "amount": payment_amount,
+                "new_paid_amount": new_paid_amount,
+                "new_balance_due": max(0, new_balance_due),
+                "payment_mode": payment_data['payment_mode']
+            }
+        )
+        
+        # Return success response with updated invoice details
+        return {
+            "message": "Payment added successfully",
+            "transaction_id": transaction.id,
+            "transaction_number": transaction_number,
+            "new_paid_amount": new_paid_amount,
+            "new_balance_due": max(0, new_balance_due),
+            "payment_status": new_payment_status,
+            "is_walk_in_partial_payment": invoice.customer_type == "walk_in" and new_balance_due > 0.01
+        }
 
 
 @api_router.delete("/invoices/{invoice_id}")
