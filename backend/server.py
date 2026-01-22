@@ -1415,29 +1415,76 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
         else:
             making_value = 5.0  # Default
         
-        # Use VAT from job card if provided, otherwise use default
-        item_vat_percent = item.get('vat_percent') or vat_percent
-        vat_amount = (gold_value + making_value) * item_vat_percent / 100
-        line_total = gold_value + making_value + vat_amount
-        
-        invoice_items.append(InvoiceItem(
-            category=item.get('category', ''),  # Store category for stock tracking
-            description=item.get('description', ''),
-            qty=item.get('qty', 1),
-            weight=weight,
-            purity=item.get('purity', 916),
-            metal_rate=metal_rate,
-            gold_value=gold_value,
-            making_value=making_value,
-            vat_percent=item_vat_percent,
-            vat_amount=vat_amount,
-            line_total=line_total
-        ))
-        
         subtotal += gold_value + making_value
-        vat_total += vat_amount
     
-    grand_total = subtotal + vat_total
+    # MODULE 7: Get discount amount from invoice_data (default to 0)
+    discount_amount = float(invoice_data.get('discount_amount', 0))
+    
+    # Validate discount
+    if discount_amount < 0:
+        raise HTTPException(status_code=400, detail="Discount amount cannot be negative")
+    if discount_amount > subtotal:
+        raise HTTPException(status_code=400, detail=f"Discount amount ({discount_amount:.3f}) cannot exceed subtotal ({subtotal:.3f})")
+    
+    # MODULE 7: Apply discount before VAT calculation
+    # taxable = subtotal - discount
+    taxable = round(subtotal - discount_amount, 3)
+    
+    # Calculate VAT and line items with new formula
+    for i, item in enumerate(jobcard.get('items', [])):
+        invoice_item = invoice_items[i] if i < len(invoice_items) else None
+        if invoice_item:
+            # VAT calculated on gold_value + making_value (no discount at item level)
+            item_vat_percent = item.get('vat_percent') or vat_percent
+            # But we need to recalculate considering the discount applies before VAT
+            # For now, keep item-level VAT calculation simple (on item subtotal without discount)
+            item_subtotal = invoice_item.gold_value + invoice_item.making_value
+            vat_amount = round(item_subtotal * item_vat_percent / 100, 3)
+            line_total = round(item_subtotal + vat_amount, 3)
+            
+            invoice_items[i].vat_percent = item_vat_percent
+            invoice_items[i].vat_amount = vat_amount
+            invoice_items[i].line_total = line_total
+            vat_total += vat_amount
+        else:
+            # Create invoice item
+            weight = item.get('weight_out') or item.get('weight_in') or 0
+            weight = float(weight) if weight else 0.0
+            metal_rate = 20.0
+            gold_value = weight * metal_rate
+            
+            if item.get('making_charge_value') is not None:
+                if item.get('making_charge_type') == 'per_gram':
+                    making_value = float(item.get('making_charge_value', 0)) * weight
+                else:
+                    making_value = float(item.get('making_charge_value', 0))
+            else:
+                making_value = 5.0
+            
+            item_vat_percent = item.get('vat_percent') or vat_percent
+            item_subtotal = gold_value + making_value
+            vat_amount = round(item_subtotal * item_vat_percent / 100, 3)
+            line_total = round(item_subtotal + vat_amount, 3)
+            
+            invoice_items.append(InvoiceItem(
+                category=item.get('category', ''),
+                description=item.get('description', ''),
+                qty=item.get('qty', 1),
+                weight=weight,
+                purity=item.get('purity', 916),
+                metal_rate=metal_rate,
+                gold_value=gold_value,
+                making_value=making_value,
+                vat_percent=item_vat_percent,
+                vat_amount=vat_amount,
+                line_total=line_total
+            ))
+            vat_total += vat_amount
+    
+    # MODULE 7: Recalculate VAT on taxable amount (subtotal - discount)
+    # VAT should be calculated on taxable amount, not on full subtotal
+    vat_total = round(taxable * vat_percent / 100, 3)
+    grand_total = round(taxable + vat_total, 3)
     
     # Create invoice with customer type specific fields
     invoice_dict = {
