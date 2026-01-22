@@ -644,7 +644,7 @@ async def delete_stock_movement(movement_id: str, current_user: User = Depends(g
         "stock_movement",
         movement_id,
         "delete",
-        details={
+        changes={
             "movement_type": movement.get('movement_type'),
             "qty_delta": movement.get('qty_delta'),
             "weight_delta": movement.get('weight_delta'),
