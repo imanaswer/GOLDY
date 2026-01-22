@@ -993,12 +993,15 @@ async def update_purchase(
 @api_router.post("/purchases/{purchase_id}/finalize")
 async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_current_user)):
     """
-    Finalize a purchase - performs all required operations atomically:
+    MODULE 4: Finalize a purchase - performs all required operations atomically:
     1. Update purchase status to 'finalized'
     2. Create Stock IN movement (adds to inventory using valuation_purity_fixed = 916)
-    3. Create vendor payable transaction (credit entry)
-    4. Lock the purchase to prevent further edits
-    5. Create audit log
+    3. MODULE 4: Create DEBIT transaction if paid_amount_money > 0 (we paid vendor)
+    4. MODULE 4: Create GoldLedgerEntry OUT if advance_in_gold_grams > 0 (shop gives gold to vendor)
+    5. MODULE 4: Create GoldLedgerEntry IN if exchange_in_gold_grams > 0 (shop receives gold from vendor)
+    6. Create vendor payable transaction (credit entry) ONLY for balance_due_money
+    7. Lock the purchase to prevent further edits
+    8. Create audit log
     """
     # Get purchase
     purchase = await db.purchases.find_one({"id": purchase_id, "is_deleted": False})
@@ -1013,6 +1016,15 @@ async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_c
     vendor = await db.parties.find_one({"id": purchase["vendor_party_id"], "is_deleted": False})
     if not vendor:
         raise HTTPException(status_code=404, detail="Vendor not found")
+    
+    # Collect IDs for response
+    created_ids = {
+        "stock_movement_id": None,
+        "payment_transaction_id": None,
+        "advance_gold_ledger_id": None,
+        "exchange_gold_ledger_id": None,
+        "vendor_payable_transaction_id": None
+    }
     
     # === OPERATION 1: Update purchase status ===
     finalize_time = datetime.now(timezone.utc)
@@ -1061,6 +1073,7 @@ async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_c
         notes=f"Entered purity: {purchase['entered_purity']}, Valuation purity: {purity}"
     )
     await db.stock_movements.insert_one(movement.model_dump())
+    created_ids["stock_movement_id"] = movement.id
     
     # Update inventory header current stock
     header_id = header.get("id") if isinstance(header, dict) else header.id
@@ -1072,43 +1085,120 @@ async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_c
         }}
     )
     
-    # === OPERATION 3: Create vendor payable transaction (credit) ===
-    # Generate transaction number
-    current_year = datetime.now(timezone.utc).year
-    existing_txns = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{current_year}-"}})
-    txn_number = f"TXN-{current_year}-{existing_txns + 1:04d}"
-    
-    # Get or create Purchases account
-    purchases_account = await db.accounts.find_one({"name": "Purchases", "is_deleted": False})
-    if not purchases_account:
-        purchases_account = Account(
-            name="Purchases",
-            account_type="expense",
-            balance=0,
+    # === MODULE 4 OPERATION 3: Create DEBIT transaction if paid_amount_money > 0 ===
+    paid_amount = purchase.get("paid_amount_money", 0.0)
+    if paid_amount > 0:
+        # Generate transaction number
+        current_year = datetime.now(timezone.utc).year
+        existing_txns = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{current_year}-"}})
+        payment_txn_number = f"TXN-{current_year}-{existing_txns + 1:04d}"
+        
+        # Get account details
+        account = await db.accounts.find_one({"id": purchase["account_id"], "is_deleted": False})
+        if not account:
+            raise HTTPException(status_code=404, detail="Payment account not found")
+        
+        # Create DEBIT transaction (we paid vendor - reduces our account balance)
+        payment_transaction = Transaction(
+            transaction_number=payment_txn_number,
+            date=purchase["date"],
+            transaction_type="debit",  # Debit = we paid out
+            mode=purchase.get("payment_mode", "Cash"),
+            account_id=purchase["account_id"],
+            account_name=account["name"],
+            party_id=purchase["vendor_party_id"],
+            party_name=vendor["name"],
+            amount=round(paid_amount, 2),
+            category="Purchase Payment",
+            reference_type="purchase",
+            reference_id=purchase_id,
+            notes=f"Payment for purchase: {purchase['description']} ({purchase['weight_grams']}g)",
             created_by=current_user.username
         )
-        await db.accounts.insert_one(purchases_account.model_dump())
+        await db.transactions.insert_one(payment_transaction.model_dump())
+        created_ids["payment_transaction_id"] = payment_transaction.id
     
-    # Create transaction (credit = we owe vendor)
-    transaction = Transaction(
-        transaction_number=txn_number,
-        date=purchase["date"],
-        transaction_type="credit",  # Credit = liability, we owe vendor
-        mode="Vendor Payable",
-        account_id=purchases_account.get("id") if isinstance(purchases_account, dict) else purchases_account.id,
-        account_name="Purchases",
-        party_id=purchase["vendor_party_id"],
-        party_name=vendor["name"],
-        amount=purchase["amount_total"],
-        category="Purchase",
-        reference_type="purchase",
-        reference_id=purchase_id,
-        notes=f"Vendor payable for purchase: {purchase['description']} ({purchase['weight_grams']}g @ {purchase['rate_per_gram']}/g)",
-        created_by=current_user.username
-    )
-    await db.transactions.insert_one(transaction.model_dump())
+    # === MODULE 4 OPERATION 4: Create GoldLedgerEntry OUT if advance_in_gold_grams > 0 ===
+    advance_gold = purchase.get("advance_in_gold_grams")
+    if advance_gold and advance_gold > 0:
+        advance_gold = round(advance_gold, 3)  # Ensure 3 decimal precision
+        
+        advance_entry = GoldLedgerEntry(
+            party_id=purchase["vendor_party_id"],
+            date=purchase["date"],
+            type="OUT",  # OUT = shop gives gold to vendor (settling advance)
+            weight_grams=advance_gold,
+            purity_entered=purchase["entered_purity"],
+            purpose="advance_gold",
+            reference_type="purchase",
+            reference_id=purchase_id,
+            notes=f"Advance gold settled in purchase: {purchase['description']}",
+            created_by=current_user.username
+        )
+        await db.gold_ledger.insert_one(advance_entry.model_dump())
+        created_ids["advance_gold_ledger_id"] = advance_entry.id
     
-    # === OPERATION 4: Create audit log ===
+    # === MODULE 4 OPERATION 5: Create GoldLedgerEntry IN if exchange_in_gold_grams > 0 ===
+    exchange_gold = purchase.get("exchange_in_gold_grams")
+    if exchange_gold and exchange_gold > 0:
+        exchange_gold = round(exchange_gold, 3)  # Ensure 3 decimal precision
+        
+        exchange_entry = GoldLedgerEntry(
+            party_id=purchase["vendor_party_id"],
+            date=purchase["date"],
+            type="IN",  # IN = shop receives gold from vendor
+            weight_grams=exchange_gold,
+            purity_entered=purchase["entered_purity"],
+            purpose="exchange",
+            reference_type="purchase",
+            reference_id=purchase_id,
+            notes=f"Gold exchanged in purchase: {purchase['description']}",
+            created_by=current_user.username
+        )
+        await db.gold_ledger.insert_one(exchange_entry.model_dump())
+        created_ids["exchange_gold_ledger_id"] = exchange_entry.id
+    
+    # === MODULE 4 OPERATION 6: Create vendor payable transaction ONLY for balance_due_money ===
+    balance_due = purchase.get("balance_due_money", purchase.get("amount_total", 0))
+    
+    if balance_due > 0:
+        # Generate transaction number
+        current_year = datetime.now(timezone.utc).year
+        existing_txns = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{current_year}-"}})
+        payable_txn_number = f"TXN-{current_year}-{existing_txns + 1:04d}"
+        
+        # Get or create Purchases account
+        purchases_account = await db.accounts.find_one({"name": "Purchases", "is_deleted": False})
+        if not purchases_account:
+            purchases_account = Account(
+                name="Purchases",
+                account_type="expense",
+                balance=0,
+                created_by=current_user.username
+            )
+            await db.accounts.insert_one(purchases_account.model_dump())
+        
+        # Create transaction (credit = we owe vendor)
+        payable_transaction = Transaction(
+            transaction_number=payable_txn_number,
+            date=purchase["date"],
+            transaction_type="credit",  # Credit = liability, we owe vendor
+            mode="Vendor Payable",
+            account_id=purchases_account.get("id") if isinstance(purchases_account, dict) else purchases_account.id,
+            account_name="Purchases",
+            party_id=purchase["vendor_party_id"],
+            party_name=vendor["name"],
+            amount=round(balance_due, 2),
+            category="Purchase",
+            reference_type="purchase",
+            reference_id=purchase_id,
+            notes=f"Vendor payable (balance due) for purchase: {purchase['description']} ({purchase['weight_grams']}g @ {purchase['rate_per_gram']}/g)",
+            created_by=current_user.username
+        )
+        await db.transactions.insert_one(payable_transaction.model_dump())
+        created_ids["vendor_payable_transaction_id"] = payable_transaction.id
+    
+    # === OPERATION 7: Create audit log ===
     await create_audit_log(
         user_id=current_user.id,
         user_name=current_user.username,
@@ -1117,20 +1207,31 @@ async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_c
         action="finalize",
         changes={
             "status": "finalized",
-            "stock_movement_id": movement.id,
-            "transaction_id": transaction.id,
+            "stock_movement_id": created_ids["stock_movement_id"],
+            "payment_transaction_id": created_ids["payment_transaction_id"],
+            "advance_gold_ledger_id": created_ids["advance_gold_ledger_id"],
+            "exchange_gold_ledger_id": created_ids["exchange_gold_ledger_id"],
+            "vendor_payable_transaction_id": created_ids["vendor_payable_transaction_id"],
             "weight_added": purchase["weight_grams"],
             "purity_used": purity,
-            "vendor_payable_amount": purchase["amount_total"]
+            "paid_amount": paid_amount,
+            "balance_due": balance_due,
+            "advance_gold_grams": purchase.get("advance_in_gold_grams"),
+            "exchange_gold_grams": purchase.get("exchange_in_gold_grams")
         }
     )
     
     return {
-        "message": "Purchase finalized successfully",
+        "message": "Purchase finalized successfully with payment and gold settlement",
         "purchase_id": purchase_id,
-        "stock_movement_id": movement.id,
-        "transaction_id": transaction.id,
-        "vendor_payable": purchase["amount_total"]
+        "stock_movement_id": created_ids["stock_movement_id"],
+        "payment_transaction_id": created_ids["payment_transaction_id"],
+        "advance_gold_ledger_id": created_ids["advance_gold_ledger_id"],
+        "exchange_gold_ledger_id": created_ids["exchange_gold_ledger_id"],
+        "vendor_payable_transaction_id": created_ids["vendor_payable_transaction_id"],
+        "paid_amount": paid_amount,
+        "balance_due": balance_due,
+        "vendor_payable": balance_due
     }
 
 
