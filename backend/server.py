@@ -833,6 +833,24 @@ async def create_purchase(purchase: Purchase, current_user: User = Depends(get_c
     purchase.rate_per_gram = round(purchase.rate_per_gram, 2)
     purchase.amount_total = round(purchase.amount_total, 2)
     
+    # MODULE 4: Handle payment and gold settlement fields
+    purchase.paid_amount_money = round(purchase.paid_amount_money, 2)
+    purchase.balance_due_money = round(purchase.amount_total - purchase.paid_amount_money, 2)
+    
+    # Round gold settlement fields to 3 decimals
+    if purchase.advance_in_gold_grams is not None:
+        purchase.advance_in_gold_grams = round(purchase.advance_in_gold_grams, 3)
+    if purchase.exchange_in_gold_grams is not None:
+        purchase.exchange_in_gold_grams = round(purchase.exchange_in_gold_grams, 3)
+    
+    # Validate account exists if payment made
+    if purchase.paid_amount_money > 0:
+        if not purchase.account_id:
+            raise HTTPException(status_code=400, detail="account_id is required when paid_amount_money > 0")
+        account = await db.accounts.find_one({"id": purchase.account_id, "is_deleted": False})
+        if not account:
+            raise HTTPException(status_code=404, detail="Payment account not found")
+    
     # Ensure valuation purity is always 916
     purchase.valuation_purity_fixed = 916
     
@@ -855,6 +873,10 @@ async def create_purchase(purchase: Purchase, current_user: User = Depends(get_c
             "weight_grams": purchase.weight_grams,
             "entered_purity": purchase.entered_purity,
             "amount_total": purchase.amount_total,
+            "paid_amount_money": purchase.paid_amount_money,
+            "balance_due_money": purchase.balance_due_money,
+            "advance_in_gold_grams": purchase.advance_in_gold_grams,
+            "exchange_in_gold_grams": purchase.exchange_in_gold_grams,
             "status": "draft"
         }
     )
