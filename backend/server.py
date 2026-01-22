@@ -191,6 +191,7 @@ class Invoice(BaseModel):
     finalized_by: Optional[str] = None
     items: List[InvoiceItem] = []
     subtotal: float = 0
+    discount_amount: float = 0.0  # MODULE 7: Discount amount (amount-based, not percentage)
     vat_total: float = 0
     grand_total: float = 0
     paid_amount: float = 0
