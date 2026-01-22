@@ -114,32 +114,45 @@ export default function InvoicesPage() {
       doc.setFont(undefined, 'normal');
       
       const rightAlign = 190;
-      doc.text('Subtotal:', 140, finalY);
-      doc.text(`${(invoice.subtotal || 0).toFixed(3)} OMR`, rightAlign, finalY, { align: 'right' });
+      let currentY = finalY;
       
-      doc.text('VAT Total:', 140, finalY + 7);
-      doc.text(`${(invoice.vat_total || 0).toFixed(3)} OMR`, rightAlign, finalY + 7, { align: 'right' });
+      doc.text('Subtotal:', 140, currentY);
+      doc.text(`${(invoice.subtotal || 0).toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
+      
+      // MODULE 7: Show discount line if discount exists
+      const discountAmount = invoice.discount_amount || 0;
+      if (discountAmount > 0) {
+        currentY += 7;
+        doc.text('Discount:', 140, currentY);
+        doc.text(`-${discountAmount.toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
+      }
+      
+      currentY += 7;
+      doc.text('VAT Total:', 140, currentY);
+      doc.text(`${(invoice.vat_total || 0).toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
       
       // Grand Total - Bold
+      currentY += 9;
       doc.setFont(undefined, 'bold');
       doc.setFontSize(12);
-      doc.text('Grand Total:', 140, finalY + 16);
-      doc.text(`${(invoice.grand_total || 0).toFixed(3)} OMR`, rightAlign, finalY + 16, { align: 'right' });
+      doc.text('Grand Total:', 140, currentY);
+      doc.text(`${(invoice.grand_total || 0).toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
       
       // Balance Due
+      currentY += 8;
       doc.setFontSize(10);
       const balanceDue = invoice.balance_due || 0;
       const balanceColor = balanceDue > 0 ? [200, 0, 0] : [0, 150, 0];
       doc.setTextColor(...balanceColor);
-      doc.text('Balance Due:', 140, finalY + 24);
-      doc.text(`${balanceDue.toFixed(3)} OMR`, rightAlign, finalY + 24, { align: 'right' });
+      doc.text('Balance Due:', 140, currentY);
+      doc.text(`${balanceDue.toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
       
       // Payment Status
       doc.setTextColor(0, 0, 0);
       doc.setFont(undefined, 'normal');
       doc.setFontSize(9);
       const statusText = `Status: ${(invoice.payment_status || 'unpaid').toUpperCase()}`;
-      doc.text(statusText, 20, finalY + 24);
+      doc.text(statusText, 20, currentY);
       
       // Footer
       doc.setFont(undefined, 'italic');
