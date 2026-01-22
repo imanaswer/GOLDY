@@ -490,6 +490,7 @@ export default function ReportsPageEnhanced() {
           <TabsTrigger value="outstanding">Outstanding</TabsTrigger>
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
           <TabsTrigger value="sales-history">Sales History</TabsTrigger>
+          <TabsTrigger value="purchase-history">Purchase History</TabsTrigger>
           <TabsTrigger value="parties">Parties</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="inventory">Inventory</TabsTrigger>
