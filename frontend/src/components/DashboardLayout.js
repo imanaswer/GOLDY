@@ -12,7 +12,8 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  History
+  History,
+  ShoppingCart
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/jobcards', icon: ClipboardList, label: 'Job Cards' },
   { path: '/invoices', icon: FileText, label: 'Invoices' },
   { path: '/parties', icon: Users, label: 'Parties' },
+  { path: '/purchases', icon: ShoppingCart, label: 'Purchases' },
   { path: '/finance', icon: Wallet, label: 'Finance' },
   { path: '/daily-closing', icon: CalendarCheck, label: 'Daily Closing' },
   { path: '/reports', icon: BarChart3, label: 'Reports' },
