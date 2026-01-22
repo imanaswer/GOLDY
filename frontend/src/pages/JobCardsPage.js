@@ -156,6 +156,7 @@ export default function JobCardsPage() {
     try {
       const payload = {
         customer_type: convertData.customer_type,
+        discount_amount: parseFloat(convertData.discount_amount) || 0  // MODULE 7: Include discount
       };
 
       if (convertData.customer_type === 'saved') {
