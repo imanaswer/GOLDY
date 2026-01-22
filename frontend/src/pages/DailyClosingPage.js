@@ -126,6 +126,46 @@ export default function DailyClosingPage() {
     );
   };
 
+  const handleOpenDialog = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    setFormData({
+      date: today,
+      opening_cash: 0,
+      total_credit: 0,
+      total_debit: 0,
+      actual_closing: 0,
+      notes: ''
+    });
+    setCalculationData(null);
+    setShowDialog(true);
+    
+    // Auto-calculate immediately when opening dialog for today
+    setTimeout(() => {
+      if (showDialog) return; // Prevent double call
+      setIsCalculating(true);
+      axios.get(`${API}/daily-closings/calculate/${today}`)
+        .then(response => {
+          const data = response.data;
+          setCalculationData(data);
+          setFormData(prev => ({
+            ...prev,
+            opening_cash: data.opening_cash,
+            total_credit: data.total_credit,
+            total_debit: data.total_debit
+          }));
+          if (data.transaction_count > 0) {
+            toast.success(`Auto-calculated from ${data.transaction_count} transactions`);
+          }
+        })
+        .catch(() => {
+          // Silent fail - user can still enter manually
+        })
+        .finally(() => {
+          setIsCalculating(false);
+        });
+    }, 300);
+  };
+
   return (
     <div data-testid="daily-closing-page">
       <div className="mb-8 flex justify-between items-center">
@@ -133,7 +173,7 @@ export default function DailyClosingPage() {
           <h1 className="text-4xl font-serif font-semibold text-gray-900 mb-2">Daily Closing</h1>
           <p className="text-muted-foreground">Daily cash reconciliation and closing</p>
         </div>
-        <Button data-testid="create-closing-button" onClick={() => setShowDialog(true)}>
+        <Button data-testid="create-closing-button" onClick={handleOpenDialog}>
           <Plus className="w-4 h-4 mr-2" /> Create Daily Closing
         </Button>
       </div>
