@@ -207,6 +207,7 @@ export default function JobCardsPage() {
       worker_id: jobcard.worker_id || '',
       delivery_date: deliveryDate,
       notes: jobcard.notes || '',
+      gold_rate_at_jobcard: jobcard.gold_rate_at_jobcard || '',  // MODULE 8: Load gold rate
       status: jobcard.status || 'created',
       items: jobcard.items.map(item => ({
         ...item,
