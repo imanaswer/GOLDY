@@ -3064,3 +3064,45 @@ agent_communication:
       18. Test partial payment (gold value < balance_due) → payment_status=partial
       19. Test full payment (gold value = balance_due) → payment_status=paid
       20. Verify precision: gold at 3 decimals, money at 2 decimals
+
+  - agent: "main"
+    message: |
+      PHASE 2 COMPREHENSIVE END-TO-END TESTING INITIATED
+      
+      Previous testing attempt was interrupted due to Playwright script execution issues.
+      Services have been restarted and are now running correctly:
+      - Backend: RUNNING on port 8001
+      - Frontend: RUNNING on port 3000
+      - MongoDB: RUNNING
+      - Application accessible at: https://erp-validation-1.preview.emergentagent.com
+      - Admin credentials: admin/admin123
+      
+      NOW EXECUTING FOCUSED, PRIORITIZED TESTING APPROACH:
+      
+      PRIORITY 1 - CRITICAL BUSINESS LOGIC (MUST TEST):
+      1. Invoice State Management (Draft → Finalized) with Stock Deduction
+      2. Job Card → Invoice Conversion Workflow
+      3. Stock Deduction from Inventory Categories (Direct Reduction)
+      4. Payment Tracking (All Modes including GOLD_EXCHANGE)
+      5. Outstanding Balance Calculations
+      
+      PRIORITY 2 - IMPORTANT FEATURES:
+      6. Walk-in vs Saved Customer Handling
+      7. Gold Ledger (IN/OUT Entries) & Balance Tracking
+      8. Discount & VAT Calculations
+      9. Job Card Locking with Admin Override
+      10. Purchase Module with Vendor Payables
+      
+      PRIORITY 3 - REPORTING & UI:
+      11. Reports & Filters System (8 tabs)
+      12. Daily Closing Procedures
+      13. Audit Logs
+      14. PDF/Excel Exports
+      
+      Testing Strategy:
+      - Break down into smaller, focused test sequences
+      - Test backend critical workflows first
+      - Then validate frontend UI for critical features
+      - Use simplified test scripts to avoid execution issues
+      
+      Starting with BACKEND CRITICAL WORKFLOWS testing...
