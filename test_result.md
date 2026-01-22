@@ -1916,16 +1916,17 @@ metadata:
 
 test_plan:
   current_focus:
-    - "API Completeness - Inventory CRUD Operations (UPDATE & DELETE)"
-    - "Test PATCH /api/inventory/headers/{id} - Update header name"
-    - "Test PATCH /api/inventory/headers/{id} - Update is_active status"
-    - "Test DELETE /api/inventory/headers/{id} - Delete empty header"
-    - "Test DELETE /api/inventory/headers/{id} - Prevent deletion with stock"
-    - "Test DELETE /api/inventory/movements/{id} - Delete manual movement"
-    - "Test DELETE /api/inventory/movements/{id} - Prevent deletion of invoice-linked movement"
-    - "Test DELETE /api/inventory/movements/{id} - Prevent deletion of purchase-linked movement"
-    - "Verify stock reversal calculations"
-    - "Verify audit logs for all operations"
+    - "Pagination Implementation - Backend Endpoints"
+    - "Pagination Implementation - Frontend Components"
+    - "Test GET /api/parties with page and per_page params"
+    - "Test GET /api/invoices with page and per_page params"
+    - "Test GET /api/jobcards with page and per_page params"
+    - "Test GET /api/purchases with page and per_page params"
+    - "Test GET /api/transactions with page and per_page params"
+    - "Test GET /api/gold-ledger with page and per_page params"
+    - "Test GET /api/audit-logs with page and per_page params"
+    - "Verify pagination metadata returned correctly"
+    - "Verify frontend pagination component displays correctly"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
