@@ -1118,6 +1118,109 @@ backend:
         agent: "main"
         comment: "IMPLEMENTED - Outstanding Report endpoint GET /api/reports/outstanding. Features: (1) Added due_date field to Invoice model (optional, defaults to invoice_date for overdue calculations). (2) Party-wise outstanding calculation with total_invoiced, total_paid, total_outstanding per party. (3) Separate Customer Due (receivable) vs Vendor Payable breakdown. (4) Overdue buckets based on balance_due > 0: 0-7 days, 8-30 days, 31+ days. Overdue calculated from due_date (or invoice_date if due_date null). (5) Last invoice date and last payment date tracking. (6) Filters: party_id (specific party), party_type (customer/vendor), start_date, end_date, include_paid flag. (7) Returns summary totals plus party-wise details array. Ready for testing."
 
+  - task: "API Completeness - Dashboard Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ DASHBOARD ENDPOINT TESTING COMPLETED - FULLY FUNCTIONAL
+          
+          Test Scope: GET /api/dashboard - Dashboard statistics endpoint
+          
+          Response Structure Verification:
+          ✅ All required sections present: inventory, financial, parties, job_cards, recent_activity
+          ✅ Inventory section: total_categories, total_stock_weight_grams, total_stock_qty, low_stock_items
+          ✅ Financial section: total_outstanding_omr, outstanding_invoices_count
+          ✅ Parties section: total_customers, total_vendors, total
+          ✅ Job Cards section: total, pending, completed
+          ✅ Recent Activity section: recent_invoices (max 5 items)
+          
+          Calculation Verification:
+          ✅ Low stock items count (items with qty < 5) calculated correctly
+          ✅ Outstanding balance aggregation working
+          ✅ Recent invoices limited to 5 items as specified
+          
+          Precision Verification:
+          ✅ Weight values have proper 3-decimal precision
+          ✅ Money values have proper 2-decimal precision
+          
+          ENDPOINT IS PRODUCTION READY - All calculations accurate, response structure complete, precision formatting correct.
+
+  - task: "API Completeness - Reports Catalog Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ REPORTS CATALOG ENDPOINT TESTING COMPLETED - FULLY FUNCTIONAL
+          
+          Test Scope: GET /api/reports - Reports catalog endpoint
+          
+          Response Structure Verification:
+          ✅ All 8 reports listed correctly
+          ✅ Each report has required fields: id, name, description, category, endpoints, supports_filters, supports_export
+          ✅ Endpoint URLs match actual available routes (all start with /api/)
+          ✅ Categories array contains unique categories: ['financial', 'inventory', 'parties', 'sales', 'purchases']
+          ✅ Total count = 8 (matches array length)
+          
+          Report Metadata Verification:
+          ✅ 7 reports support export functionality
+          ✅ 7 reports support filtering functionality
+          ✅ All reports have proper endpoint structure with 'view' endpoint
+          ✅ Export formats properly specified where applicable
+          
+          ENDPOINT IS PRODUCTION READY - Complete reports catalog with accurate metadata for API completeness.
+
+  - task: "API Completeness - Inventory Listing Endpoint"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: |
+          ✅ INVENTORY LISTING ENDPOINT TESTING COMPLETED - FULLY FUNCTIONAL
+          
+          Test Scope: GET /api/inventory - Simplified inventory listing endpoint
+          
+          Response Structure Verification:
+          ✅ All required fields present: items, total_count, total_weight_grams, total_quantity, low_stock_count
+          ✅ Each item has required fields: id, category, quantity, weight_grams, status
+          ✅ Status field computation working (low_stock when qty < 5, in_stock otherwise)
+          ✅ Items sorted by weight_grams descending as specified
+          
+          Filter Testing:
+          ✅ Category filter working (e.g., ?category=gold)
+          ✅ Min quantity filter working (e.g., ?min_qty=10) - all returned items have qty >= filter value
+          ✅ Combined filters working (category + min_qty)
+          ✅ No filters returns all items
+          
+          Aggregation Verification:
+          ✅ Total count matches items array length
+          ✅ Total weight calculation accurate (sum of all item weights)
+          ✅ Total quantity calculation accurate (sum of all item quantities)
+          ✅ Low stock count accurate (count of items with status = 'low_stock')
+          
+          Precision Verification:
+          ✅ Weight values maintain 3-decimal precision
+          ✅ Quantity values maintain 2-decimal precision
+          
+          ENDPOINT IS PRODUCTION READY - All filters work correctly, aggregations accurate, precision maintained.
+
   - task: "Reports & Filters - Enhanced Financial Summary"
     implemented: true
     working: "NA"
