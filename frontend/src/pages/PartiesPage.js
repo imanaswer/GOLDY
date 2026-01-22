@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Plus, Users as UsersIcon, Edit, Trash2, Eye, TrendingUp, TrendingDown, Search, Calendar } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 export default function PartiesPage() {
   const [parties, setParties] = useState([]);
