@@ -1208,6 +1208,54 @@ agent_communication:
   - agent: "main"
     message: "CRITICAL FIX - LOGIN ISSUE RESOLVED: User reported 'Invalid credentials' error. Root cause: No users existed in the database. Created default admin user with credentials: username='admin', password='admin123'. Login is now fully functional. User can access the application with these credentials. Additionally fixed job card issues: (1) Added missing Edit/Delete buttons in Actions column. (2) Replaced category text input with dropdown populated from inventory headers."
   - agent: "main"
+  - agent: "main"
+    message: |
+      MODULE 8/10 IMPLEMENTATION COMPLETE - JobCard Gold Rate Field + Auto-fill Invoice Rate
+      
+      Backend Changes:
+      - ✅ Added gold_rate_at_jobcard field to JobCard model (Optional[float], 2 decimal precision)
+      - ✅ POST /api/jobcards accepts and stores gold_rate_at_jobcard
+      - ✅ PATCH /api/jobcards/{id} allows updating gold_rate_at_jobcard
+      - ✅ CRITICAL: convert_jobcard_to_invoice now uses priority chain:
+        * Priority 1: invoice_data.metal_rate (user override)
+        * Priority 2: jobcard.gold_rate_at_jobcard (auto-fill from job card)
+        * Priority 3: Default 20.0 (backward compatibility fallback)
+      - ✅ Previous hardcoded metal_rate = 20.0 replaced with dynamic rate selection
+      - ✅ Rate applied consistently to ALL invoice items
+      
+      Frontend Changes:
+      - ✅ Added "Gold Rate (per gram) - OMR" input field in job card form
+      - ✅ Field positioned after Status and before Notes section
+      - ✅ Input validation: type="number", step="0.01", min="0"
+      - ✅ Helper text explains: "This rate will auto-fill when converting to invoice"
+      - ✅ formData state includes gold_rate_at_jobcard with proper parsing
+      - ✅ handleEditJobCard loads existing gold rate for editing
+      - ✅ handleCloseDialog resets gold rate on form close
+      - ✅ Convert dialog enhanced with gold rate display:
+        * Shows amber-colored info card when job card has gold rate
+        * Format: "💰 Gold Rate from Job Card: {rate} OMR/gram"
+        * Positioned between job card info and customer type selection
+      
+      Key Features:
+      - ✅ Backward compatible: optional field, existing job cards work fine
+      - ✅ Historical record: rate stored at job card creation time
+      - ✅ Auto-fill reduces manual data entry during conversion
+      - ✅ Visual feedback in convert dialog for transparency
+      - ✅ User can override if needed (priority chain supports it)
+      - ✅ 2 decimal precision maintained throughout
+      
+      READY FOR COMPREHENSIVE TESTING:
+      1. Create job card WITH gold rate (e.g., 25.50) → verify stored correctly
+      2. Create job card WITHOUT gold rate → verify works with default
+      3. Edit job card and change gold rate → verify update works
+      4. Convert job card WITH gold rate → verify invoice items use that rate
+      5. Convert job card WITHOUT gold rate → verify default 20.0 used
+      6. Convert dialog display → verify gold rate shown correctly
+      7. Existing job cards (before Module 8) → verify backward compatibility
+      8. Field validation → verify negative rates prevented (min="0")
+      9. Decimal precision → verify accepts 0.01 step values
+      10. Priority chain → verify invoice_data override works if needed
+
     message: "CRITICAL BUSINESS LOGIC FIX IMPLEMENTED: Invoice state management now properly implemented. Invoices are created in 'draft' status with NO stock deduction. Stock OUT movements ONLY happen when invoice is explicitly finalized via new POST /api/invoices/{id}/finalize endpoint. Finalized invoices are immutable (cannot be edited or deleted). This ensures financial integrity and prevents premature inventory deduction. READY FOR COMPREHENSIVE TESTING - please test all invoice workflows: create draft, edit draft, finalize, attempt to edit finalized (should fail), verify stock movements only happen on finalization."
   - agent: "testing"
     message: |
