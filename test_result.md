@@ -3733,7 +3733,7 @@ agent_communication:
       - Backend: RUNNING on port 8001
       - Frontend: RUNNING on port 3000
       - MongoDB: RUNNING
-      - Application accessible at: https://pagination-blocker.preview.emergentagent.com
+      - Application accessible at: https://pagination-fix-3.preview.emergentagent.com
       - Admin credentials: admin/admin123
       
       NOW EXECUTING FOCUSED, PRIORITIZED TESTING APPROACH:
@@ -4241,7 +4241,7 @@ agent_communication:
       - ✅ Frontend services running successfully (localhost:3000)
       - ✅ MongoDB running and accessible
       - ✅ Frontend dependencies installed successfully (yarn install completed)
-      - ✅ Backend URL configured: https://pagination-blocker.preview.emergentagent.com
+      - ✅ Backend URL configured: https://pagination-fix-3.preview.emergentagent.com
       
       Testing Plan - Comprehensive Frontend UI Testing:
       
@@ -5071,7 +5071,7 @@ agent_communication:
       
       Testing Tool Status:
       - Test script: /app/backend_test.py (612 lines, cleaned and functional)
-      - Backend URL: https://pagination-blocker.preview.emergentagent.com
+      - Backend URL: https://pagination-fix-3.preview.emergentagent.com
       - Authentication: Working (admin/admin123)
       
       Next Steps:
