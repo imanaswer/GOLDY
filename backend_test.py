@@ -422,8 +422,13 @@ class PurchaseHistoryTester:
         # Step 3: Test response structure if endpoint exists
         if endpoint_exists and data:
             self.test_response_structure(data)
+            self.test_business_logic_validation(data)
         
-        # Step 4: Test filters if endpoint exists
+        # Step 4: Test Excel export
+        if export_endpoint_exists:
+            self.test_excel_export()
+        
+        # Step 5: Test filters if endpoint exists
         if endpoint_exists:
             self.test_filters()
         
