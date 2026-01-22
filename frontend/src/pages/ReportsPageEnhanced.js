@@ -252,6 +252,25 @@ export default function ReportsPageEnhanced() {
     }
   };
 
+  const loadSalesHistoryReport = async () => {
+    try {
+      setLoading(true);
+      const params = {};
+      if (startDate) params.date_from = startDate;
+      if (endDate) params.date_to = endDate;
+      if (selectedPartyId && selectedPartyId !== 'all') params.party_id = selectedPartyId;
+      if (searchQuery) params.search = searchQuery;
+      
+      const response = await axios.get(`${API}/reports/sales-history`, { params });
+      setSalesHistoryData(response.data);
+    } catch (error) {
+      toast.error('Failed to load sales history report');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const exportPDF = async (reportType) => {
     try {
       const params = {};
