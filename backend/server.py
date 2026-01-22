@@ -2875,6 +2875,66 @@ async def create_daily_closing(closing_data: dict, current_user: User = Depends(
     await create_audit_log(current_user.id, current_user.full_name, "daily_closing", closing.id, "create")
     return closing
 
+@api_router.get("/daily-closings/calculate/{date}")
+async def calculate_daily_closing(date: str, current_user: User = Depends(get_current_user)):
+    """
+    Auto-calculate daily closing values for a specific date.
+    Returns:
+    - opening_cash: actual_closing from previous day's closing (or 0 if first day)
+    - total_credit: sum of all credit transactions for the date
+    - total_debit: sum of all debit transactions for the date
+    - expected_closing: opening_cash + total_credit - total_debit
+    """
+    try:
+        # Parse the date string (format: YYYY-MM-DD)
+        target_date = datetime.strptime(date, "%Y-%m-%d")
+        start_of_day = target_date.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+        end_of_day = target_date.replace(hour=23, minute=59, second=59, microsecond=999999, tzinfo=timezone.utc)
+        
+        # Get previous day's closing for opening_cash
+        previous_date = target_date - timedelta(days=1)
+        previous_closing = await db.daily_closings.find_one(
+            {"date": {"$gte": previous_date.replace(hour=0, minute=0, second=0, tzinfo=timezone.utc),
+                      "$lte": previous_date.replace(hour=23, minute=59, second=59, tzinfo=timezone.utc)}},
+            {"_id": 0}
+        )
+        opening_cash = previous_closing['actual_closing'] if previous_closing else 0.0
+        
+        # Get all transactions for the target date
+        transactions = await db.transactions.find(
+            {
+                "date": {"$gte": start_of_day, "$lte": end_of_day},
+                "is_deleted": False
+            },
+            {"_id": 0}
+        ).to_list(None)
+        
+        # Calculate total credit and debit
+        total_credit = sum(t['amount'] for t in transactions if t['transaction_type'] == 'credit')
+        total_debit = sum(t['amount'] for t in transactions if t['transaction_type'] == 'debit')
+        
+        # Round to 3 decimal places (OMR standard)
+        opening_cash = round(opening_cash, 3)
+        total_credit = round(total_credit, 3)
+        total_debit = round(total_debit, 3)
+        expected_closing = round(opening_cash + total_credit - total_debit, 3)
+        
+        return {
+            "date": date,
+            "opening_cash": opening_cash,
+            "total_credit": total_credit,
+            "total_debit": total_debit,
+            "expected_closing": expected_closing,
+            "transaction_count": len(transactions),
+            "credit_count": sum(1 for t in transactions if t['transaction_type'] == 'credit'),
+            "debit_count": sum(1 for t in transactions if t['transaction_type'] == 'debit'),
+            "has_previous_closing": previous_closing is not None
+        }
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to calculate daily closing: {str(e)}")
+
 @api_router.get("/audit-logs", response_model=List[AuditLog])
 async def get_audit_logs(module: Optional[str] = None, current_user: User = Depends(get_current_user)):
     query = {}
