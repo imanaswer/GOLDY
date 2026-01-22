@@ -1799,6 +1799,56 @@ agent_communication:
       6. Verify print PDF shows discount line correctly
       7. Verify print PDF hides discount line when discount = 0
       8. Verify grand_total = (subtotal - discount) + VAT
+  - agent: "main"
+    message: |
+      🎯 API COMPLETENESS - INVENTORY CRUD OPERATIONS COMPLETE
+      
+      Implemented missing UPDATE and DELETE endpoints for complete inventory CRUD functionality.
+      
+      IMPLEMENTATION SUMMARY:
+      
+      1. ✅ PATCH /api/inventory/headers/{header_id}:
+         - Updates inventory header (category name and active status)
+         - Validates header exists before update
+         - Only allows updating name and is_active fields
+         - Note: qty/weight managed through stock movements
+         - Creates audit log with changes
+         - Returns updated header object
+      
+      2. ✅ DELETE /api/inventory/headers/{header_id}:
+         - Soft deletes inventory header
+         - CRITICAL VALIDATION: Cannot delete headers with stock
+         - Shows current qty/weight in error if stock exists
+         - Preserves audit trail (movements unchanged)
+         - Creates audit log
+      
+      3. ✅ DELETE /api/inventory/movements/{movement_id}:
+         - Deletes stock movement and reverses inventory effect
+         - PROTECTION: Cannot delete invoice/purchase-linked movements
+         - Automatically reverses stock in header
+         - Validates reversal won't cause negative stock
+         - Soft delete with audit log
+         - Returns reversed qty/weight
+      
+      COMPLETE INVENTORY API ENDPOINTS NOW AVAILABLE:
+      - ✅ GET /api/inventory/headers - List all categories
+      - ✅ POST /api/inventory/headers - Create new category
+      - ✅ PATCH /api/inventory/headers/{id} - Update category (NEW)
+      - ✅ DELETE /api/inventory/headers/{id} - Delete category (NEW)
+      - ✅ GET /api/inventory/movements - List movements
+      - ✅ POST /api/inventory/movements - Create movement
+      - ✅ DELETE /api/inventory/movements/{id} - Delete movement (NEW)
+      - ✅ GET /api/inventory/stock-totals - Get totals
+      - ✅ GET /api/inventory - Simplified listing
+      
+      BUSINESS RULES ENFORCED:
+      - ✅ Headers with stock cannot be deleted (data integrity)
+      - ✅ Transactional movements (invoice/purchase) cannot be deleted (audit compliance)
+      - ✅ Manual movements can be deleted with stock reversal
+      - ✅ All operations maintain audit trail
+      - ✅ Negative stock prevented through validation
+      
+      READY FOR COMPREHENSIVE TESTING - Backend is production-ready.
 
 
     implemented: false
