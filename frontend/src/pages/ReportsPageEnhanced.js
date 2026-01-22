@@ -273,6 +273,24 @@ export default function ReportsPageEnhanced() {
     }
   };
 
+  const loadPurchaseHistoryReport = async () => {
+    try {
+      setLoading(true);
+      const params = {};
+      if (startDate) params.date_from = startDate;
+      if (endDate) params.date_to = endDate;
+      if (selectedPartyId && selectedPartyId !== 'all') params.vendor_party_id = selectedPartyId;
+      if (searchQuery) params.search = searchQuery;
+      
+      const response = await axios.get(`${API}/reports/purchase-history`, { params });
+      setPurchaseHistoryData(response.data);
+    } catch (error) {
+      toast.error('Failed to load purchase history report');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const exportPDF = async (reportType) => {
     try {
