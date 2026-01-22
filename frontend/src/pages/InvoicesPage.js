@@ -23,7 +23,11 @@ export default function InvoicesPage() {
     amount: '',
     payment_mode: 'Cash',
     account_id: '',
-    notes: ''
+    notes: '',
+    // Gold exchange specific fields
+    gold_weight_grams: '',
+    rate_per_gram: '',
+    purity_entered: '916'
   });
 
   useEffect(() => {
