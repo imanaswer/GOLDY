@@ -432,16 +432,22 @@ class PurchaseHistoryTester:
         if endpoint_exists:
             self.test_filters()
         
-        # Step 5: Check existing data
+        # Step 6: Check existing data
         existing_purchases = self.check_existing_purchases()
         
-        # Step 6: Create test data if endpoints exist
+        # Step 7: Create test data if endpoints exist
         if endpoint_exists:
             vendor = self.create_test_vendor_if_needed()
             if vendor:
                 purchase = self.create_test_purchase(vendor)
                 if purchase:
-                    self.finalize_purchase(purchase['id'])
+                    finalized = self.finalize_purchase(purchase['id'])
+                    
+                    # Test with actual data after creating finalized purchase
+                    if finalized:
+                        endpoint_exists_2, data_2 = self.test_purchase_history_endpoint_exists()
+                        if endpoint_exists_2 and data_2:
+                            self.test_business_logic_validation(data_2)
         
         # Summary
         print("=" * 80)
