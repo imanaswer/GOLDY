@@ -963,7 +963,7 @@ async def get_inventory(
 # END OF NEW ENDPOINTS
 # ============================================================================
 
-@api_router.get("/parties", response_model=List[Party])
+@api_router.get("/parties")
 async def get_parties(
     party_type: Optional[str] = None,
     page: int = 1,
