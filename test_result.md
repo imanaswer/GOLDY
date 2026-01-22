@@ -5341,6 +5341,15 @@ backend:
           - Returns {items: [...], pagination: {...}} structure
           - Sorted by date descending
           READY FOR TESTING
+      - working: "NA"
+        agent: "main"
+        comment: |
+          CRITICAL FIX APPLIED - Response Model Mismatch Resolved
+          - REMOVED response_model=List[Invoice] from decorator (line 2114)
+          - This was causing 520 Internal Server Error due to FastAPI validation
+          - Endpoint now returns raw dict matching pagination response structure
+          - Backend restarted successfully
+          READY FOR RETESTING
 
   - task: "Pagination Backend - GET /api/transactions"
     implemented: true
