@@ -198,7 +198,11 @@ export default function InvoicesPage() {
       amount: invoice.balance_due.toFixed(3),  // Default to full balance
       payment_mode: 'Cash',
       account_id: accounts.length > 0 ? accounts[0].id : '',
-      notes: ''
+      notes: '',
+      // Gold exchange specific fields
+      gold_weight_grams: '',
+      rate_per_gram: '',
+      purity_entered: '916'
     });
     setShowPaymentDialog(true);
   };
