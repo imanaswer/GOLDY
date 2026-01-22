@@ -153,6 +153,7 @@ class JobCard(BaseModel):
     worker_name: Optional[str] = None
     items: List[JobCardItem] = []
     notes: Optional[str] = None
+    gold_rate_at_jobcard: Optional[float] = None  # MODULE 8: Gold rate at time of job card creation
     locked: bool = False  # True when linked invoice is finalized
     locked_at: Optional[datetime] = None
     locked_by: Optional[str] = None
