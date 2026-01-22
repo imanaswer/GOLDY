@@ -208,6 +208,50 @@ export default function InvoicesPage() {
   };
 
   const handleAddPayment = async () => {
+    // GOLD_EXCHANGE mode validation
+    if (paymentData.payment_mode === 'GOLD_EXCHANGE') {
+      // Check if customer is saved (not walk-in)
+      if (selectedInvoice.customer_type === 'walk_in') {
+        toast.error('Gold Exchange payment is only available for saved customers, not walk-in customers');
+        return;
+      }
+
+      if (!paymentData.gold_weight_grams || parseFloat(paymentData.gold_weight_grams) <= 0) {
+        toast.error('Please enter a valid gold weight');
+        return;
+      }
+
+      if (!paymentData.rate_per_gram || parseFloat(paymentData.rate_per_gram) <= 0) {
+        toast.error('Please enter a valid rate per gram');
+        return;
+      }
+
+      try {
+        const response = await axios.post(
+          `${API}/invoices/${selectedInvoice.id}/add-payment`,
+          {
+            payment_mode: 'GOLD_EXCHANGE',
+            gold_weight_grams: parseFloat(paymentData.gold_weight_grams),
+            rate_per_gram: parseFloat(paymentData.rate_per_gram),
+            purity_entered: parseInt(paymentData.purity_entered) || 916,
+            notes: paymentData.notes
+          }
+        );
+
+        toast.success(`Gold exchange payment added! Transaction #${response.data.transaction_number}`);
+        toast.info(`Gold used: ${response.data.gold_weight_grams}g | Value: ${response.data.gold_money_value} OMR`);
+        
+        setShowPaymentDialog(false);
+        loadInvoices();
+      } catch (error) {
+        console.error('Error adding gold exchange payment:', error);
+        const errorMsg = error.response?.data?.detail || 'Failed to add gold exchange payment';
+        toast.error(errorMsg);
+      }
+      return;
+    }
+
+    // Standard payment mode validation
     if (!paymentData.amount || parseFloat(paymentData.amount) <= 0) {
       toast.error('Please enter a valid payment amount');
       return;
