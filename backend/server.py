@@ -2079,9 +2079,24 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
     return invoice
 
 @api_router.get("/invoices", response_model=List[Invoice])
-async def get_invoices(current_user: User = Depends(get_current_user)):
-    invoices = await db.invoices.find({"is_deleted": False}, {"_id": 0}).sort("date", -1).to_list(1000)
-    return invoices
+async def get_invoices(
+    page: int = 1,
+    per_page: int = 50,
+    current_user: User = Depends(get_current_user)
+):
+    """Get invoices with pagination support"""
+    query = {"is_deleted": False}
+    
+    # Calculate skip value
+    skip = (page - 1) * per_page
+    
+    # Get total count for pagination
+    total_count = await db.invoices.count_documents(query)
+    
+    # Get paginated results
+    invoices = await db.invoices.find(query, {"_id": 0}).sort("date", -1).skip(skip).limit(per_page).to_list(per_page)
+    
+    return create_pagination_response(invoices, total_count, page, per_page)
 
 @api_router.get("/invoices/{invoice_id}", response_model=Invoice)
 async def get_invoice(invoice_id: str, current_user: User = Depends(get_current_user)):
