@@ -680,16 +680,19 @@ def main():
     USERNAME = "admin"
     PASSWORD = "admin123"
     
-    print("🚀 Starting Audit Logs Filtering Tests")
+    print("🚀 Starting Pagination Backend Tests - 7 Endpoints")
     print(f"Backend URL: {BASE_URL}")
     print(f"Username: {USERNAME}")
     print("-" * 80)
     
     # Initialize tester
-    tester = AuditLogsFilterTester(BASE_URL, USERNAME, PASSWORD)
+    tester = PaginationTester(BASE_URL, USERNAME, PASSWORD)
     
-    # Run all audit logs filtering tests
-    tester.run_all_tests()
+    # Run all pagination tests
+    success = tester.run_all_tests()
+    
+    # Exit with appropriate code
+    sys.exit(0 if success else 1)
 
 if __name__ == "__main__":
     main()
