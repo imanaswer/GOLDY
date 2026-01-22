@@ -5178,6 +5178,75 @@ agent_communication:
       3. Test with different page and per_page values
       4. Verify pagination metadata calculations are accurate
 
+  - task: "Pagination Backend - GET /api/jobcards"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          PAGINATION IMPLEMENTED FOR JOBCARDS ENDPOINT (lines 1821-1839)
+          - Accepts page (default: 1) and per_page (default: 50) query parameters
+          - Returns {items: [...], pagination: {...}} structure
+          - CRITICAL FIX: Removed response_model=List[JobCard] to fix 520 error
+          READY FOR TESTING
+
+  - task: "Pagination Backend - GET /api/invoices"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          PAGINATION IMPLEMENTED FOR INVOICES ENDPOINT (lines 2114-2132)
+          - Accepts page (default: 1) and per_page (default: 50) query parameters
+          - Returns {items: [...], pagination: {...}} structure
+          - CRITICAL FIX: Removed response_model=List[Invoice] to fix 520 error
+          READY FOR TESTING
+
+  - task: "Pagination Backend - GET /api/transactions"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          PAGINATION IMPLEMENTED FOR TRANSACTIONS ENDPOINT (lines 2938-2956)
+          - Accepts page (default: 1) and per_page (default: 50) query parameters
+          - Returns {items: [...], pagination: {...}} structure
+          - CRITICAL FIX: Removed response_model=List[Transaction] to fix 520 error
+          READY FOR TESTING
+
+  - task: "Pagination Backend - GET /api/audit-logs"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          PAGINATION IMPLEMENTED FOR AUDIT-LOGS ENDPOINT (lines 3170-3236)
+          - Accepts page (default: 1) and per_page (default: 50) query parameters
+          - Returns {items: [...], pagination: {...}} structure
+          - Includes all filters: module, action, user_id, date_from, date_to
+          - CRITICAL FIX: Removed response_model=List[AuditLog] to fix 520 error
+          READY FOR TESTING
+
 backend:
   - task: "Pagination Backend - GET /api/parties"
     implemented: true
