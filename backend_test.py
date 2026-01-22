@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend Testing for Gold Shop ERP System
-AUDIT LOGS FILTERING FEATURE - Comprehensive Backend Testing
+PAGINATION BACKEND TESTING - 7 ENDPOINTS
 
-This script tests the enhanced GET /api/audit-logs endpoint with new filtering capabilities:
-- date_from: Filter from this date (ISO format)
-- date_to: Filter up to this date (ISO format)  
-- user_id: Filter by user ID
-- module: Filter by module name
-- action: Filter by action type
+This script tests all 7 pagination endpoints that have been implemented:
+1. GET /api/parties?page=X&per_page=Y
+2. GET /api/gold-ledger?page=X&per_page=Y
+3. GET /api/purchases?page=X&per_page=Y
+4. GET /api/jobcards?page=X&per_page=Y
+5. GET /api/invoices?page=X&per_page=Y
+6. GET /api/transactions?page=X&per_page=Y
+7. GET /api/audit-logs?page=X&per_page=Y
+
+Each endpoint uses standardized create_pagination_response() helper function.
+Default pagination: page=1, per_page=50
+Response format: {items: [...], pagination: {...}}
 """
 
 import requests
@@ -17,7 +23,7 @@ import sys
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, Optional
 
-class AuditLogsFilterTester:
+class PaginationTester:
     def __init__(self, base_url: str, username: str, password: str):
         self.base_url = base_url.rstrip('/')
         self.username = username
