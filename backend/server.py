@@ -536,7 +536,7 @@ async def delete_inventory_header(header_id: str, current_user: User = Depends(g
         "inventory_header", 
         header_id, 
         "delete",
-        details={"header_name": existing_header.get('name')}
+        changes={"header_name": existing_header.get('name')}
     )
     
     return {"message": "Inventory header deleted successfully", "id": header_id}
