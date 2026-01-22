@@ -372,17 +372,18 @@ export default function ReportsPageEnhanced() {
   };
 
   const clearFilters = () => {
-    setDatePreset('');
+    setDatePreset('all');
     setStartDate('');
     setEndDate('');
-    setSelectedPartyId('');
+    setSelectedPartyId('all');
     setSortBy('date_desc');
-    setInvoiceType('');
-    setPaymentStatus('');
-    setPartyType('');
-    setMovementType('');
-    setCategory('');
-    setTransactionType('');
+    setInvoiceType('all');
+    setPaymentStatus('all');
+    setPartyType('all');
+    setMovementType('all');
+    setCategory('all');
+    setTransactionType('all');
+    setSearchQuery('');
   };
 
   // Global Filters Component
