@@ -948,6 +948,28 @@ async def update_purchase(
     if "amount_total" in updates:
         updates["amount_total"] = round(updates["amount_total"], 2)
     
+    # MODULE 4: Handle payment and gold settlement fields
+    if "paid_amount_money" in updates:
+        updates["paid_amount_money"] = round(updates["paid_amount_money"], 2)
+    if "advance_in_gold_grams" in updates and updates["advance_in_gold_grams"] is not None:
+        updates["advance_in_gold_grams"] = round(updates["advance_in_gold_grams"], 3)
+    if "exchange_in_gold_grams" in updates and updates["exchange_in_gold_grams"] is not None:
+        updates["exchange_in_gold_grams"] = round(updates["exchange_in_gold_grams"], 3)
+    
+    # Auto-calculate balance_due_money if amount_total or paid_amount_money changed
+    amount_total = updates.get("amount_total", existing.get("amount_total", 0))
+    paid_amount = updates.get("paid_amount_money", existing.get("paid_amount_money", 0))
+    updates["balance_due_money"] = round(amount_total - paid_amount, 2)
+    
+    # Validate account exists if payment made
+    if "paid_amount_money" in updates and updates["paid_amount_money"] > 0:
+        account_id = updates.get("account_id") or existing.get("account_id")
+        if not account_id:
+            raise HTTPException(status_code=400, detail="account_id is required when paid_amount_money > 0")
+        account = await db.accounts.find_one({"id": account_id, "is_deleted": False})
+        if not account:
+            raise HTTPException(status_code=404, detail="Payment account not found")
+    
     # Update purchase
     await db.purchases.update_one(
         {"id": purchase_id},
