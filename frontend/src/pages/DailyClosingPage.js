@@ -261,6 +261,7 @@ export default function DailyClosingPage() {
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Actual</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Difference</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -289,6 +290,31 @@ export default function DailyClosingPage() {
                       </td>
                       <td className="px-4 py-3">
                         {getStatusBadge(closing.is_locked)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          {!closing.is_locked && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(closing)}
+                              data-testid={`edit-closing-${closing.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {isAdmin() && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleLock(closing)}
+                              data-testid={`toggle-lock-${closing.id}`}
+                              className={closing.is_locked ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}
+                            >
+                              {closing.is_locked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
