@@ -4962,6 +4962,7 @@ class GoldShopERPTester:
         test_results = {
             "Inventory Headers": self.test_inventory_headers(),
             "Stock Movements": self.test_stock_movements(),
+            "🔥 Inventory CRUD Operations (UPDATE & DELETE)": self.test_inventory_crud_operations(),  # NEW TEST
             "Parties Management": self.test_parties(),
             "Accounts Management": self.test_accounts(),
             "Transactions": self.test_transactions(),
