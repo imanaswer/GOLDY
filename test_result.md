@@ -1626,6 +1626,27 @@ test_plan:
 
 agent_communication:
   - agent: "main"
+    message: |
+      CONTINUATION TASK STARTED - Complete Missing API Endpoints (High Priority)
+      
+      Initial Assessment:
+      1. ✅ /api/reports endpoint - Already implemented and tested successfully (test_result.md lines 1155-1183)
+         - Returns 8 reports with proper metadata
+         - Categories: financial, inventory, parties, sales, purchases
+         - All endpoints validated and working
+      
+      2. 🔍 Inventory CRUD Operations - Implemented but needs verification testing:
+         - PATCH /api/inventory/headers/{header_id} - Update header name/status (lines 464-506)
+         - DELETE /api/inventory/headers/{header_id} - Soft delete with stock validation (lines 508-542)
+         - DELETE /api/inventory/movements/{movement_id} - Delete movement with reversal (lines 596-661)
+      
+      Current Actions:
+      - ✅ All services restarted successfully (backend, frontend, mongodb running)
+      - ✅ Dependencies verified (FastAPI, PyMongo, ReportLab all present)
+      - 📋 Preparing to test inventory CRUD operations comprehensively
+      
+      Next Step: Call backend testing agent to verify all inventory CRUD operations
+  - agent: "main"
     message: "PHASE COMPLETE: Fixed all requested issues. Backend: Added optional making_charge and VAT fields to JobCardItem (backward compatible). Frontend: Enhanced job card form with making charge type, value, VAT %, and remove item button. Implemented complete daily closing page. Improved invoice PDF generation with better formatting and error handling. All report APIs already exist. Ready for backend testing."
   - agent: "main"
     message: "CRITICAL FIX - LOGIN ISSUE RESOLVED: User reported 'Invalid credentials' error. Root cause: No users existed in the database. Created default admin user with credentials: username='admin', password='admin123'. Login is now fully functional. User can access the application with these credentials. Additionally fixed job card issues: (1) Added missing Edit/Delete buttons in Actions column. (2) Replaced category text input with dropdown populated from inventory headers."
