@@ -1514,3 +1514,282 @@ agent_communication:
       
       This module provides complete flexibility in how vendors are paid - cash, gold settlements, or any combination thereof.
 
+
+backend:
+  - task: "MODULE 5/10 - Sales History Report (Finalized Invoices Only)"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          SALES HISTORY REPORT IMPLEMENTED - Complete sales history reporting for finalized invoices only.
+          
+          Backend Implementation:
+          
+          1. ✅ GET /api/reports/sales-history Endpoint (lines 3330-3472):
+             Query Parameters:
+             - date_from: Optional date filter (start of range)
+             - date_to: Optional date filter (end of range)
+             - party_id: Optional party filter (or "all" for all parties)
+             - search: Optional search string for customer name, phone, or invoice_id
+             
+             Critical Business Logic:
+             - ONLY returns invoices with status = "finalized"
+             - Handles both saved customers and walk-in customers
+             - For saved customers: fetches customer_name and phone from parties collection
+             - For walk-in customers: uses walk_in_name and walk_in_phone from invoice
+             
+             Calculations:
+             - total_weight_grams: Sums weight from all invoice items (3 decimal precision)
+             - purity_summary: Shows single purity if all items same (e.g., "22K"), 
+                               shows "Mixed" if items have different purities,
+                               shows "N/A" if no purity data
+             
+             Return Structure:
+             {
+               "sales_records": [
+                 {
+                   "invoice_id": "INV-2026-0001",
+                   "customer_name": "John Doe",
+                   "customer_phone": "+968 1234567",
+                   "date": "2026-01-22",
+                   "total_weight_grams": 125.456,
+                   "purity_summary": "22K" or "Mixed",
+                   "grand_total": 1250.50
+                 }
+               ],
+               "summary": {
+                 "total_sales": 15234.50,
+                 "total_weight": 1234.567,
+                 "total_invoices": 45
+               }
+             }
+          
+          2. ✅ GET /api/reports/sales-history-export Endpoint (lines 3475-3555):
+             - Excel export with all applied filters
+             - Professional formatting with headers and summary section
+             - Shows report generation date and date range
+             - Summary row with totals before data table
+             - Proper column widths for readability
+             - Filename includes timestamp for versioning
+             
+          Key Features:
+          - ✅ Filters by finalized status ONLY (draft invoices excluded)
+          - ✅ Date range filtering (date_from/date_to)
+          - ✅ Party filtering (specific party or all)
+          - ✅ Full-text search across customer name, phone, and invoice ID
+          - ✅ Handles both saved and walk-in customers correctly
+          - ✅ Purity intelligence (single value vs mixed detection)
+          - ✅ Proper precision: 3 decimals for weight, 2 decimals for money
+          - ✅ Summary totals for quick overview
+          - ✅ Excel export with professional formatting
+          
+          READY FOR TESTING - Need to verify:
+          1. Only finalized invoices appear in results
+          2. Draft invoices are excluded
+          3. Date filtering works correctly
+          4. Party filtering works (specific party and "all")
+          5. Search functionality works for name, phone, and invoice ID
+          6. Walk-in customer display with name and phone
+          7. Saved customer display with name and phone from parties
+          8. Weight calculation sums all items correctly
+          9. Purity summary shows "Mixed" when multiple purities exist
+          10. Purity summary shows single value when all items same purity
+          11. Summary totals calculate correctly
+          12. Excel export includes all filtered data
+          13. Excel export has proper formatting
+
+frontend:
+  - task: "MODULE 5/10 - Sales History Report UI"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/ReportsPageEnhanced.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          SALES HISTORY UI IMPLEMENTED - Complete frontend interface for viewing sales history.
+          
+          Frontend Implementation:
+          
+          1. ✅ State Management:
+             - Added salesHistoryData state for report data
+             - Added searchQuery state for search functionality
+             - Integrated with existing global filters (date range, party selection)
+          
+          2. ✅ loadSalesHistoryReport Function:
+             - Calls GET /api/reports/sales-history with filters
+             - Passes date_from, date_to, party_id, search parameters
+             - Sets loading state and handles errors with toast
+          
+          3. ✅ Tab Integration:
+             - Added "Sales History" tab to TabsList
+             - Updated grid-cols from 6 to 7 to accommodate new tab
+             - Positioned between "Invoices" and "Parties" tabs
+             - Added tab activation in useEffect filter monitoring
+          
+          4. ✅ Sales History Tab Content (lines 939-1058):
+             Features:
+             - Global Filters component (date range, party selection)
+             - Search bar with icon and placeholder text
+             - "Load Report" button to fetch data
+             - Loading spinner during data fetch
+             
+             Summary Cards (3 cards):
+             a. Total Invoices: Count of finalized invoices
+             b. Total Weight: Combined gold weight in grams (3 decimals)
+             c. Total Sales: Grand total in OMR (2 decimals, green color)
+             
+             Sales History Table:
+             Columns:
+             - Invoice # (font-medium)
+             - Customer Name
+             - Phone (shows "-" if empty)
+             - Date
+             - Weight in grams (right-aligned, monospace font, 3 decimals)
+             - Purity (badge with color: purple for Mixed, blue for single purity)
+             - Grand Total in OMR (right-aligned, bold, 2 decimals)
+             
+             Empty State:
+             - Displays helpful message: "No sales history found. Only finalized invoices are displayed."
+          
+          5. ✅ Export Integration:
+             - Updated exportExcel function to handle sales-history type
+             - Special parameter handling: date_from/date_to, search
+             - Exports to sales-history-export endpoint
+             - Filename includes report type and date
+          
+          UI/UX Features:
+          - ✅ Consistent with existing report tabs design
+          - ✅ Clear indication that only finalized invoices shown
+          - ✅ Search functionality with instant update on Load Report
+          - ✅ Color-coded purity badges for quick visual scanning
+          - ✅ Responsive layout with proper spacing
+          - ✅ Professional table styling with proper alignment
+          - ✅ Excel export button integrated with global filters
+          
+          READY FOR TESTING - Need to verify:
+          1. Tab appears and is clickable
+          2. Global filters work (date range, party dropdown)
+          3. Search bar accepts input and filters on "Load Report"
+          4. Summary cards display correct totals
+          5. Table displays all sales records correctly
+          6. Walk-in customers show correctly
+          7. Saved customers show correctly with phone
+          8. Purity badges show correct colors and text
+          9. Weight displays with 3 decimal precision
+          10. Grand total displays with 2 decimal precision
+          11. Empty state message appears when no data
+          12. Loading spinner shows during data fetch
+          13. Excel export button works and downloads file
+          14. Excel file contains filtered data
+
+metadata:
+  created_by: "main_agent"
+  version: "3.0"
+  test_sequence: 2
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "MODULE 5/10 - Test Sales History Report backend endpoint"
+    - "MODULE 5/10 - Test finalized-only filtering"
+    - "MODULE 5/10 - Test date range and party filtering"
+    - "MODULE 5/10 - Test search functionality"
+    - "MODULE 5/10 - Test purity summary (single vs mixed)"
+    - "MODULE 5/10 - Test Excel export with filters"
+    - "MODULE 5/10 - Test Sales History UI tab"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      MODULE 5/10 - SALES HISTORY REPORT IMPLEMENTATION COMPLETE
+      
+      BACKEND IMPLEMENTATION:
+      
+      1. ✅ GET /api/reports/sales-history endpoint created
+         - Filters: date_from, date_to, party_id, search
+         - Returns ONLY finalized invoices (status = "finalized")
+         - Handles both saved and walk-in customers
+         - Calculates total weight from all items (3 decimal precision)
+         - Intelligent purity summary: single value or "Mixed"
+         - Full-text search across name, phone, invoice ID
+         - Returns summary totals: total_sales, total_weight, total_invoices
+      
+      2. ✅ GET /api/reports/sales-history-export endpoint created
+         - Excel export with professional formatting
+         - Includes summary section and data table
+         - Respects all applied filters
+         - Timestamp in filename for versioning
+      
+      FRONTEND IMPLEMENTATION:
+      
+      1. ✅ Added "Sales History" tab to Reports page
+         - Positioned between Invoices and Parties tabs
+         - Integrated with global filters
+      
+      2. ✅ Search functionality added
+         - Search bar with icon
+         - Searches customer name, phone, and invoice ID
+         - Load Report button to apply filters
+      
+      3. ✅ Summary cards display:
+         - Total Invoices (count)
+         - Total Weight (grams with 3 decimals)
+         - Total Sales (OMR with 2 decimals)
+      
+      4. ✅ Sales History table with columns:
+         - Invoice #
+         - Customer Name (saved or walk-in)
+         - Phone number
+         - Date
+         - Weight in grams (3 decimals)
+         - Purity (color-coded badge)
+         - Grand Total (2 decimals)
+      
+      5. ✅ Excel export integration
+         - Export button in global filters
+         - Downloads with applied filters
+      
+      CRITICAL BUSINESS RULES IMPLEMENTED:
+      - ✅ Only shows finalized invoices (draft invoices excluded)
+      - ✅ Handles walk-in customers (not in parties collection)
+      - ✅ Fetches party phone for saved customers
+      - ✅ Detects mixed purity vs single purity intelligently
+      - ✅ Proper precision throughout (3 decimals weight, 2 decimals money)
+      - ✅ Full filtering support (date range, party, search)
+      
+      READY FOR COMPREHENSIVE TESTING
+      
+      Backend needs testing:
+      1. Verify only finalized invoices returned
+      2. Test date range filtering
+      3. Test party filtering (specific and "all")
+      4. Test search functionality (name, phone, invoice ID)
+      5. Test walk-in customer display
+      6. Test saved customer display with phone lookup
+      7. Test weight calculation (sum of items)
+      8. Test purity summary (single vs mixed detection)
+      9. Test summary totals calculation
+      10. Test Excel export with filters
+      
+      Frontend needs testing after backend validation:
+      1. Verify tab appears and loads correctly
+      2. Test global filters integration
+      3. Test search bar functionality
+      4. Test summary cards display
+      5. Test table display with all columns
+      6. Test purity badge colors
+      7. Test empty state message
+      8. Test Excel export button
