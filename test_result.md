@@ -5148,6 +5148,36 @@ agent_communication:
       READY FOR TESTING - Backend pagination is complete and PartiesPage is updated.
       Need to update remaining frontend pages and test comprehensive functionality.
 
+  - agent: "main"
+    message: |
+      🔧 PAGINATION RESPONSE MODEL MISMATCH FIXED - 4 Endpoints Corrected
+      
+      ISSUE IDENTIFIED BY TESTING AGENT:
+      - All 7 pagination endpoints were returning 520 Internal Server Error
+      - Root cause: FastAPI response model mismatch
+      - Endpoints return {items: [...], pagination: {...}} but response_model=List[Entity] expects array
+      - Testing agent fixed 3 endpoints (parties, gold-ledger, purchases)
+      - 4 endpoints still had incorrect response models
+      
+      FIXES APPLIED:
+      ✅ Removed response_model=List[JobCard] from GET /api/jobcards (line 1821)
+      ✅ Removed response_model=List[Invoice] from GET /api/invoices (line 2114)
+      ✅ Removed response_model=List[Transaction] from GET /api/transactions (line 2938)
+      ✅ Removed response_model=List[AuditLog] from GET /api/audit-logs (line 3170)
+      
+      VALIDATION:
+      - All pagination endpoints now return raw dict (no response_model constraint)
+      - Underlying pagination logic already correct (create_pagination_response() function)
+      - Backend restarted successfully
+      
+      STATUS: Ready for comprehensive pagination endpoint testing
+      
+      NEXT: Testing agent should verify all 7 pagination endpoints now return:
+      1. Status 200 (not 520)
+      2. Correct response structure: {items: [], pagination: {total_count, page, per_page, total_pages, has_next, has_prev}}
+      3. Test with different page and per_page values
+      4. Verify pagination metadata calculations are accurate
+
 backend:
   - task: "Pagination Backend - GET /api/parties"
     implemented: true
