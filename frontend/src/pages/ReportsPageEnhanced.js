@@ -316,6 +316,13 @@ export default function ReportsPageEnhanced() {
       if (category && category !== 'all') params.category = category;
       if (transactionType && transactionType !== 'all') params.transaction_type = transactionType;
       
+      // Special handling for sales history
+      if (reportType === 'sales-history') {
+        if (startDate) params.date_from = startDate;
+        if (endDate) params.date_to = endDate;
+        if (searchQuery) params.search = searchQuery;
+      }
+      
       const response = await axios.get(`${API}/reports/${reportType}-export`, {
         params,
         responseType: 'blob'
