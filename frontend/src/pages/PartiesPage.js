@@ -748,6 +748,96 @@ export default function PartiesPage() {
         </DialogContent>
       </Dialog>
 
+      {/* MODULE 9: Gold Deposit Dialog */}
+      <Dialog open={showGoldDepositDialog} onOpenChange={setShowGoldDepositDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Gold Deposit</DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Record gold received from <strong>{ledgerData?.party?.name}</strong>
+            </p>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="weight_grams">Weight (grams) *</Label>
+              <Input
+                id="weight_grams"
+                type="number"
+                step="0.001"
+                min="0"
+                placeholder="e.g., 25.500"
+                value={depositFormData.weight_grams}
+                onChange={(e) => setDepositFormData({...depositFormData, weight_grams: e.target.value})}
+                data-testid="deposit-weight-input"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Precision: 3 decimal places</p>
+            </div>
+
+            <div>
+              <Label htmlFor="purity_entered">Purity (Karats) *</Label>
+              <Input
+                id="purity_entered"
+                type="number"
+                min="0"
+                placeholder="e.g., 22, 24, 18"
+                value={depositFormData.purity_entered}
+                onChange={(e) => setDepositFormData({...depositFormData, purity_entered: e.target.value})}
+                data-testid="deposit-purity-input"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Common values: 22K, 24K, 18K</p>
+            </div>
+
+            <div>
+              <Label htmlFor="purpose">Purpose *</Label>
+              <Select 
+                value={depositFormData.purpose} 
+                onValueChange={(value) => setDepositFormData({...depositFormData, purpose: value})}
+              >
+                <SelectTrigger data-testid="deposit-purpose-select">
+                  <SelectValue placeholder="Select purpose" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="job_work">Job Work</SelectItem>
+                  <SelectItem value="exchange">Exchange</SelectItem>
+                  <SelectItem value="advance_gold">Advance Gold</SelectItem>
+                  <SelectItem value="adjustment">Adjustment</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                placeholder="Additional notes..."
+                value={depositFormData.notes}
+                onChange={(e) => setDepositFormData({...depositFormData, notes: e.target.value})}
+                data-testid="deposit-notes-input"
+              />
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowGoldDepositDialog(false)}
+                className="flex-1"
+                disabled={loading}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleCreateGoldDeposit}
+                className="flex-1 bg-amber-600 hover:bg-amber-700"
+                disabled={loading}
+                data-testid="save-deposit-button"
+              >
+                {loading ? 'Saving...' : 'Save Deposit'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
