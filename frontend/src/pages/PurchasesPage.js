@@ -171,7 +171,20 @@ export default function PurchasesPage() {
       loadPurchases();
     } catch (error) {
       console.error('Error saving purchase:', error);
-      const errorMsg = error.response?.data?.detail || 'Failed to save purchase';
+      let errorMsg = 'Failed to save purchase';
+      
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        // Handle Pydantic validation errors (array format)
+        if (Array.isArray(detail)) {
+          errorMsg = detail.map(err => err.msg || JSON.stringify(err)).join(', ');
+        } else if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (typeof detail === 'object') {
+          errorMsg = JSON.stringify(detail);
+        }
+      }
+      
       toast.error(errorMsg);
     }
   };
