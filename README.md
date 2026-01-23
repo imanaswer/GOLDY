@@ -1,4 +1,4 @@
-# Gold Inventory Management System - 10
+# Gold Inventory Management System - 11
 
 A comprehensive full-stack ERP system for managing gold jewelry business operations including inventory, job cards, invoices, purchases, parties, transactions, and financial reports.
 
