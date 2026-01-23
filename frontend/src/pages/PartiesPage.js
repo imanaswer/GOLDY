@@ -879,18 +879,136 @@ export default function PartiesPage() {
       </Dialog>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete <strong>{deletingParty?.name}</strong>. 
-              This action cannot be undone.
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-destructive" />
+              Delete Party - Impact Assessment
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              {deleteImpact ? (
+                <>
+                  {/* Party Info */}
+                  <div className="bg-muted/50 p-3 rounded-md">
+                    <p className="font-medium text-foreground">
+                      {deleteImpact.party_name}
+                    </p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {deleteImpact.party_type}
+                    </p>
+                  </div>
+
+                  {/* Linked Records Summary */}
+                  {deleteImpact.total_linked_records > 0 ? (
+                    <div className="space-y-3">
+                      <div className="bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+                        <p className="font-semibold text-destructive flex items-center gap-2">
+                          <AlertCircle className="w-4 h-4" />
+                          Cannot Delete - Linked Records Found
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          This party has {deleteImpact.total_linked_records} linked record(s). 
+                          You must remove or reassign these records before deletion.
+                        </p>
+                      </div>
+
+                      {/* Breakdown of linked records */}
+                      <div className="space-y-2 border-l-2 border-muted pl-3">
+                        {deleteImpact.linked_records.invoices > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Invoices:</span>
+                            <span className="font-medium text-foreground">
+                              {deleteImpact.linked_records.invoices}
+                            </span>
+                          </div>
+                        )}
+                        {deleteImpact.linked_records.jobcards > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Job Cards:</span>
+                            <span className="font-medium text-foreground">
+                              {deleteImpact.linked_records.jobcards}
+                            </span>
+                          </div>
+                        )}
+                        {deleteImpact.linked_records.purchases > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Purchases:</span>
+                            <span className="font-medium text-foreground">
+                              {deleteImpact.linked_records.purchases}
+                            </span>
+                          </div>
+                        )}
+                        {deleteImpact.linked_records.transactions > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Transactions:</span>
+                            <span className="font-medium text-foreground">
+                              {deleteImpact.linked_records.transactions}
+                            </span>
+                          </div>
+                        )}
+                        {deleteImpact.linked_records.gold_ledger > 0 && (
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Gold Ledger Entries:</span>
+                            <span className="font-medium text-foreground">
+                              {deleteImpact.linked_records.gold_ledger}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Warning message */}
+                      <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
+                        <p className="text-xs text-amber-800">
+                          {deleteImpact.warning}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="bg-green-50 border border-green-200 p-3 rounded-md">
+                        <p className="font-medium text-green-800">
+                          ✓ No Linked Records
+                        </p>
+                        <p className="text-xs text-green-700 mt-1">
+                          This party has no linked records and can be safely deleted.
+                        </p>
+                      </div>
+                      
+                      <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
+                        <p className="text-xs text-amber-800 font-medium">
+                          ⚠ Warning: {deleteImpact.warning}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-sm text-muted-foreground">
+                    Loading impact assessment...
+                  </p>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+            <AlertDialogCancel onClick={() => {
+              setShowDeleteDialog(false);
+              setDeleteingParty(null);
+              setDeleteImpact(null);
+            }}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              disabled={!deleteImpact || !deleteImpact.can_proceed}
+              className={
+                deleteImpact && !deleteImpact.can_proceed
+                  ? "bg-muted text-muted-foreground cursor-not-allowed hover:bg-muted"
+                  : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              }
+            >
+              {deleteImpact && !deleteImpact.can_proceed ? "Cannot Delete" : "Delete Party"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
