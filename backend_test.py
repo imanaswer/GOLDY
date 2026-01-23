@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend API Testing Suite
-Tests duplicate phone number validation in parties API endpoints
+Tests Party Ledger endpoints and pagination structure
 """
 
 import requests
