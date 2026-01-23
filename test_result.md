@@ -5970,3 +5970,168 @@ frontend:
       - Pagination metadata accuracy
       - Filter compatibility status
 
+
+user_problem_statement: "Block duplicate phone numbers - Prevent users from registering with a phone number that already exists in the system. Allow duplicate names but NOT duplicate phone numbers."
+
+backend:
+  - task: "Add duplicate phone validation to POST /api/parties"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          DUPLICATE PHONE VALIDATION IMPLEMENTED - Block duplicate phone numbers during party creation.
+          
+          Implementation Details:
+          1. ✅ Added phone validation in create_party endpoint (lines 989-1006):
+             - Checks if phone is provided and not empty (phone.strip())
+             - Queries database for existing non-deleted parties with same phone
+             - Raises HTTPException with status 400 if duplicate found
+             - Error message includes existing party name for clarity
+             - Example: "Phone number 12345678 is already registered with another party: John Doe"
+          
+          2. Validation Logic:
+             - Only validates if phone is provided and not empty/whitespace
+             - Allows multiple parties with null/empty phone (no restriction)
+             - Case-sensitive phone matching
+             - Excludes deleted parties from check (is_deleted: False)
+          
+          3. Error Response:
+             - Status Code: 400 Bad Request
+             - Error message clearly states the issue and existing party name
+             - Frontend error handler will display this message in toast notification
+
+  - task: "Add duplicate phone validation to PATCH /api/parties/{party_id}"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          DUPLICATE PHONE VALIDATION IMPLEMENTED - Block duplicate phone numbers during party update.
+          
+          Implementation Details:
+          1. ✅ Added phone validation in update_party endpoint (lines 1034-1056):
+             - Checks if phone is being updated in party_data
+             - Only validates if phone is provided and not empty (phone.strip())
+             - Queries database for existing non-deleted parties with same phone
+             - EXCLUDES current party from check using {"id": {"$ne": party_id}}
+             - Raises HTTPException with status 400 if duplicate found
+             - Error message includes existing party name for clarity
+          
+          2. Validation Logic:
+             - Only validates if phone is in update payload and not empty
+             - Allows updating other fields without phone validation
+             - Allows party to keep its own phone number unchanged
+             - Case-sensitive phone matching
+             - Excludes deleted parties from check (is_deleted: False)
+          
+          3. Error Response:
+             - Status Code: 400 Bad Request
+             - Error message: "Phone number X is already registered with another party: Y"
+             - Frontend error handler will display this in toast notification
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Test creating party with duplicate phone number (should fail)"
+    - "Test creating party with unique phone number (should succeed)"
+    - "Test creating party with duplicate name but unique phone (should succeed)"
+    - "Test updating party phone to existing phone (should fail)"
+    - "Test updating party phone to unique phone (should succeed)"
+    - "Test creating/updating parties with null/empty phone (should succeed)"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      DUPLICATE PHONE VALIDATION IMPLEMENTED - Ready for Testing
+      
+      CONTEXT:
+      User requested to block duplicate phone numbers in the parties system.
+      Names can be duplicate, but phone numbers must be unique across all non-deleted parties.
+      
+      IMPLEMENTATION SUMMARY:
+      1. ✅ POST /api/parties endpoint enhanced with phone validation
+         - Checks for existing phone before inserting new party
+         - Raises 400 error if phone already exists
+         
+      2. ✅ PATCH /api/parties/{party_id} endpoint enhanced with phone validation
+         - Checks for existing phone before updating
+         - Excludes current party from duplicate check
+         - Raises 400 error if phone exists for another party
+      
+      3. ✅ Backend restarted successfully
+         - Status: RUNNING (pid 798)
+         - No startup errors detected
+      
+      TESTING REQUIREMENTS:
+      Please test the following scenarios:
+      
+      SCENARIO 1: Create Party with Duplicate Phone
+      - Create Party A with phone "12345678"
+      - Try to create Party B with same phone "12345678"
+      - Expected: 400 error with message about duplicate phone
+      
+      SCENARIO 2: Create Party with Unique Phone
+      - Create Party with unique phone number
+      - Expected: Party created successfully
+      
+      SCENARIO 3: Create Party with Duplicate Name (Different Phone)
+      - Create Party A with name "John Doe" and phone "11111111"
+      - Create Party B with name "John Doe" and phone "22222222"
+      - Expected: Both parties created successfully (duplicate names allowed)
+      
+      SCENARIO 4: Update Party Phone to Existing Phone
+      - Party A has phone "11111111"
+      - Party B has phone "22222222"
+      - Try to update Party B phone to "11111111"
+      - Expected: 400 error about duplicate phone
+      
+      SCENARIO 5: Update Party Phone to Unique Phone
+      - Update party phone to a unique number
+      - Expected: Party updated successfully
+      
+      SCENARIO 6: Update Party Other Fields (Without Phone)
+      - Update party name, address, or other fields
+      - Expected: Party updated successfully (no phone validation)
+      
+      SCENARIO 7: Multiple Parties with Empty/Null Phone
+      - Create Party A with no phone
+      - Create Party B with no phone
+      - Expected: Both created successfully (empty phones allowed)
+      
+      SCENARIO 8: Error Message Validation
+      - Verify error messages are user-friendly
+      - Verify error messages include existing party name
+      - Verify frontend displays error in toast notification
+      
+      CRITICAL VERIFICATION POINTS:
+      ✅ Phone validation only applies to non-empty phones
+      ✅ Duplicate check excludes deleted parties (is_deleted: False)
+      ✅ Update validation excludes current party from check
+      ✅ Error messages are clear and helpful
+      ✅ Frontend error handler displays validation errors correctly
+      ✅ Names can be duplicate (no validation on names)
+      
+      AUTHENTICATION:
+      - Use admin/admin123 credentials
+      - Test through Parties page UI or direct API calls
+      
+      Ready for comprehensive testing!
