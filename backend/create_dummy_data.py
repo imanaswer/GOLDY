@@ -73,11 +73,11 @@ def create_accounts(user_id):
     """Create financial accounts"""
     print("\n📊 Creating Financial Accounts...")
     accounts = [
-        {'name': 'Cash', 'account_type': 'cash', 'current_balance': 50000.00, 'color': 'green'},
-        {'name': 'Bank - ABC Bank', 'account_type': 'bank', 'current_balance': 150000.00, 'color': 'blue'},
-        {'name': 'Bank - XYZ Bank', 'account_type': 'bank', 'current_balance': 85000.00, 'color': 'purple'},
-        {'name': 'Sales', 'account_type': 'asset', 'current_balance': 0.00, 'color': 'amber'},
-        {'name': 'Purchases', 'account_type': 'expense', 'current_balance': 0.00, 'color': 'red'},
+        {'name': 'Cash Account', 'account_type': 'cash', 'opening_balance': 50000.00, 'current_balance': 50000.00},
+        {'name': 'Bank - ABC Bank', 'account_type': 'bank', 'opening_balance': 150000.00, 'current_balance': 150000.00},
+        {'name': 'Bank - XYZ Bank', 'account_type': 'bank', 'opening_balance': 85000.00, 'current_balance': 85000.00},
+        {'name': 'Sales Account', 'account_type': 'revenue', 'opening_balance': 0.00, 'current_balance': 0.00},
+        {'name': 'Purchase Account', 'account_type': 'expense', 'opening_balance': 0.00, 'current_balance': 0.00},
     ]
     
     created_accounts = []
@@ -86,10 +86,11 @@ def create_accounts(user_id):
             'id': generate_uuid(),
             'name': acc['name'],
             'account_type': acc['account_type'],
+            'opening_balance': acc['opening_balance'],
             'current_balance': acc['current_balance'],
-            'color': acc['color'],
-            'created_at': datetime.utcnow(),
-            'created_by': user_id
+            'created_at': datetime.now(timezone.utc),
+            'created_by': user_id,
+            'is_deleted': False
         }
         db.accounts.insert_one(account)
         created_accounts.append(account)
