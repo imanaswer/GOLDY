@@ -564,48 +564,87 @@ export default function JobCardsPage() {
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {editingJobCard ? 'Edit Job Card' : 'Create New Job Card'}
+              {editingTemplate ? 'Edit Template' : editingJobCard ? 'Edit Job Card' : saveAsTemplate ? 'Save as Template' : 'Create New Job Card'}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 mt-4">
-            {/* Customer Type Selection */}
-            <div className="mb-6 space-y-3 p-4 bg-gray-50 rounded-lg border">
-              <Label className="text-base font-semibold">Customer Type *</Label>
-              <div className="flex gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="job_customer_type"
-                    value="saved"
-                    checked={formData.customer_type === 'saved'}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      customer_type: e.target.value,
-                      walk_in_name: '',
-                      walk_in_phone: ''
-                    })}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Saved Customer</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="job_customer_type"
-                    value="walk_in"
-                    checked={formData.customer_type === 'walk_in'}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      customer_type: e.target.value,
-                      customer_id: '',
-                      customer_name: ''
-                    })}
-                    className="w-4 h-4"
-                  />
-                  <span className="font-medium">Walk-in Customer</span>
-                </label>
+            {/* Load Template Button - Only show when creating new job card */}
+            {!editingJobCard && !saveAsTemplate && !editingTemplate && (
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowTemplateDialog(true)}
+                  className="flex-1"
+                >
+                  <FolderOpen className="w-4 h-4 mr-2" /> Load from Template
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setSaveAsTemplate(true)}
+                  className="flex-1"
+                  disabled={user?.role !== 'admin'}
+                >
+                  <Save className="w-4 h-4 mr-2" /> Save as Template {user?.role !== 'admin' && '(Admin Only)'}
+                </Button>
               </div>
-            </div>
+            )}
+
+            {/* Template Name Field - Show when saving as template */}
+            {(saveAsTemplate || editingTemplate) && (
+              <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <Label className="text-base font-semibold">Template Name *</Label>
+                <Input
+                  value={formData.template_name}
+                  onChange={(e) => setFormData({...formData, template_name: e.target.value})}
+                  placeholder="Enter template name (e.g., 'Standard Ring Polish')"
+                  className="mt-2"
+                />
+                <p className="text-xs text-amber-700 mt-1">This template will be available to all users</p>
+              </div>
+            )}
+
+            {/* Customer Type Selection - Hide for templates */}
+            {!saveAsTemplate && !editingTemplate && (
+              <div className="mb-6 space-y-3 p-4 bg-gray-50 rounded-lg border">
+                <Label className="text-base font-semibold">Customer Type *</Label>
+                <div className="flex gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="job_customer_type"
+                      value="saved"
+                      checked={formData.customer_type === 'saved'}
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        customer_type: e.target.value,
+                        walk_in_name: '',
+                        walk_in_phone: ''
+                      })}
+                      className="w-4 h-4"
+                    />
+                    <span className="font-medium">Saved Customer</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="job_customer_type"
+                      value="walk_in"
+                      checked={formData.customer_type === 'walk_in'}
+                      onChange={(e) => setFormData({
+                        ...formData, 
+                        customer_type: e.target.value,
+                        customer_id: '',
+                        customer_name: ''
+                      })}
+                      className="w-4 h-4"
+                    />
+                    <span className="font-medium">Walk-in Customer</span>
+                  </label>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
