@@ -1380,8 +1380,8 @@ user_problem_statement: "TEST INVOICE PAYMENT TO ACCOUNTS INTEGRATION - Verify t
 
 backend:
   - task: "Fix Invoice Payment to Account Integration - Update account balance when payment is added"
-    implemented: false
-    working: false
+    implemented: true
+    working: "needs_testing"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
@@ -1425,6 +1425,42 @@ backend:
               {"$inc": {"current_balance": delta}}
           )
           ```
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          FIX IMPLEMENTED - Account balance update added to both payment paths:
+          
+          CHANGES MADE:
+          1. ✅ GOLD_EXCHANGE Payment Mode (after line 2684):
+             - Added account balance update using account_id
+             - Delta calculation: credit increases, debit decreases balance
+             - Updates Gold Exchange account balance
+          
+          2. ✅ Standard Payment Modes (after line 2830):
+             - Added account balance update using payment_data['account_id']
+             - Delta calculation: credit increases, debit decreases balance
+             - Updates Cash/Bank/UPI account balances
+          
+          CODE ADDED (both locations):
+          ```python
+          # CRITICAL: Update account balance when payment is received
+          # Credit transaction means money coming in, so increase account balance
+          delta = transaction.amount if transaction.transaction_type == "credit" else -transaction.amount
+          await db.accounts.update_one(
+              {"id": account_id},  # or payment_data['account_id'] for standard modes
+              {"$inc": {"current_balance": delta}}
+          )
+          ```
+          
+          BACKEND RESTARTED: ✅ Successfully restarted on port 8001
+          
+          READY FOR TESTING - Need to verify:
+          1. Create invoice with items
+          2. Add payment with specific account
+          3. Check account balance increases by exact payment amount
+          4. Verify transaction record created with correct details
+          5. Test both partial and full payments
+          6. Test both Cash and Bank accounts
   
   - task: "Party CRUD Operations - Verify 'Failed to update parties' and 'Failed to load party details'"
     implemented: true
