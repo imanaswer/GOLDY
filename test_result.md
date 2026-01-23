@@ -8337,6 +8337,84 @@ test_plan:
   test_priority: "critical_first"
 
 agent_communication:
+  - agent: "testing"
+    message: |
+      🎯 CRITICAL BUG FIXES VERIFICATION TESTING COMPLETED - 2 OUT OF 3 FIXES VERIFIED WORKING
+      
+      EXECUTIVE SUMMARY:
+      Successfully conducted comprehensive testing of the 3 critical bug fixes as requested in the review.
+      Two critical fixes are now PRODUCTION READY, but one fix is blocked by a new ObjectId serialization issue.
+      
+      🔥 CRITICAL BUG FIX VERIFICATION RESULTS:
+      
+      ✅ BUG FIX #3: Outstanding Reports Timezone Error - FIXED & VERIFIED
+      - Endpoint: GET /api/reports/outstanding
+      - Previous Error: 500 Internal Server Error - "can't subtract offset-naive and offset-aware datetimes"
+      - Fix Applied: Added timezone awareness checks for datetime subtraction (lines 4077 & 4137)
+      - Test Results: Returns 200 OK with proper structure, no timezone errors
+      - Status: PRODUCTION READY ✅
+      
+      ✅ BUG FIX #2: Account Detail Endpoint - FIXED & VERIFIED  
+      - Endpoint: GET /accounts/{account_id}
+      - Previous Issue: 405 Method Not Allowed (endpoint didn't exist)
+      - Fix Applied: Added new endpoint to retrieve individual account details (line 3044-3049)
+      - Test Results: Returns 200 OK with all required fields (id, name, account_type, opening_balance, current_balance)
+      - Status: PRODUCTION READY ✅
+      
+      ❌ BUG FIX #1: Account Balance Update - BLOCKED BY NEW ISSUE
+      - Workflow: Create Purchase → Finalize → Verify Account Balance Update
+      - Previous Issue: Account balance didn't update after purchase finalization
+      - Previous Block: Couldn't verify because GET /accounts/{id} didn't exist
+      - Current Status: Now testable with new endpoint, BUT blocked by ObjectId serialization error
+      - Blocking Issue: Purchase finalization returns 520 Internal Server Error
+      - Root Cause: ObjectId serialization error in purchase-related endpoints
+      - Status: CANNOT BE VERIFIED UNTIL SERIALIZATION ISSUE IS FIXED ❌
+      
+      🚨 NEW CRITICAL ISSUE DISCOVERED:
+      
+      ObjectId Serialization Error in Purchase Endpoints:
+      ```
+      ValueError: [TypeError("'ObjectId' object is not iterable"), TypeError('vars() argument must have __dict__ attribute')]
+      ```
+      
+      Affected Endpoints:
+      - POST /api/purchases/{id}/finalize (returns 520 error)
+      - GET /api/purchases (returns 500 error)
+      
+      This prevents comprehensive testing of Bug #1 (account balance update after purchase finalization).
+      
+      📊 TESTING STATISTICS:
+      - Total Bug Fixes Tested: 3
+      - Successfully Verified: 2 (66.7%)
+      - Blocked by New Issues: 1 (33.3%)
+      - Production Ready: 2 out of 3 fixes
+      
+      🎯 SUCCESS CRITERIA ASSESSMENT:
+      
+      ✅ ACHIEVED:
+      - Bug #3: Outstanding Reports - No 500 server errors, proper timezone handling
+      - Bug #2: Account Detail Endpoint - Returns proper responses with all required fields
+      - All endpoints tested return proper JSON structures (when working)
+      
+      ❌ BLOCKED:
+      - Bug #1: Account Balance Update - Cannot verify due to purchase finalization serialization error
+      - Financial calculations accuracy - Cannot test due to blocking issue
+      - Data integrity maintenance - Cannot verify purchase workflow
+      
+      🔧 IMMEDIATE ACTION REQUIRED:
+      
+      The main agent needs to fix the ObjectId serialization issue in purchase-related endpoints before Bug #1 can be properly verified. This appears to be a broader serialization problem affecting multiple purchase endpoints.
+      
+      RECOMMENDATION FOR MAIN AGENT:
+      1. ✅ Outstanding Reports fix is complete and working - no further action needed
+      2. ✅ Account Detail endpoint is complete and working - no further action needed  
+      3. 🚨 Fix ObjectId serialization in purchase endpoints (finalize and list)
+      4. 🔄 Re-test Bug #1 after serialization fix is applied
+      
+      PRODUCTION READINESS STATUS:
+      - 2 out of 3 critical bug fixes are PRODUCTION READY
+      - 1 bug fix verification is blocked by new serialization issue
+      - Overall system stability improved with timezone and account endpoint fixes
   - agent: "main"
     message: |
       🔧 CRITICAL BUG FIXES COMPLETED - 2 BACKEND FIXES APPLIED
