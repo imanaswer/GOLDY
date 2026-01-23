@@ -68,14 +68,16 @@ def main():
         "items": [
             {
                 "description": "Gold Ring 22K - Payment Test",
+                "qty": 1,
                 "weight": 10.000,
                 "category": "Ring",
                 "purity": 916,
                 "metal_rate": 50.00,
+                "gold_value": 500.00,  # weight * metal_rate
                 "making_value": 100.00,
-                "vat_rate": 5.0,
-                "vat_amount": 30.00,  # Added VAT amount
-                "line_total": 630.00  # (10 * 50) + 100 + 30
+                "vat_percent": 5.0,
+                "vat_amount": 30.00,
+                "line_total": 630.00  # gold_value + making_value + vat_amount
             }
         ],
         "subtotal": 600.00,
