@@ -237,13 +237,15 @@ export function ConfirmationDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onConfirm}
-            disabled={loading}
-            className={actionColors[actionType]}
-          >
-            {loading ? "Processing..." : actionLabel}
-          </AlertDialogAction>
+          {(!impact || impact.can_proceed !== false) && (
+            <AlertDialogAction
+              onClick={onConfirm}
+              disabled={loading}
+              className={actionColors[actionType]}
+            >
+              {loading ? "Processing..." : actionLabel}
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
