@@ -773,11 +773,11 @@ export default function JobCardsPage() {
             </div>
             
             <div>
-              <Label>Notes</Label>
+              <Label>Notes {(saveAsTemplate || editingTemplate) && '/ Instructions'}</Label>
               <Input
                 value={formData.notes}
                 onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                placeholder="Optional notes"
+                placeholder={(saveAsTemplate || editingTemplate) ? "Optional instructions for using this template" : "Optional notes"}
               />
             </div>
 
