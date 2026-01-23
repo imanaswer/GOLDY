@@ -481,7 +481,7 @@ class DailyClosingTester:
 def main():
     """Main execution function"""
     # Configuration
-    BASE_URL = "https://inventory-confirm.preview.emergentagent.com"
+    BASE_URL = "https://safe-delete-tx.preview.emergentagent.com"
     USERNAME = "admin"
     PASSWORD = "admin123"
     
