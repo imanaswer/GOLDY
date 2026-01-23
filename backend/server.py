@@ -988,6 +988,19 @@ async def get_parties(
 
 @api_router.post("/parties", response_model=Party)
 async def create_party(party_data: dict, current_user: User = Depends(get_current_user)):
+    # Validate duplicate phone number
+    phone = party_data.get('phone')
+    if phone and phone.strip():  # Only check if phone is provided and not empty
+        existing_phone = await db.parties.find_one({
+            "phone": phone.strip(),
+            "is_deleted": False
+        })
+        if existing_phone:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Phone number {phone} is already registered with another party: {existing_phone.get('name', 'Unknown')}"
+            )
+    
     party = Party(**party_data, created_by=current_user.id)
     await db.parties.insert_one(party.model_dump())
     await create_audit_log(current_user.id, current_user.full_name, "party", party.id, "create")
