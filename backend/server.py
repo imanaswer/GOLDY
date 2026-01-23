@@ -204,6 +204,7 @@ class StockMovement(BaseModel):
     reference_id: Optional[str] = None
     created_by: str
     notes: Optional[str] = None
+    confirmation_reason: Optional[str] = None  # Required for manual adjustments
     is_deleted: bool = False
 
 class Party(BaseModel):
