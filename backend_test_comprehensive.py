@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import time
 
 # Configuration
-BASE_URL = "https://confirm-dialogs.preview.emergentagent.com/api"
+BASE_URL = "https://inventory-confirm.preview.emergentagent.com/api"
 
 # Test credentials from review request
 TEST_CREDENTIALS = [
