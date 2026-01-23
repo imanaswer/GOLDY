@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 
 class InvoiceStateManagementTester:
-    def __init__(self, base_url="https://account-balance-fix.preview.emergentagent.com"):
+    def __init__(self, base_url="https://bugfix-progress-1.preview.emergentagent.com"):
         self.base_url = base_url
         self.token = None
         self.user_id = None
