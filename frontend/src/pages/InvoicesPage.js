@@ -655,6 +655,199 @@ export default function InvoicesPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* View Invoice Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-serif">Invoice Details</DialogTitle>
+          </DialogHeader>
+
+          {viewInvoice && (
+            <div className="space-y-6">
+              {/* Invoice Header */}
+              <div className="grid grid-cols-2 gap-6 p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Invoice Number</p>
+                    <p className="font-mono font-semibold text-lg">{viewInvoice.invoice_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Invoice Type</p>
+                    <p className="capitalize font-medium">{viewInvoice.invoice_type}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Date</p>
+                    <p className="font-medium">{new Date(viewInvoice.date).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Customer</p>
+                    {viewInvoice.customer_type === 'walk_in' ? (
+                      <div>
+                        <p className="font-medium">{viewInvoice.walk_in_name || 'Walk-in Customer'}</p>
+                        <Badge variant="outline" className="mt-1 text-xs bg-amber-50 text-amber-700">
+                          Walk-in
+                        </Badge>
+                      </div>
+                    ) : (
+                      <p className="font-medium">{viewInvoice.customer_name || '-'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Invoice Status</p>
+                    <div className="mt-1">{getInvoiceStatusBadge(viewInvoice.status || 'draft')}</div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Payment Status</p>
+                    <div className="mt-1">{getPaymentStatusBadge(viewInvoice.payment_status)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Timestamps */}
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-sm font-semibold text-blue-900 mb-2">Timestamps</h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-blue-700">Created At:</p>
+                    <p className="font-mono text-blue-900">
+                      {viewInvoice.created_at ? new Date(viewInvoice.created_at).toLocaleString() : 'N/A'}
+                    </p>
+                  </div>
+                  {viewInvoice.finalized_at && (
+                    <div>
+                      <p className="text-blue-700">Finalized At:</p>
+                      <p className="font-mono text-blue-900">
+                        {new Date(viewInvoice.finalized_at).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
+                  {viewInvoice.finalized_by && (
+                    <div>
+                      <p className="text-blue-700">Finalized By:</p>
+                      <p className="font-mono text-blue-900">{viewInvoice.finalized_by}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Items</h3>
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold">Description</th>
+                        <th className="px-3 py-2 text-right font-semibold">Qty</th>
+                        <th className="px-3 py-2 text-right font-semibold">Purity</th>
+                        <th className="px-3 py-2 text-right font-semibold">Weight (g)</th>
+                        <th className="px-3 py-2 text-right font-semibold">Rate</th>
+                        <th className="px-3 py-2 text-right font-semibold">Gold Value</th>
+                        <th className="px-3 py-2 text-right font-semibold">Making</th>
+                        <th className="px-3 py-2 text-right font-semibold">VAT</th>
+                        <th className="px-3 py-2 text-right font-semibold">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(viewInvoice.items || []).map((item, idx) => (
+                        <tr key={idx} className="border-t hover:bg-muted/20">
+                          <td className="px-3 py-2">{item.description || '-'}</td>
+                          <td className="px-3 py-2 text-right font-mono">{item.qty || 0}</td>
+                          <td className="px-3 py-2 text-right font-mono">{item.purity || 916}K</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.weight || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.metal_rate || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.gold_value || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.making_value || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.vat_amount || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono font-semibold">{(item.line_total || 0).toFixed(3)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Totals Section */}
+              <div className="grid grid-cols-2 gap-6">
+                {/* Left side - Payment Details */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Payment Details</h3>
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Paid Amount:</span>
+                      <span className="font-mono font-medium text-green-700">{(viewInvoice.paid_amount || 0).toFixed(3)} OMR</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Balance Due:</span>
+                      <span className="font-mono font-semibold text-red-700">{(viewInvoice.balance_due || 0).toFixed(3)} OMR</span>
+                    </div>
+                    {viewInvoice.payment_mode && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Payment Mode:</span>
+                        <span className="font-medium">{viewInvoice.payment_mode}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Right side - Amount Totals */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold">Amount Breakdown</h3>
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal:</span>
+                      <span className="font-mono">{(viewInvoice.subtotal || 0).toFixed(3)} OMR</span>
+                    </div>
+                    {viewInvoice.discount_amount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Discount:</span>
+                        <span className="font-mono text-red-600">-{(viewInvoice.discount_amount || 0).toFixed(3)} OMR</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">VAT Total:</span>
+                      <span className="font-mono">{(viewInvoice.vat_total || 0).toFixed(3)} OMR</span>
+                    </div>
+                    {viewInvoice.round_off_amount !== 0 && viewInvoice.round_off_amount !== null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Round Off:</span>
+                        <span className="font-mono">{(viewInvoice.round_off_amount || 0).toFixed(3)} OMR</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-bold border-t pt-2 mt-2">
+                      <span>Grand Total:</span>
+                      <span className="font-mono text-lg">{(viewInvoice.grand_total || 0).toFixed(3)} OMR</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowViewDialog(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    handlePrintInvoice(viewInvoice);
+                    setShowViewDialog(false);
+                  }}
+                  className="flex-1"
+                >
+                  <Printer className="w-4 h-4 mr-2" /> Print Invoice
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
