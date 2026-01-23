@@ -3040,6 +3040,14 @@ async def get_accounts(current_user: User = Depends(get_current_user)):
     accounts = await db.accounts.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
     return accounts
 
+@api_router.get("/accounts/{account_id}", response_model=Account)
+async def get_account(account_id: str, current_user: User = Depends(get_current_user)):
+    """Get a single account by ID"""
+    account = await db.accounts.find_one({"id": account_id, "is_deleted": False}, {"_id": 0})
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return account
+
 @api_router.post("/accounts", response_model=Account)
 async def create_account(account_data: dict, current_user: User = Depends(get_current_user)):
     account = Account(**account_data, created_by=current_user.id)
