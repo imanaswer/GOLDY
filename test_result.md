@@ -7054,3 +7054,187 @@ agent_communication:
       ✅ Backend: RUNNING (pid 2771)
       ✅ Frontend: RUNNING (pid 2772)
       ✅ MongoDB: RUNNING (pid 639)
+
+user_problem_statement: "Fix invoice viewing issue - After finalizing an invoice, the invoice cannot be viewed from the Invoices list. The View Invoice action must remain accessible after finalization and should display complete invoice details including: item-wise calculations (weight, rate, making charges, VAT/GST), total amounts and rounding, payment details (paid amount, balance, payment mode), customer/party information, invoice status and timestamps. Finalization should lock editing, not remove visibility."
+
+frontend:
+  - task: "Add View Invoice button and comprehensive dialog to display finalized invoices"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ROOT CAUSE IDENTIFIED AND FIXED:
+          The InvoicesPage was missing a "View Invoice" action button. Previously, users could only print invoices via PDF but had no way to view complete invoice details on screen. This was especially problematic for finalized invoices where users need to audit details without editing.
+          
+          SOLUTION IMPLEMENTED:
+          1. Added "View Invoice" button with Eye icon in the actions column
+             - Button is visible for ALL invoices (both draft and finalized)
+             - Positioned as the first action button for easy access
+             - Uses indigo color scheme for visual distinction
+          
+          2. Created comprehensive View Invoice dialog (max-w-5xl with scrolling):
+             - Invoice Header Section:
+               * Invoice number (large, monospace font)
+               * Invoice type (sale/service/repair/exchange)
+               * Date
+               * Customer information (with walk-in badge if applicable)
+               * Invoice status badge (draft/finalized with lock icon)
+               * Payment status badge (paid/partial/unpaid)
+             
+             - Timestamps Section (blue background):
+               * Created At timestamp
+               * Finalized At timestamp (if finalized)
+               * Finalized By user (if finalized)
+             
+             - Items Table (detailed view):
+               * Description, Quantity, Purity (K), Weight (g)
+               * Rate per gram, Gold Value, Making Charges
+               * VAT/GST amount, Line Total
+               * All values formatted to 3 decimal places
+               * Hover effects for better UX
+             
+             - Payment Details Section:
+               * Paid Amount (green text)
+               * Balance Due (red text)
+               * Payment Mode (if available)
+             
+             - Amount Breakdown Section:
+               * Subtotal
+               * Discount (if any, shown in red)
+               * VAT Total
+               * Round Off (if any)
+               * Grand Total (bold, large font)
+             
+             - Action Buttons:
+               * Close button to dismiss dialog
+               * Print Invoice button (opens PDF generation)
+          
+          3. Frontend compilation successful with no errors
+          
+          KEY FEATURES:
+          - View button available for BOTH draft and finalized invoices
+          - Complete invoice details visible without editing capability
+          - Comprehensive audit trail with timestamps
+          - Responsive design with proper scrolling for long invoices
+          - Professional styling with proper color coding
+          - All calculations visible (weight, rate, making charges, VAT)
+          - Payment tracking (paid amount, balance due, payment mode)
+          
+          TESTING REQUIREMENTS:
+          1. Verify "View" button appears for all invoices in the list
+          2. Test viewing a draft invoice - all details should be visible
+          3. Test viewing a finalized invoice - all details should be visible with finalized timestamp
+          4. Verify all item-wise calculations are displayed correctly
+          5. Verify payment details section shows correct amounts
+          6. Verify timestamps section shows created_at and finalized_at
+          7. Test Print button from within the view dialog
+          8. Verify dialog scrolling works for invoices with many items
+          9. Verify responsive design on different screen sizes
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Add View Invoice button and comprehensive dialog to display finalized invoices"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      INVOICE VIEW FEATURE IMPLEMENTATION COMPLETED - Ready for Testing
+      
+      ISSUE RESOLVED:
+      Previously, there was no way to view complete invoice details on screen. Users could only:
+      - See summary information in the invoice list table
+      - Generate PDF printouts
+      - Add payments or finalize invoices
+      
+      This was problematic because:
+      - No way to audit invoice details without printing
+      - Finalized invoices needed to be viewable for accounting and customer reference
+      - Item-wise calculations were not visible without printing
+      
+      SOLUTION:
+      Added a comprehensive "View Invoice" feature with:
+      1. "View" button in actions column (visible for all invoices)
+      2. Large dialog (max-w-5xl) showing complete invoice details
+      3. All required information visible:
+         ✓ Invoice header (number, type, date, customer)
+         ✓ Status badges (invoice status, payment status)
+         ✓ Complete timestamps (created, finalized)
+         ✓ Item-wise breakdown (qty, weight, purity, rate, making, VAT, totals)
+         ✓ Payment details (paid amount, balance due, payment mode)
+         ✓ Amount breakdown (subtotal, discount, VAT, round-off, grand total)
+      4. Action buttons (Close, Print)
+      5. Responsive design with scrolling support
+      
+      TESTING SCENARIOS:
+      Please test the following critical scenarios:
+      
+      1. ✅ Draft Invoice View:
+         - Click "View" button on a draft invoice
+         - Verify all sections display correctly
+         - Verify status shows as "Draft"
+         - Verify no finalized timestamp appears
+      
+      2. ✅ Finalized Invoice View (CRITICAL):
+         - Click "View" button on a finalized invoice
+         - Verify all sections display correctly
+         - Verify status shows as "Finalized" with lock icon
+         - Verify finalized timestamp is displayed
+         - Verify finalized_by user is shown
+         - Verify stock deduction note is clear
+      
+      3. ✅ Item-wise Calculations Display:
+         - Verify all columns in items table are visible
+         - Verify weight precision (3 decimals)
+         - Verify amount precision (3 decimals)
+         - Verify purity display (e.g., 916K)
+         - Verify all calculations match invoice data
+      
+      4. ✅ Payment Details Section:
+         - Verify paid amount is shown
+         - Verify balance due is shown
+         - Verify payment mode is displayed (if available)
+         - Verify color coding (green for paid, red for balance)
+      
+      5. ✅ Amount Breakdown:
+         - Verify subtotal calculation
+         - Verify discount is shown (if any)
+         - Verify VAT total
+         - Verify round-off amount (if any)
+         - Verify grand total matches
+      
+      6. ✅ Timestamps and Audit Trail:
+         - Verify created_at timestamp displays correctly
+         - Verify finalized_at timestamp (for finalized invoices)
+         - Verify finalized_by user (for finalized invoices)
+      
+      7. ✅ Actions from View Dialog:
+         - Test Close button (should close dialog)
+         - Test Print button (should generate PDF and close dialog)
+      
+      8. ✅ User Experience:
+         - Verify dialog is responsive
+         - Verify scrolling works for long invoices
+         - Verify proper spacing and layout
+         - Verify all text is readable
+      
+      AUTHENTICATION:
+      Username: admin
+      Password: admin123
+      
+      Navigate to: Invoices page
+      Test both draft and finalized invoices to verify view functionality works for all invoice types.
