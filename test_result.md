@@ -1502,12 +1502,40 @@ backend:
 
   - task: "Bug Fix #1: Account Balance Update After Purchase Finalization"
     implemented: true
-    working: false
+    working: "needs_testing"
     file: "/app/backend/server.py"
     stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          🔧 CRITICAL FIXES APPLIED - READY FOR COMPREHENSIVE RE-TESTING
+          
+          THREE CRITICAL FIXES IMPLEMENTED:
+          1. ✅ Added GET /accounts/{id} endpoint (lines 3048-3054)
+          2. ✅ Fixed ObjectId serialization issue (removed pydantic.json.ENCODERS_BY_TYPE, added ObjectId handling to decimal_to_float function)
+          3. ✅ Account balance update logic already exists (lines 1814-1820)
+          
+          PREVIOUS BLOCKERS RESOLVED:
+          - GET /accounts/{id} endpoint missing → NOW AVAILABLE ✅
+          - ObjectId serialization error → FIXED IN decimal_to_float() ✅
+          - Purchase finalization error → SHOULD BE RESOLVED ✅
+          
+          TESTING REQUIRED:
+          Complete workflow testing:
+          1. Create purchase with paid_amount_money > 0
+          2. Note account's current_balance before finalization
+          3. Finalize purchase
+          4. Verify account current_balance decreased by paid_amount_money
+          5. Verify GET /accounts/{account_id} returns updated balance
+          
+          Expected Results:
+          - Purchase finalization: 200 OK (no ObjectId errors)
+          - Account balance: Decreases by exact payment amount
+          - Transaction created: Type=debit, linked to purchase
+          - GET /accounts/{id}: Returns account with updated balance
       - working: false
         agent: "testing"
         comment: |
