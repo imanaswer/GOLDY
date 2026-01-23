@@ -9406,3 +9406,197 @@ agent_communication:
       
       Please proceed with comprehensive backend testing to verify all fixes are working correctly.
 
+
+#====================================================================================================
+# Testing Data - Job Card Template Reusability Feature
+#====================================================================================================
+
+user_problem_statement: "Implement job card template reusability: (a) Save frequently used job card configurations as templates, (b) Load templates when creating new job cards, (c) Manage (edit/delete) saved templates with admin-only controls"
+
+backend:
+  - task: "Add template_name and delivery_days_offset fields to JobCard model"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added template_name (Optional[str]) and delivery_days_offset (Optional[int]) fields to JobCard model. These fields support template functionality where template_name is required for templates, and delivery_days_offset stores days from creation for delivery calculation."
+
+  - task: "Create GET /api/jobcard-templates endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created endpoint that fetches all job card templates (card_type='template', is_deleted=False). Accessible to all users. Returns templates sorted by template_name."
+
+  - task: "Create POST /api/jobcard-templates endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created endpoint to save new templates (admin-only). Validates template_name is required, sets card_type to 'template', generates template job_card_number, clears customer information, and creates audit log entry with module 'jobcard_template'."
+
+  - task: "Create PATCH /api/jobcard-templates/{id} endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created endpoint to update existing templates (admin-only). Validates template exists and is a template type, prevents changing card_type from 'template', validates template_name if provided, and creates audit log entry."
+
+  - task: "Create DELETE /api/jobcard-templates/{id} endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created endpoint to soft delete templates (admin-only). Validates template exists and is a template type, sets is_deleted=True with deleted_at and deleted_by fields, and creates audit log entry."
+
+frontend:
+  - task: "Add template state management and load templates function"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added state variables: templates, showTemplateDialog, showManageTemplatesDialog, editingTemplate, saveAsTemplate. Added loadTemplates() function that fetches templates from /api/jobcard-templates. Added template_name and delivery_days_offset to formData."
+
+  - task: "Implement Save as Template functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added handleSaveTemplate() function that validates template_name, prepares template data (card_type='template', items config, worker, gold_rate, delivery_days_offset, notes), calls POST/PATCH /api/jobcard-templates, and refreshes templates list. Added 'Save as Template' button (admin-only) in job card dialog."
+
+  - task: "Implement Load Template functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added handleLoadTemplate() function that populates form with template data, calculates delivery_date from delivery_days_offset, sets card_type to 'individual', and deep copies items array. Added 'Load from Template' button and template selection dialog showing template name, notes, items count, delivery days, and gold rate."
+
+  - task: "Implement Manage Templates functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added handleEditTemplate() and handleDeleteTemplate() functions. Created 'Manage Templates' button and dialog showing all templates with Load, Edit (admin), and Delete (admin) buttons. Edit opens job card dialog in template edit mode, Delete shows confirmation and calls DELETE endpoint. Templates display shows name, notes, items details, delivery days, and gold rate."
+
+  - task: "Update job card creation dialog for template support"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Modified dialog to show different UI based on mode: (1) Template Name field when saving/editing template, (2) Hide customer type/selection for templates, (3) Show delivery_days_offset input for templates instead of delivery_date, (4) Hide status field for templates, (5) Update notes placeholder for templates, (6) Dynamic dialog title and button text based on mode (Create/Edit Job Card vs Save/Edit Template)."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Backend template endpoints (GET, POST, PATCH, DELETE)"
+    - "Frontend template UI (Save, Load, Manage)"
+    - "Admin-only controls validation"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      TEMPLATE REUSABILITY FEATURE IMPLEMENTATION COMPLETED
+      
+      IMPLEMENTATION SUMMARY:
+      =====================
+      
+      Backend Changes (/app/backend/server.py):
+      1. ✅ Added template_name and delivery_days_offset fields to JobCard model
+      2. ✅ Created 4 new template endpoints:
+         - GET /api/jobcard-templates (all users can view)
+         - POST /api/jobcard-templates (admin-only create)
+         - PATCH /api/jobcard-templates/{id} (admin-only edit)
+         - DELETE /api/jobcard-templates/{id} (admin-only delete)
+      3. ✅ All endpoints include proper validation and audit logging
+      4. ✅ Templates are stored in same jobcards collection with card_type='template'
+      
+      Frontend Changes (/app/frontend/src/pages/JobCardsPage.js):
+      1. ✅ Added "Manage Templates" button in main page header
+      2. ✅ Added "Load from Template" and "Save as Template" buttons in job card dialog
+      3. ✅ Implemented template selection dialog with template details
+      4. ✅ Implemented template management dialog with edit/delete (admin-only)
+      5. ✅ Job card dialog adapts UI based on mode (job card vs template)
+      6. ✅ Template-specific fields: template_name (required), delivery_days_offset
+      7. ✅ Admin-only controls properly disabled for non-admin users
+      
+      KEY FEATURES:
+      - Templates save: items config (category, description, qty, weight, purity, work_type, making charges, VAT), worker, gold rate, delivery days offset, notes
+      - Templates DO NOT save: customer info, status, actual delivery date
+      - When loading template: form populates with config, delivery_date calculated from offset
+      - Shared across all users at shop level
+      - Admin-only creation, editing, deletion with proper UI controls and backend validation
+      
+      SERVICES STATUS:
+      - Backend: RUNNING (Application startup complete)
+      - Frontend: COMPILED SUCCESSFULLY with no errors
+      
+      READY FOR TESTING:
+      Please test the following scenarios:
+      1. ✅ Admin creates template with "Save as Template" button
+      2. ✅ All users can view templates in "Manage Templates" dialog
+      3. ✅ All users can load templates when creating job cards
+      4. ✅ Non-admin users cannot edit/delete templates (buttons disabled)
+      5. ✅ Admin can edit templates
+      6. ✅ Admin can delete templates with confirmation
+      7. ✅ Template data correctly populates form when loaded
+      8. ✅ Delivery date calculated from delivery_days_offset
+      9. ✅ Backend enforces admin-only restrictions (403 for non-admins)
+
