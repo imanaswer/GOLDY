@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API } from '../contexts/AuthContext';
+import { API, useAuth } from '../contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,9 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, FileText, Trash2, Edit, AlertTriangle } from 'lucide-react';
+import { Plus, FileText, Trash2, Edit, AlertTriangle, Save, FolderOpen, Settings } from 'lucide-react';
 
 export default function JobCardsPage() {
+  const { user } = useAuth();
   const [jobcards, setJobcards] = useState([]);
   const [parties, setParties] = useState([]);
   const [inventoryHeaders, setInventoryHeaders] = useState([]);
@@ -27,6 +28,14 @@ export default function JobCardsPage() {
     walk_in_phone: '',
     discount_amount: 0  // MODULE 7: Discount amount
   });
+  
+  // Template state
+  const [templates, setTemplates] = useState([]);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showManageTemplatesDialog, setShowManageTemplatesDialog] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  
   const [formData, setFormData] = useState({
     card_type: 'individual',
     customer_type: 'saved',  // 'saved' or 'walk_in'
@@ -39,6 +48,8 @@ export default function JobCardsPage() {
     notes: '',
     gold_rate_at_jobcard: '',  // MODULE 8: Gold rate at time of job card creation
     status: 'created',
+    template_name: '',  // For templates
+    delivery_days_offset: '',  // For templates: days from creation
     items: [{
       category: 'Chain',
       description: '',
