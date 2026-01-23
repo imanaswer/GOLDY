@@ -791,6 +791,32 @@ export default function PurchasesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Finalize Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showFinalizeConfirm}
+        onOpenChange={setShowFinalizeConfirm}
+        onConfirm={confirmFinalizePurchase}
+        title="Finalize Purchase?"
+        description={`Are you sure you want to finalize this purchase from ${confirmPurchase ? getVendorName(confirmPurchase.vendor_party_id) : ''}?`}
+        impact={impactData}
+        actionLabel="Finalize Purchase"
+        actionType="warning"
+        loading={confirmLoading}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        onConfirm={confirmDeletePurchase}
+        title="Delete Purchase?"
+        description={`Are you sure you want to delete this purchase from ${confirmPurchase ? getVendorName(confirmPurchase.vendor_party_id) : ''}?`}
+        impact={impactData}
+        actionLabel="Delete Purchase"
+        actionType="danger"
+        loading={confirmLoading}
+      />
     </div>
   );
 }
