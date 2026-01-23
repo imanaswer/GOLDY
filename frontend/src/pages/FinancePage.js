@@ -16,6 +16,9 @@ export default function FinancePage() {
   const [transactions, setTransactions] = useState([]);
   const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [showTransactionDialog, setShowTransactionDialog] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState(null);
+  const [deleteReason, setDeleteReason] = useState('');
   const [accountForm, setAccountForm] = useState({
     name: '',
     account_type: 'cash',
