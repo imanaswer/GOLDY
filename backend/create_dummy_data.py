@@ -27,7 +27,7 @@ def generate_uuid():
 def random_date(days_ago_max=90, days_ago_min=0):
     """Generate random date within specified range"""
     days = random.randint(days_ago_min, days_ago_max)
-    return datetime.utcnow() - timedelta(days=days)
+    return datetime.now(timezone.utc) - timedelta(days=days)
 
 def clear_existing_data():
     """Clear all existing data - CAUTION!"""
