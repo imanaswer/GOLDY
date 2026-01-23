@@ -89,7 +89,7 @@ class JobCardTemplateTester:
         print("🔐 AUTHENTICATING AS STAFF...")
         try:
             response = requests.post(f"{BASE_URL}/auth/login", json={
-                "username": "staff1",
+                "username": "staff",
                 "password": "staff123"
             })
             
