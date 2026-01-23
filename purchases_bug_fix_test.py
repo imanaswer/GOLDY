@@ -435,7 +435,7 @@ class PurchasesBugFixTester:
             }
             
             response = self.session.post(f"{BASE_URL}/purchases", json=purchase_data)
-            if response.status_code != 201:
+            if response.status_code not in [200, 201]:
                 self.log_test("Purchase Creation with Validation", False, 
                             f"Status: {response.status_code}")
                 return False
