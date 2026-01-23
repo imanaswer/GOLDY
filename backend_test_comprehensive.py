@@ -131,13 +131,9 @@ class GoldShopERPTester:
             if response.status_code == 200:
                 data = response.json()
                 
-                # Handle pagination response
-                if isinstance(data, dict) and "items" in data:
-                    movements = data["items"]
-                    total_count = data.get("pagination", {}).get("total_count", len(movements))
-                else:
-                    movements = data if isinstance(data, list) else []
-                    total_count = len(movements)
+                # Stock movements returns a direct list, not paginated
+                movements = data if isinstance(data, list) else []
+                total_count = len(movements)
                 
                 if len(movements) > 0:
                     # Check first movement has required fields
