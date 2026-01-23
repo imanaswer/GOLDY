@@ -185,85 +185,106 @@ frontend:
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to test purchase form with all required fields and finalization"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot complete automated UI testing due to Playwright script execution errors. Purchase form appears to be implemented based on code review of PurchasesPage.js. Form includes all required sections: Basic Information (vendor, date, description), Gold Details (weight, purity, rate, amount), Payment Details (paid amount, mode, account), and Gold Settlement. Manual testing required to verify form submission and validation."
   
   - task: "Purchase Records Display"
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to verify purchase record shows correct status, amount, paid, balance"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot verify purchase records display through automated testing. Based on code review, purchase records table should display: Date, Vendor, Description, Weight, Purity, Rate/g, Amount, Paid, Balance, Status, and Actions. Manual verification needed for correct data display and finalize functionality."
   
   - task: "Inventory Display & Recent Movements"
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to verify stock increase and movement record with correct type and weight"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot verify inventory display through automated testing. Based on code review of InventoryPage.js, inventory should show stock totals by category and recent movements table with movement type badges (green for IN, red for OUT). Manual verification needed for purchase-triggered stock movements."
   
   - task: "Finance Accounts & Transactions Display"
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to verify cash account decrease and debit transaction with correct category"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot verify finance display through automated testing. Based on code review of FinancePage.js, finance page should show account cards with current balances and transactions table with type indicators (green for credit, red for debit). Manual verification needed for purchase payment impact on account balances."
   
   - task: "Reports - Outstanding, Purchase History, Overview"
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to verify all reports show updated data after purchase"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot verify reports through automated testing. Based on code review of ReportsPageEnhanced.js, reports include comprehensive tabs: Overview (financial summary), Outstanding (vendor payables), Purchase History (finalized purchases with weight/amount totals), and other report types. Manual verification needed for data accuracy across all report sections."
   
   - task: "Daily Closing Impact"
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to verify daily closing reflects purchase payment in debit and expected closing"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot verify daily closing through automated testing. Based on code review of DailyClosingPage.js, daily closing includes auto-calculation from transactions with opening cash, total credit, total debit, expected closing, actual closing, and difference calculations. Manual verification needed for purchase payment impact on daily closing calculations."
   
   - task: "Audit Logs Display"
     implemented: true
     working: "NA"
     file: "frontend/src/"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Need to verify audit logs show purchase creation, stock movement, and finance transaction"
+      - working: "NA"
+        agent: "testing"
+        comment: "TESTING BLOCKED - Cannot verify audit logs display through automated testing. Based on code review of AuditLogsPage.js, audit logs table should show timestamp, user, module, action, and record ID with proper activity tracking. Manual verification needed for purchase-related audit entries."
 
 metadata:
   created_by: "main_agent"
