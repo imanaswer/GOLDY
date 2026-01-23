@@ -4131,6 +4131,10 @@ async def get_outstanding_report(
                 if isinstance(txn_date, str):
                     txn_date = datetime.fromisoformat(txn_date)
                 
+                # CRITICAL FIX: Ensure txn_date is timezone-aware to match today
+                if txn_date.tzinfo is None:
+                    txn_date = txn_date.replace(tzinfo=timezone.utc)
+                
                 overdue_days = (today - txn_date).days
                 
                 if overdue_days >= 0:  # Only count if actually overdue
