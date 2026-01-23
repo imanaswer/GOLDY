@@ -171,6 +171,7 @@ export default function FinancePage() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Account</th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Amount</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Category</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -195,6 +196,16 @@ export default function FinancePage() {
                         {txn.transaction_type === 'credit' ? '+' : '-'}{txn.amount.toFixed(3)}
                       </td>
                       <td className="px-4 py-3 text-sm capitalize">{txn.category}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteClick(txn)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
