@@ -706,30 +706,51 @@ export default function JobCardsPage() {
             )}
             
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Delivery Date</Label>
-                <Input
-                  data-testid="delivery-date-input"
-                  type="date"
-                  value={formData.delivery_date}
-                  onChange={(e) => setFormData({...formData, delivery_date: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>
-                  <SelectTrigger data-testid="status-select">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="created">Created</SelectItem>
-                    <SelectItem value="in progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="delivered">Delivered</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* For templates: show days offset; For job cards: show actual date */}
+              {(saveAsTemplate || editingTemplate) ? (
+                <div>
+                  <Label>Delivery Days from Creation</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formData.delivery_days_offset}
+                    onChange={(e) => setFormData({...formData, delivery_days_offset: e.target.value})}
+                    placeholder="e.g., 7"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Number of days from job card creation to delivery
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <Label>Delivery Date</Label>
+                  <Input
+                    data-testid="delivery-date-input"
+                    type="date"
+                    value={formData.delivery_date}
+                    onChange={(e) => setFormData({...formData, delivery_date: e.target.value})}
+                  />
+                </div>
+              )}
+              
+              {/* Hide status field for templates */}
+              {!saveAsTemplate && !editingTemplate && (
+                <div>
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(val) => setFormData({...formData, status: val})}>
+                    <SelectTrigger data-testid="status-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="created">Created</SelectItem>
+                      <SelectItem value="in progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             
             {/* MODULE 8: Gold Rate Field */}
