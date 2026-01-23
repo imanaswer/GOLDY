@@ -5690,6 +5690,283 @@ async def health_check():
         )
 
 
+# ========================================
+# WORKFLOW CONTROL - IMPACT SUMMARY ENDPOINTS
+# ========================================
+
+@api_router.get("/jobcards/{jobcard_id}/complete-impact")
+async def get_jobcard_complete_impact(jobcard_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before completing a job card"""
+    jobcard = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
+    if not jobcard:
+        raise HTTPException(status_code=404, detail="Job card not found")
+    
+    items = jobcard.get("items", [])
+    total_weight = sum(item.get("weight_grams", 0) for item in items)
+    total_making = sum(item.get("making_charges", 0) for item in items)
+    
+    return {
+        "action": "Complete Job Card",
+        "item_count": len(items),
+        "total_weight": round(total_weight, 3),
+        "total_making_charges": round(total_making, 2),
+        "status_change": f"{jobcard.get('status', 'created')} → completed",
+        "warning": "This action cannot be undone. The job card will be marked as completed.",
+        "can_proceed": jobcard.get("status") in ["created", "in_progress"]
+    }
+
+@api_router.get("/jobcards/{jobcard_id}/deliver-impact")
+async def get_jobcard_deliver_impact(jobcard_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before delivering a job card"""
+    jobcard = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
+    if not jobcard:
+        raise HTTPException(status_code=404, detail="Job card not found")
+    
+    items = jobcard.get("items", [])
+    total_weight = sum(item.get("weight_grams", 0) for item in items)
+    
+    return {
+        "action": "Deliver Job Card",
+        "item_count": len(items),
+        "total_weight": round(total_weight, 3),
+        "status_change": f"{jobcard.get('status', 'created')} → delivered",
+        "warning": "This action cannot be undone. The job card will be marked as delivered and cannot be edited.",
+        "can_proceed": jobcard.get("status") == "completed"
+    }
+
+@api_router.get("/jobcards/{jobcard_id}/delete-impact")
+async def get_jobcard_delete_impact(jobcard_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before deleting a job card"""
+    jobcard = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
+    if not jobcard:
+        raise HTTPException(status_code=404, detail="Job card not found")
+    
+    # Check if linked to an invoice
+    linked_invoice = await db.invoices.find_one({
+        "jobcard_id": jobcard_id,
+        "is_deleted": False
+    })
+    
+    items = jobcard.get("items", [])
+    total_weight = sum(item.get("weight_grams", 0) for item in items)
+    
+    can_proceed = linked_invoice is None
+    blocking_reason = "Job card is linked to an invoice" if linked_invoice else None
+    
+    return {
+        "action": "Delete Job Card",
+        "item_count": len(items),
+        "total_weight": round(total_weight, 3),
+        "customer_name": jobcard.get("customer_name", "Walk-in Customer"),
+        "status": jobcard.get("status", "created"),
+        "warning": "This action cannot be undone. The job card will be permanently deleted." if can_proceed else blocking_reason,
+        "can_proceed": can_proceed,
+        "blocking_reason": blocking_reason,
+        "linked_invoice": linked_invoice.get("invoice_number") if linked_invoice else None
+    }
+
+@api_router.get("/invoices/{invoice_id}/finalize-impact")
+async def get_invoice_finalize_impact(invoice_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before finalizing an invoice"""
+    invoice = await db.invoices.find_one({"id": invoice_id, "is_deleted": False})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    items = invoice.get("items", [])
+    total_weight = sum(item.get("weight_grams", 0) for item in items)
+    
+    return {
+        "action": "Finalize Invoice",
+        "invoice_number": invoice.get("invoice_number", "N/A"),
+        "item_count": len(items),
+        "total_weight": round(total_weight, 3),
+        "grand_total": round(invoice.get("grand_total", 0), 2),
+        "status_change": "draft → finalized",
+        "warning": "This action cannot be undone. The invoice will be finalized and locked. Stock will be deducted.",
+        "can_proceed": invoice.get("status") == "draft",
+        "will_deduct_stock": True,
+        "will_lock_jobcard": invoice.get("jobcard_id") is not None
+    }
+
+@api_router.get("/invoices/{invoice_id}/delete-impact")
+async def get_invoice_delete_impact(invoice_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before deleting an invoice"""
+    invoice = await db.invoices.find_one({"id": invoice_id, "is_deleted": False})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    items = invoice.get("items", [])
+    total_weight = sum(item.get("weight_grams", 0) for item in items)
+    is_finalized = invoice.get("status") == "finalized"
+    
+    # Check for linked payments
+    payment_count = await db.transactions.count_documents({
+        "reference_type": "invoice",
+        "reference_id": invoice_id,
+        "is_deleted": False
+    })
+    
+    can_proceed = not is_finalized and payment_count == 0
+    blocking_reasons = []
+    if is_finalized:
+        blocking_reasons.append("Invoice is finalized")
+    if payment_count > 0:
+        blocking_reasons.append(f"{payment_count} payment(s) linked")
+    
+    return {
+        "action": "Delete Invoice",
+        "invoice_number": invoice.get("invoice_number", "N/A"),
+        "item_count": len(items),
+        "total_weight": round(total_weight, 3),
+        "grand_total": round(invoice.get("grand_total", 0), 2),
+        "status": invoice.get("status", "draft"),
+        "payment_count": payment_count,
+        "warning": "This action cannot be undone." if can_proceed else "Cannot delete this invoice.",
+        "can_proceed": can_proceed,
+        "blocking_reasons": blocking_reasons if blocking_reasons else None
+    }
+
+@api_router.get("/purchases/{purchase_id}/finalize-impact")
+async def get_purchase_finalize_impact(purchase_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before finalizing a purchase"""
+    purchase = await db.purchases.find_one({"id": purchase_id, "is_deleted": False})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    vendor = await db.parties.find_one({"id": purchase.get("vendor_party_id")})
+    vendor_name = vendor.get("name") if vendor else "Unknown"
+    
+    return {
+        "action": "Finalize Purchase",
+        "vendor_name": vendor_name,
+        "weight": round(purchase.get("weight_grams", 0), 3),
+        "amount_total": round(purchase.get("amount_total", 0), 2),
+        "paid_amount": round(purchase.get("paid_amount_money", 0), 2),
+        "balance_due": round(purchase.get("balance_due_money", 0), 2),
+        "status_change": "draft → finalized",
+        "warning": "This action cannot be undone. Stock will be added at 916 purity (22K). Vendor payable will be created.",
+        "can_proceed": purchase.get("status") == "draft",
+        "will_add_stock": True,
+        "will_create_payable": True
+    }
+
+@api_router.get("/purchases/{purchase_id}/delete-impact")
+async def get_purchase_delete_impact(purchase_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before deleting a purchase"""
+    purchase = await db.purchases.find_one({"id": purchase_id, "is_deleted": False})
+    if not purchase:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    vendor = await db.parties.find_one({"id": purchase.get("vendor_party_id")})
+    vendor_name = vendor.get("name") if vendor else "Unknown"
+    is_finalized = purchase.get("status") == "finalized"
+    
+    can_proceed = not is_finalized
+    blocking_reason = "Purchase is finalized and cannot be deleted" if is_finalized else None
+    
+    return {
+        "action": "Delete Purchase",
+        "vendor_name": vendor_name,
+        "weight": round(purchase.get("weight_grams", 0), 3),
+        "amount_total": round(purchase.get("amount_total", 0), 2),
+        "status": purchase.get("status", "draft"),
+        "warning": "This action cannot be undone." if can_proceed else blocking_reason,
+        "can_proceed": can_proceed,
+        "blocking_reason": blocking_reason
+    }
+
+@api_router.get("/parties/{party_id}/delete-impact")
+async def get_party_delete_impact(party_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before deleting a party"""
+    party = await db.parties.find_one({"id": party_id, "is_deleted": False})
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+    
+    # Check for linked records
+    jobcard_count = await db.jobcards.count_documents({
+        "customer_id": party_id,
+        "is_deleted": False
+    })
+    
+    invoice_count = await db.invoices.count_documents({
+        "customer_id": party_id,
+        "is_deleted": False
+    })
+    
+    purchase_count = await db.purchases.count_documents({
+        "vendor_party_id": party_id,
+        "is_deleted": False
+    })
+    
+    transaction_count = await db.transactions.count_documents({
+        "party_id": party_id,
+        "is_deleted": False
+    })
+    
+    gold_ledger_count = await db.gold_ledger.count_documents({
+        "party_id": party_id,
+        "is_deleted": False
+    })
+    
+    total_linked = jobcard_count + invoice_count + purchase_count + transaction_count + gold_ledger_count
+    can_proceed = total_linked == 0
+    
+    blocking_reasons = []
+    if jobcard_count > 0:
+        blocking_reasons.append(f"{jobcard_count} job card(s)")
+    if invoice_count > 0:
+        blocking_reasons.append(f"{invoice_count} invoice(s)")
+    if purchase_count > 0:
+        blocking_reasons.append(f"{purchase_count} purchase(s)")
+    if transaction_count > 0:
+        blocking_reasons.append(f"{transaction_count} transaction(s)")
+    if gold_ledger_count > 0:
+        blocking_reasons.append(f"{gold_ledger_count} gold ledger entry/entries")
+    
+    return {
+        "action": "Delete Party",
+        "party_name": party.get("name", "Unknown"),
+        "party_type": party.get("party_type", "customer"),
+        "total_linked_records": total_linked,
+        "linked_records": {
+            "jobcards": jobcard_count,
+            "invoices": invoice_count,
+            "purchases": purchase_count,
+            "transactions": transaction_count,
+            "gold_ledger": gold_ledger_count
+        },
+        "warning": "This action cannot be undone." if can_proceed else f"Cannot delete party. Linked to: {', '.join(blocking_reasons)}",
+        "can_proceed": can_proceed,
+        "blocking_reasons": blocking_reasons if blocking_reasons else None
+    }
+
+@api_router.get("/transactions/{transaction_id}/delete-impact")
+async def get_transaction_delete_impact(transaction_id: str, current_user: User = Depends(get_current_user)):
+    """Get impact summary before deleting a transaction"""
+    transaction = await db.transactions.find_one({"id": transaction_id, "is_deleted": False})
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    
+    # Check if linked to invoice
+    is_invoice_payment = transaction.get("reference_type") == "invoice"
+    can_proceed = not is_invoice_payment
+    blocking_reason = "Transaction is linked to an invoice and cannot be deleted" if is_invoice_payment else None
+    
+    return {
+        "action": "Delete Transaction",
+        "transaction_number": transaction.get("transaction_number", "N/A"),
+        "transaction_type": transaction.get("transaction_type", "N/A"),
+        "amount": round(transaction.get("amount", 0), 2),
+        "category": transaction.get("category", "N/A"),
+        "party_name": transaction.get("party_name", "N/A"),
+        "is_invoice_payment": is_invoice_payment,
+        "warning": "This action cannot be undone. Account balance will be adjusted." if can_proceed else blocking_reason,
+        "can_proceed": can_proceed,
+        "blocking_reason": blocking_reason,
+        "will_affect_account": True
+    }
+
+
 app.include_router(api_router)
 
 app.add_middleware(
