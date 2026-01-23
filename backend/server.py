@@ -4002,8 +4002,9 @@ async def get_outstanding_report(
     invoices = await db.invoices.find(invoice_query, {"_id": 0}).to_list(10000)
     
     # Get all transactions for payment tracking
+    # CRITICAL FIX: Include "Purchase" category for vendor payables from purchase finalization
     transactions = await db.transactions.find(
-        {"is_deleted": False, "category": {"$in": ["Sales Invoice", "Purchase Invoice"]}},
+        {"is_deleted": False, "category": {"$in": ["Sales Invoice", "Purchase Invoice", "Purchase"]}},
         {"_id": 0}
     ).to_list(10000)
     
