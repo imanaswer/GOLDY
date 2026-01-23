@@ -5904,6 +5904,28 @@ async def get_purchase_delete_impact(purchase_id: str, current_user: User = Depe
         "blocking_reason": blocking_reason
     }
 
+@api_router.delete("/purchases/{purchase_id}")
+async def delete_purchase(purchase_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a purchase (only draft purchases can be deleted)"""
+    existing = await db.purchases.find_one({"id": purchase_id, "is_deleted": False})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Purchase not found")
+    
+    # CRITICAL: Only allow deleting draft purchases
+    # Finalized purchases should not be deleted to maintain financial integrity
+    if existing.get("status") == "finalized":
+        raise HTTPException(
+            status_code=400, 
+            detail="Cannot delete finalized purchase. Finalized purchases are immutable to maintain financial integrity."
+        )
+    
+    await db.purchases.update_one(
+        {"id": purchase_id},
+        {"$set": {"is_deleted": True}}
+    )
+    await create_audit_log(current_user.id, current_user.full_name, "purchases", purchase_id, "delete")
+    return {"message": "Purchase deleted successfully"}
+
 @api_router.get("/parties/{party_id}/delete-impact")
 async def get_party_delete_impact(party_id: str, current_user: User = Depends(get_current_user)):
     """Get impact summary before deleting a party"""
