@@ -950,6 +950,100 @@ export default function JobCardsPage() {
               ))}
             </div>
 
+            {/* Cost Estimation Section - Show when not saving as template */}
+            {!saveAsTemplate && !editingTemplate && formData.gold_rate_at_jobcard && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                  Cost Estimation Breakdown
+                </h3>
+                <div className="space-y-2">
+                  {formData.items.map((item, idx) => {
+                    const goldRate = parseFloat(formData.gold_rate_at_jobcard) || 0;
+                    const weightIn = parseFloat(item.weight_in) || 0;
+                    const makingValue = parseFloat(item.making_charge_value) || 0;
+                    const vatPercent = parseFloat(item.vat_percent) || 0;
+                    
+                    // Calculate metal value (weight × gold rate)
+                    const metalValue = weightIn * goldRate;
+                    
+                    // Calculate making charges
+                    const makingCharges = item.making_charge_type === 'per_gram' 
+                      ? makingValue * weightIn 
+                      : makingValue;
+                    
+                    // Calculate subtotal before VAT
+                    const subtotal = metalValue + makingCharges;
+                    
+                    // Calculate VAT
+                    const vat = (subtotal * vatPercent) / 100;
+                    
+                    // Calculate total
+                    const total = subtotal + vat;
+                    
+                    return (
+                      <div key={idx} className="bg-white rounded-md p-3 border border-blue-100">
+                        <div className="font-medium text-sm text-blue-800 mb-2">
+                          {item.description || `Item ${idx + 1}`} ({item.category})
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Metal Value:</span>
+                            <span className="font-medium">{metalValue.toFixed(3)} OMR</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Making Charges:</span>
+                            <span className="font-medium">{makingCharges.toFixed(3)} OMR</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Subtotal:</span>
+                            <span className="font-medium">{subtotal.toFixed(3)} OMR</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">VAT ({vatPercent}%):</span>
+                            <span className="font-medium">{vat.toFixed(3)} OMR</span>
+                          </div>
+                          <div className="flex justify-between col-span-2 pt-1 border-t border-blue-200">
+                            <span className="font-semibold text-blue-900">Item Total:</span>
+                            <span className="font-semibold text-blue-900">{total.toFixed(3)} OMR</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Grand Total */}
+                  <div className="bg-blue-900 text-white rounded-md p-3 mt-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg">Estimated Grand Total:</span>
+                      <span className="font-bold text-xl">
+                        {formData.items.reduce((total, item) => {
+                          const goldRate = parseFloat(formData.gold_rate_at_jobcard) || 0;
+                          const weightIn = parseFloat(item.weight_in) || 0;
+                          const makingValue = parseFloat(item.making_charge_value) || 0;
+                          const vatPercent = parseFloat(item.vat_percent) || 0;
+                          
+                          const metalValue = weightIn * goldRate;
+                          const makingCharges = item.making_charge_type === 'per_gram' ? makingValue * weightIn : makingValue;
+                          const subtotal = metalValue + makingCharges;
+                          const vat = (subtotal * vatPercent) / 100;
+                          const itemTotal = subtotal + vat;
+                          
+                          return total + itemTotal;
+                        }, 0).toFixed(2)} OMR
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs text-blue-700 italic mt-2">
+                    * This is an estimate based on the gold rate entered. Actual invoice amount may vary based on final weight and market rates.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <Button data-testid="save-jobcard-button" onClick={handleCreateJobCard} className="w-full">
               {editingTemplate ? 'Update Template' : saveAsTemplate ? 'Save Template' : editingJobCard ? 'Update Job Card' : 'Create Job Card'}
             </Button>
