@@ -189,12 +189,14 @@ class BugFixTester:
         print("=" * 80)
         
         try:
-            # STEP 1: Create test vendor
+            # STEP 1: Create test vendor with unique phone
             print("STEP 1: Creating test vendor...")
+            import random
+            unique_phone = f"9876543{random.randint(10, 99)}"
             vendor_data = {
-                "name": "Test Vendor for Balance Update",
+                "name": f"Test Vendor for Balance Update {datetime.now().strftime('%Y%m%d%H%M%S')}",
                 "party_type": "vendor",
-                "phone": "98765432"
+                "phone": unique_phone
             }
             
             vendor_response = self.session.post(f"{BASE_URL}/parties", json=vendor_data)
