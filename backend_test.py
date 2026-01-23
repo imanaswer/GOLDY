@@ -25,11 +25,13 @@ BASE_URL = "https://invoice-details-2.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
-class APITester:
+class InvoiceFinalizationTester:
     def __init__(self):
         self.session = requests.Session()
         self.token = None
         self.test_results = []
+        self.test_invoice_id = None
+        self.test_customer_id = None
         
     def log_test(self, test_name, success, details="", response_data=None):
         """Log test results"""
