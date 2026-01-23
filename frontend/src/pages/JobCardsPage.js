@@ -126,6 +126,28 @@ export default function JobCardsPage() {
         }
       }
 
+      // Prepare data for create/update
+      const data = {
+        ...formData,
+        gold_rate_at_jobcard: formData.gold_rate_at_jobcard ? parseFloat(formData.gold_rate_at_jobcard) : null,
+        delivery_days_offset: formData.delivery_days_offset ? parseInt(formData.delivery_days_offset) : null,
+        items: formData.items.map(item => ({
+          ...item,
+          qty: parseInt(item.qty),
+          weight_in: parseFloat(item.weight_in),
+          weight_out: item.weight_out ? parseFloat(item.weight_out) : null,
+          purity: parseInt(item.purity),
+          making_charge_value: item.making_charge_value ? parseFloat(item.making_charge_value) : null,
+          vat_percent: item.vat_percent ? parseFloat(item.vat_percent) : null
+        }))
+      };
+
+      // Add customer name for saved customers
+      if (formData.customer_type === 'saved') {
+        const customer = parties.find(p => p.id === formData.customer_id);
+        data.customer_name = customer?.name || '';
+      }
+
       // Confirmation for status change to completed or delivered (only when editing)
       if (editingJobCard) {
         const oldStatus = editingJobCard.status || 'created';
