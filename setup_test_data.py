@@ -8,7 +8,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "https://purchase-testing.preview.emergentagent.com/api"
+BASE_URL = "https://playwright-fixes.preview.emergentagent.com/api"
 ADMIN_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 def setup_test_data():

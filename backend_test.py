@@ -23,7 +23,7 @@ from datetime import datetime
 import time
 
 # Configuration - Read from frontend/.env
-BASE_URL = "https://purchase-testing.preview.emergentagent.com/api"
+BASE_URL = "https://playwright-fixes.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
