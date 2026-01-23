@@ -26,7 +26,13 @@ def gen_uuid():
     return str(uuid.uuid4())
 
 def rand_date(days_ago=30):
-    return datetime.now(timezone.utc) - timedelta(days=random.randint(0, days_ago))
+    """Generate a random date. Use positive for past, negative for future"""
+    if days_ago < 0:
+        # Future date
+        return datetime.now(timezone.utc) + timedelta(days=random.randint(0, abs(days_ago)))
+    else:
+        # Past date
+        return datetime.now(timezone.utc) - timedelta(days=random.randint(0, days_ago))
 
 async def create_dummy_data():
     print("=" * 70)
