@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing Suite for Party Ledger Functionality
-Tests the specific issues reported by user:
-1. "View Ledger in Parties not working" 
-2. "Failed to update parties"
-3. "Failed to load party details"
+Comprehensive Backend API Testing Suite for Invoice Finalization and Viewing Functionality
+Tests the Gold Shop ERP System invoice finalization and viewing capabilities.
 
-Focus: Verify backend API endpoints are working correctly with proper response structures
+Focus: Verify that finalized invoices can be viewed properly and display complete, accurate details.
+
+Test Requirements:
+1. Create New Invoice (Draft) with 2+ items
+2. View Draft Invoice 
+3. Finalize the Invoice
+4. View Finalized Invoice
+5. Test Invoice List View
+6. Attempt to Edit Finalized Invoice (Should Fail)
+7. Test Edge Cases
 """
 
 import requests
