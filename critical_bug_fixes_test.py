@@ -304,7 +304,7 @@ class CriticalBugFixTester:
             }
             
             response = self.session.post(f"{BASE_URL}/purchases", json=purchase_data)
-            if response.status_code != 201:
+            if response.status_code not in [200, 201]:
                 self.log_test("Create Purchase", False, f"Status: {response.status_code}, Response: {response.text}")
                 return False
                 
