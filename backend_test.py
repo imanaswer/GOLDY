@@ -21,7 +21,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://invoice-details-2.preview.emergentagent.com/api"
+BASE_URL = "https://invoice-payment-flow.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
