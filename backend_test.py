@@ -10,7 +10,7 @@ import sys
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://inventory-repair-3.preview.emergentagent.com/api"
+BASE_URL = "https://test-dummy-data.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
