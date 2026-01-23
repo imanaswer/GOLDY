@@ -1180,6 +1180,57 @@ async def update_party(party_id: str, party_data: dict, current_user: User = Dep
     updated = await db.parties.find_one({"id": party_id}, {"_id": 0})
     return Party(**updated)
 
+@api_router.get("/parties/{party_id}/impact")
+async def get_party_impact(party_id: str, current_user: User = Depends(get_current_user)):
+    """
+    Get impact summary for party deletion.
+    Shows what data is linked to this party and will be affected.
+    """
+    party = await db.parties.find_one({"id": party_id, "is_deleted": False}, {"_id": 0})
+    if not party:
+        raise HTTPException(status_code=404, detail="Party not found")
+    
+    # Count linked records
+    linked_invoices_count = await db.invoices.count_documents({"customer_id": party_id, "is_deleted": False})
+    linked_purchases_count = await db.purchases.count_documents({"vendor_party_id": party_id, "is_deleted": False})
+    linked_jobcards_count = await db.jobcards.count_documents({"customer_id": party_id, "is_deleted": False})
+    linked_gold_ledger_count = await db.gold_ledger.count_documents({"party_id": party_id, "is_deleted": False})
+    linked_transactions_count = await db.transactions.count_documents({"party_id": party_id, "is_deleted": False})
+    
+    # Get outstanding balances
+    money_outstanding = 0
+    invoices = await db.invoices.find({"customer_id": party_id, "is_deleted": False, "status": "finalized"}, {"_id": 0, "balance_due": 1}).to_list(1000)
+    for inv in invoices:
+        money_outstanding += inv.get('balance_due', 0)
+    
+    # Get gold balance
+    gold_entries = await db.gold_ledger.find({"party_id": party_id, "is_deleted": False}, {"_id": 0, "type": 1, "weight_grams": 1}).to_list(1000)
+    gold_balance = 0
+    for entry in gold_entries:
+        if entry.get('type') == 'IN':
+            gold_balance += entry.get('weight_grams', 0)
+        else:
+            gold_balance -= entry.get('weight_grams', 0)
+    
+    impact = {
+        "party_name": party.get("name"),
+        "party_type": party.get("party_type"),
+        "phone": party.get("phone"),
+        "linked_invoices": linked_invoices_count,
+        "linked_purchases": linked_purchases_count,
+        "linked_jobcards": linked_jobcards_count,
+        "linked_gold_ledger": linked_gold_ledger_count,
+        "linked_transactions": linked_transactions_count,
+        "total_linked_records": (linked_invoices_count + linked_purchases_count + 
+                                linked_jobcards_count + linked_gold_ledger_count + 
+                                linked_transactions_count),
+        "money_outstanding": round(money_outstanding, 2),
+        "gold_balance_grams": round(gold_balance, 3),
+        "has_outstanding_balance": money_outstanding != 0 or gold_balance != 0
+    }
+    
+    return impact
+
 @api_router.delete("/parties/{party_id}")
 async def delete_party(party_id: str, current_user: User = Depends(get_current_user)):
     existing = await db.parties.find_one({"id": party_id, "is_deleted": False})
