@@ -142,6 +142,7 @@ def create_stock_movements(categories, user_id):
             movement_type = random.choice(['Stock IN', 'Stock OUT'])
             qty = random.randint(1, 10)
             weight = round(random.uniform(10.0, 100.0), 3)
+            purity = random.choice([999, 916, 750, 585])
             
             if movement_type == 'Stock OUT':
                 qty = -qty
@@ -149,17 +150,19 @@ def create_stock_movements(categories, user_id):
             
             movement = {
                 'id': generate_uuid(),
-                'inventory_header_id': category['id'],
                 'date': random_date(60, 0),
                 'movement_type': movement_type,
-                'qty_delta': qty,
-                'weight_delta': weight,
-                'purity': category['purity'],
-                'reference_type': 'manual',
+                'header_id': category['id'],
+                'header_name': category['name'],
+                'description': f'Test {movement_type} movement for {category["name"]}',
+                'qty_delta': float(qty),
+                'weight_delta': float(weight),
+                'purity': purity,
+                'reference_type': None,
                 'reference_id': None,
-                'notes': f'Test {movement_type} movement',
-                'created_at': datetime.utcnow(),
-                'created_by': user_id
+                'created_by': user_id,
+                'notes': f'Dummy {movement_type} entry',
+                'is_deleted': False
             }
             db.stock_movements.insert_one(movement)
             movements.append(movement)
