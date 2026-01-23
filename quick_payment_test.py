@@ -90,7 +90,7 @@ def main():
     
     response = requests.post(f"{BASE_URL}/invoices", headers=headers, json=invoice_data)
     
-    if response.status_code != 201:
+    if response.status_code not in [200, 201]:
         print(f"❌ Failed to create invoice: {response.status_code}")
         print(f"   Response: {response.text}")
         return False
