@@ -658,6 +658,70 @@ frontend:
         agent: "main"
         comment: "Stock IN/OUT recording interface"
 
+  - task: "Phase 4: Inventory Confirmation Dialog & Impact Summary"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/InventoryPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ PHASE 4 IMPLEMENTATION COMPLETED
+          
+          Implemented comprehensive confirmation dialog system for Stock IN/OUT adjustments:
+          
+          1. Confirmation Dialog ✅
+             - Mandatory confirmation before any stock movement submission
+             - Shows detailed impact summary with current vs. new stock levels
+             - Cannot be bypassed - required for all adjustments
+          
+          2. Reason Text Field ✅
+             - Required text field with placeholder guidance
+             - Reason appended to notes field for audit trail
+             - Submit button disabled until reason provided
+          
+          3. Impact Summary ✅
+             - Current Stock: Displays existing quantity and weight
+             - Proposed Change: Visual indicator (↑ for IN, ↓ for OUT)
+             - New Stock Level: Calculated post-adjustment values
+             - Movement Type: Color-coded badges (Green: IN, Red: OUT)
+             - Category: Shows affected inventory category
+             - Three-column layout: Current → Change → New
+          
+          4. Visual Enhancements ✅
+             - Amber warning theme for impact summary section
+             - TrendingUp/TrendingDown icons for change indicators
+             - Color-coded values (Green: increases, Red: decreases, Blue: new values)
+             - Red warning banner about irreversible action
+             - AlertTriangle icons for emphasis
+          
+          5. Validation & Safety ✅
+             - Form validation before showing confirmation
+             - Required: category, description, weight
+             - Mandatory reason field in confirmation
+             - Clear Cancel option to abort
+             - Amber-themed Confirm button for caution
+          
+          Technical Implementation:
+          - Split handleAddMovement into validation + confirmation
+          - Added handleConfirmMovement for actual submission
+          - Integrated Textarea component for reason field
+          - Added lucide-react icons: AlertTriangle, TrendingUp, TrendingDown
+          - Impact calculations based on stockTotals state
+          - Reason format: "{notes} | Reason: {reason}"
+          
+          User Flow:
+          1. Fill movement form → 2. Click Save → 3. Validate form
+          4. Show confirmation with impact → 5. Enter reason
+          6. Confirm → 7. Submit movement → 8. Reload data
+          
+          Frontend compiled successfully. Services running.
+          Ready for testing all confirmation flows.
+
+
   - task: "Party Management UI"
     implemented: true
     working: "needs_testing"
