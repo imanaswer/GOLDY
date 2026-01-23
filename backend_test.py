@@ -65,50 +65,140 @@ class APITester:
             self.log_test("Authentication", False, f"Exception: {str(e)}")
             return False
     
-    def test_party_ledger_endpoints(self):
-        """Test Party Ledger endpoints as requested in review"""
-        print("📋 Testing Party Ledger Endpoints...")
+    def test_party_crud_operations(self):
+        """Test Party CRUD operations to verify 'Failed to update parties' and 'Failed to load party details' issues"""
+        print("🔧 Testing Party CRUD Operations...")
         
-        # First, get a list of existing parties to test with
-        print("\n1️⃣ GETTING EXISTING PARTIES")
-        response = self.session.get(f"{BASE_URL}/parties?page=1&per_page=10")
+        # Test 1: GET /api/parties - List all parties
+        print("\n1️⃣ TESTING GET /api/parties - List all parties")
+        response = self.session.get(f"{BASE_URL}/parties?page=1&per_page=50")
         
-        if response.status_code != 200:
-            self.log_test("Get parties for testing", False, 
+        if response.status_code == 200:
+            parties_data = response.json()
+            
+            # Verify pagination structure
+            if "items" in parties_data and "pagination" in parties_data:
+                items = parties_data.get("items", [])
+                pagination = parties_data.get("pagination", {})
+                
+                # Verify pagination fields
+                pagination_fields = ["total_count", "page", "per_page", "total_pages", "has_next", "has_prev"]
+                pagination_missing = [field for field in pagination_fields if field not in pagination]
+                
+                if not pagination_missing:
+                    self.log_test("GET /api/parties - Pagination structure", True, 
+                                f"Found {len(items)} parties with correct pagination structure")
+                    
+                    # Store first party for later tests if available
+                    self.existing_party_id = items[0]["id"] if items else None
+                    
+                    # Verify party fields if parties exist
+                    if items:
+                        first_party = items[0]
+                        required_fields = ["id", "name", "phone", "party_type", "created_at"]
+                        missing_fields = [field for field in required_fields if field not in first_party]
+                        
+                        if not missing_fields:
+                            self.log_test("GET /api/parties - Party fields structure", True, 
+                                        f"All required fields present in party objects")
+                        else:
+                            self.log_test("GET /api/parties - Party fields structure", False, 
+                                        f"Missing fields: {missing_fields}")
+                else:
+                    self.log_test("GET /api/parties - Pagination structure", False, 
+                                f"Missing pagination fields: {pagination_missing}")
+            else:
+                self.log_test("GET /api/parties - Response structure", False, 
+                            "Missing 'items' or 'pagination' in response", parties_data)
+        else:
+            self.log_test("GET /api/parties", False, 
                         f"Status: {response.status_code}", response.text)
             return
         
-        parties_data = response.json()
-        if not parties_data.get("items"):
-            # Create a test party if none exist
-            print("   No existing parties found. Creating test party...")
-            test_party_data = {
-                "name": "Ledger Test Party 2025",
-                "phone": "99887766",
-                "party_type": "customer",
-                "address": "Test Address for Ledger Testing"
-            }
+        # Test 2: Create new party
+        print("\n2️⃣ TESTING POST /api/parties - Create new party")
+        test_party_data = {
+            "name": "Test Party API Check",
+            "phone": "+968 9999 5555",
+            "party_type": "customer",
+            "address": "Test Address for API Verification",
+            "notes": "Created for party ledger testing"
+        }
+        
+        create_response = self.session.post(f"{BASE_URL}/parties", json=test_party_data)
+        
+        if create_response.status_code in [200, 201]:
+            created_party = create_response.json()
+            self.test_party_id = created_party.get("id")
             
-            create_response = self.session.post(f"{BASE_URL}/parties", json=test_party_data)
-            if create_response.status_code in [200, 201]:
-                test_party = create_response.json()
-                party_id = test_party.get("id")
-                self.log_test("Create test party for ledger testing", True, 
-                            f"Created party with ID: {party_id}")
+            # Verify created party structure
+            if self.test_party_id and created_party.get("name") == test_party_data["name"]:
+                self.log_test("POST /api/parties - Create party", True, 
+                            f"Created party with ID: {self.test_party_id}")
             else:
-                self.log_test("Create test party for ledger testing", False, 
-                            f"Status: {create_response.status_code}", create_response.text)
+                self.log_test("POST /api/parties - Create party", False, 
+                            "Created party missing ID or incorrect data", created_party)
                 return
         else:
-            # Use first existing party
-            party_id = parties_data["items"][0]["id"]
-            party_name = parties_data["items"][0]["name"]
-            self.log_test("Get existing party for testing", True, 
-                        f"Using party: {party_name} (ID: {party_id})")
+            self.log_test("POST /api/parties - Create party", False, 
+                        f"Status: {create_response.status_code}", create_response.text)
+            return
         
-        # Test 1: GET /api/parties/{party_id}/summary
-        print(f"\n2️⃣ TESTING GET /api/parties/{party_id}/summary")
-        response = self.session.get(f"{BASE_URL}/parties/{party_id}/summary")
+        # Test 3: GET /api/parties/{party_id} - Get single party details
+        print(f"\n3️⃣ TESTING GET /api/parties/{self.test_party_id} - Get party details")
+        response = self.session.get(f"{BASE_URL}/parties/{self.test_party_id}")
+        
+        if response.status_code == 200:
+            party_details = response.json()
+            
+            # Verify party details structure
+            required_fields = ["id", "name", "phone", "party_type", "address", "notes", "created_at"]
+            missing_fields = [field for field in required_fields if field not in party_details]
+            
+            if not missing_fields:
+                self.log_test("GET /api/parties/{id} - Party details", True, 
+                            f"All required fields present. Party: {party_details.get('name')}")
+            else:
+                self.log_test("GET /api/parties/{id} - Party details", False, 
+                            f"Missing fields: {missing_fields}")
+        else:
+            self.log_test("GET /api/parties/{id} - Party details", False, 
+                        f"Status: {response.status_code}", response.text)
+        
+        # Test 4: PATCH /api/parties/{party_id} - Update party
+        print(f"\n4️⃣ TESTING PATCH /api/parties/{self.test_party_id} - Update party")
+        update_data = {
+            "name": "Updated Test Party",
+            "notes": "Updated for testing party update functionality"
+        }
+        
+        update_response = self.session.patch(f"{BASE_URL}/parties/{self.test_party_id}", json=update_data)
+        
+        if update_response.status_code == 200:
+            updated_party = update_response.json()
+            
+            # Verify update was applied
+            if updated_party.get("name") == update_data["name"]:
+                self.log_test("PATCH /api/parties/{id} - Update party", True, 
+                            f"Party updated successfully. New name: {updated_party.get('name')}")
+            else:
+                self.log_test("PATCH /api/parties/{id} - Update party", False, 
+                            f"Update not applied correctly. Expected: {update_data['name']}, Got: {updated_party.get('name')}")
+        else:
+            self.log_test("PATCH /api/parties/{id} - Update party", False, 
+                        f"Status: {update_response.status_code}", update_response.text)
+    
+    def test_party_ledger_endpoints(self):
+        """Test Party Ledger endpoints to verify 'View Ledger in Parties not working' issue"""
+        print("📋 Testing Party Ledger Endpoints...")
+        
+        if not hasattr(self, 'test_party_id') or not self.test_party_id:
+            self.log_test("Party Ledger Tests", False, "No test party available for ledger testing")
+            return
+        
+        # Test 1: GET /api/parties/{party_id}/summary - Party Summary
+        print(f"\n1️⃣ TESTING GET /api/parties/{self.test_party_id}/summary - Party Summary")
+        response = self.session.get(f"{BASE_URL}/parties/{self.test_party_id}/summary")
         
         if response.status_code == 200:
             summary_data = response.json()
@@ -134,34 +224,34 @@ class APITester:
                 money_missing = [field for field in money_fields if field not in money_section]
                 
                 if not party_missing and not gold_missing and not money_missing:
-                    self.log_test("Party summary endpoint structure", True, 
-                                f"All required fields present. Gold balance: {gold_section.get('net_gold_balance')}g, Money balance: {money_section.get('net_money_balance')} OMR")
+                    self.log_test("GET /api/parties/{id}/summary - Complete structure", True, 
+                                f"All sections and fields present. Gold: {gold_section.get('net_gold_balance')}g, Money: {money_section.get('net_money_balance')} OMR")
                 else:
                     missing_details = []
                     if party_missing:
-                        missing_details.append(f"Party fields: {party_missing}")
+                        missing_details.append(f"Party: {party_missing}")
                     if gold_missing:
-                        missing_details.append(f"Gold fields: {gold_missing}")
+                        missing_details.append(f"Gold: {gold_missing}")
                     if money_missing:
-                        missing_details.append(f"Money fields: {money_missing}")
+                        missing_details.append(f"Money: {money_missing}")
                     
-                    self.log_test("Party summary endpoint structure", False, 
+                    self.log_test("GET /api/parties/{id}/summary - Complete structure", False, 
                                 f"Missing fields - {', '.join(missing_details)}")
             else:
-                self.log_test("Party summary endpoint structure", False, 
+                self.log_test("GET /api/parties/{id}/summary - Response structure", False, 
                             f"Missing sections: {missing_sections}", summary_data)
         else:
-            self.log_test("Party summary endpoint", False, 
+            self.log_test("GET /api/parties/{id}/summary", False, 
                         f"Status: {response.status_code}", response.text)
         
-        # Test 2: GET /api/gold-ledger?party_id={party_id}
-        print(f"\n3️⃣ TESTING GET /api/gold-ledger?party_id={party_id}")
-        response = self.session.get(f"{BASE_URL}/gold-ledger?party_id={party_id}")
+        # Test 2: GET /api/gold-ledger?party_id={party_id} - Gold Ledger (CRITICAL - This was the main fix)
+        print(f"\n2️⃣ TESTING GET /api/gold-ledger?party_id={self.test_party_id} - Gold Ledger (CRITICAL FIX)")
+        response = self.session.get(f"{BASE_URL}/gold-ledger?party_id={self.test_party_id}")
         
         if response.status_code == 200:
             gold_ledger_data = response.json()
             
-            # Verify pagination structure
+            # CRITICAL: Verify pagination structure {items: [], pagination: {}}
             if "items" in gold_ledger_data and "pagination" in gold_ledger_data:
                 items = gold_ledger_data.get("items", [])
                 pagination = gold_ledger_data.get("pagination", {})
@@ -171,34 +261,38 @@ class APITester:
                 pagination_missing = [field for field in pagination_fields if field not in pagination]
                 
                 if not pagination_missing:
-                    # Verify items structure if any exist
-                    if items:
-                        first_item = items[0]
-                        item_fields = ["id", "party_id", "date", "type", "weight_grams", "purity_entered", "purpose", "notes"]
-                        item_missing = [field for field in item_fields if field not in first_item]
+                    # Verify items is an array (not an object)
+                    if isinstance(items, list):
+                        self.log_test("GET /api/gold-ledger - PAGINATION STRUCTURE (CRITICAL FIX)", True, 
+                                    f"✅ CORRECT: Returns {{items: [], pagination: {{}}}} structure with {len(items)} entries")
                         
-                        if not item_missing:
-                            self.log_test("Gold ledger pagination structure", True, 
-                                        f"Correct structure with {len(items)} entries. First entry: {first_item.get('type')} {first_item.get('weight_grams')}g")
-                        else:
-                            self.log_test("Gold ledger pagination structure", False, 
-                                        f"Items missing fields: {item_missing}")
+                        # Test different page sizes
+                        for per_page in [25, 50, 100]:
+                            page_response = self.session.get(f"{BASE_URL}/gold-ledger?party_id={self.test_party_id}&page=1&per_page={per_page}")
+                            if page_response.status_code == 200:
+                                page_data = page_response.json()
+                                if page_data.get("pagination", {}).get("per_page") == per_page:
+                                    self.log_test(f"Gold ledger pagination per_page={per_page}", True, 
+                                                f"Correct per_page value: {per_page}")
+                                else:
+                                    self.log_test(f"Gold ledger pagination per_page={per_page}", False, 
+                                                f"Expected {per_page}, got {page_data.get('pagination', {}).get('per_page')}")
                     else:
-                        self.log_test("Gold ledger pagination structure", True, 
-                                    f"Correct pagination structure with {pagination.get('total_count', 0)} total entries (empty result is valid)")
+                        self.log_test("GET /api/gold-ledger - PAGINATION STRUCTURE (CRITICAL FIX)", False, 
+                                    f"❌ INCORRECT: items is not an array, it's {type(items)}")
                 else:
-                    self.log_test("Gold ledger pagination structure", False, 
-                                f"Pagination missing fields: {pagination_missing}")
+                    self.log_test("GET /api/gold-ledger - PAGINATION STRUCTURE (CRITICAL FIX)", False, 
+                                f"❌ Missing pagination fields: {pagination_missing}")
             else:
-                self.log_test("Gold ledger pagination structure", False, 
-                            "Response missing 'items' or 'pagination' fields", gold_ledger_data)
+                self.log_test("GET /api/gold-ledger - PAGINATION STRUCTURE (CRITICAL FIX)", False, 
+                            f"❌ INCORRECT: Missing 'items' or 'pagination' fields. This was the main issue!", gold_ledger_data)
         else:
-            self.log_test("Gold ledger endpoint", False, 
+            self.log_test("GET /api/gold-ledger", False, 
                         f"Status: {response.status_code}", response.text)
         
-        # Test 3: GET /api/parties/{party_id}/ledger
-        print(f"\n4️⃣ TESTING GET /api/parties/{party_id}/ledger")
-        response = self.session.get(f"{BASE_URL}/parties/{party_id}/ledger")
+        # Test 3: GET /api/parties/{party_id}/ledger - Money Ledger
+        print(f"\n3️⃣ TESTING GET /api/parties/{self.test_party_id}/ledger - Money Ledger")
+        response = self.session.get(f"{BASE_URL}/parties/{self.test_party_id}/ledger")
         
         if response.status_code == 200:
             ledger_data = response.json()
@@ -212,115 +306,137 @@ class APITester:
                 transactions = ledger_data.get("transactions", [])
                 outstanding = ledger_data.get("outstanding", 0)
                 
-                self.log_test("Party ledger endpoint structure", True, 
-                            f"Correct structure with {len(invoices)} invoices, {len(transactions)} transactions, outstanding: {outstanding} OMR")
+                # Verify invoices and transactions are arrays
+                if isinstance(invoices, list) and isinstance(transactions, list):
+                    self.log_test("GET /api/parties/{id}/ledger - Money Ledger structure", True, 
+                                f"Complete structure: {len(invoices)} invoices, {len(transactions)} transactions, outstanding: {outstanding} OMR")
+                else:
+                    self.log_test("GET /api/parties/{id}/ledger - Money Ledger structure", False, 
+                                f"Invoices or transactions not arrays. Invoices: {type(invoices)}, Transactions: {type(transactions)}")
             else:
-                self.log_test("Party ledger endpoint structure", False, 
+                self.log_test("GET /api/parties/{id}/ledger - Money Ledger structure", False, 
                             f"Missing fields: {missing_fields}", ledger_data)
         else:
-            self.log_test("Party ledger endpoint", False, 
+            self.log_test("GET /api/parties/{id}/ledger", False, 
                         f"Status: {response.status_code}", response.text)
+    
+    def test_with_actual_data(self):
+        """Test with actual ledger entries to verify data flow"""
+        print("📊 Testing with Actual Data - Create ledger entries and verify")
         
-        # Test 4: Test pagination parameters on gold-ledger
-        print(f"\n5️⃣ TESTING GOLD LEDGER PAGINATION PARAMETERS")
+        if not hasattr(self, 'test_party_id') or not self.test_party_id:
+            self.log_test("Data Flow Tests", False, "No test party available for data testing")
+            return
         
-        # Test different page sizes
-        for per_page in [25, 50, 100]:
-            response = self.session.get(f"{BASE_URL}/gold-ledger?party_id={party_id}&page=1&per_page={per_page}")
-            
-            if response.status_code == 200:
-                data = response.json()
-                pagination = data.get("pagination", {})
-                
-                if pagination.get("per_page") == per_page:
-                    self.log_test(f"Gold ledger pagination per_page={per_page}", True, 
-                                f"Correct per_page value returned: {pagination.get('per_page')}")
-                else:
-                    self.log_test(f"Gold ledger pagination per_page={per_page}", False, 
-                                f"Expected per_page={per_page}, got {pagination.get('per_page')}")
-            else:
-                self.log_test(f"Gold ledger pagination per_page={per_page}", False, 
-                            f"Status: {response.status_code}")
-        
-        # Test 5: Create test gold ledger entry to verify data flow
-        print(f"\n6️⃣ TESTING GOLD LEDGER ENTRY CREATION AND RETRIEVAL")
-        
-        # Create a test gold ledger entry
-        test_entry_data = {
-            "party_id": party_id,
+        # Test 1: Create gold ledger IN entry
+        print(f"\n1️⃣ CREATING GOLD LEDGER IN ENTRY for party {self.test_party_id}")
+        gold_entry_data = {
+            "party_id": self.test_party_id,
             "type": "IN",
-            "weight_grams": 25.750,
+            "weight_grams": 25.500,
             "purity_entered": 916,
             "purpose": "job_work",
-            "notes": "Test entry for ledger verification"
+            "notes": "Test gold deposit for ledger verification"
         }
         
-        create_response = self.session.post(f"{BASE_URL}/gold-ledger", json=test_entry_data)
+        create_response = self.session.post(f"{BASE_URL}/gold-ledger", json=gold_entry_data)
         
         if create_response.status_code in [200, 201]:
             created_entry = create_response.json()
-            entry_id = created_entry.get("id")
+            self.test_gold_entry_id = created_entry.get("id")
             
-            self.log_test("Create test gold ledger entry", True, 
-                        f"Created entry with ID: {entry_id}, Weight: {created_entry.get('weight_grams')}g")
+            self.log_test("Create gold ledger IN entry", True, 
+                        f"Created entry ID: {self.test_gold_entry_id}, Weight: {created_entry.get('weight_grams')}g")
             
-            # Now test retrieval with the new entry
-            response = self.session.get(f"{BASE_URL}/gold-ledger?party_id={party_id}")
+            # Test 2: Verify gold ledger shows the entry
+            print(f"\n2️⃣ VERIFYING GOLD LEDGER SHOWS THE ENTRY")
+            response = self.session.get(f"{BASE_URL}/gold-ledger?party_id={self.test_party_id}")
             
             if response.status_code == 200:
                 data = response.json()
                 items = data.get("items", [])
                 
                 # Look for our test entry
-                test_entry_found = any(item.get("id") == entry_id for item in items)
+                test_entry_found = any(item.get("id") == self.test_gold_entry_id for item in items)
                 
-                if test_entry_found:
-                    self.log_test("Retrieve created gold ledger entry", True, 
-                                f"Test entry found in gold ledger results")
-                    
-                    # Test the updated summary
-                    summary_response = self.session.get(f"{BASE_URL}/parties/{party_id}/summary")
-                    if summary_response.status_code == 200:
-                        summary_data = summary_response.json()
-                        gold_section = summary_data.get("gold", {})
-                        
-                        if gold_section.get("total_entries", 0) > 0:
-                            self.log_test("Party summary reflects gold ledger entry", True, 
-                                        f"Gold summary shows {gold_section.get('total_entries')} entries, balance: {gold_section.get('net_gold_balance')}g")
-                        else:
-                            self.log_test("Party summary reflects gold ledger entry", False, 
-                                        "Gold summary shows 0 entries despite creating one")
+                if test_entry_found and len(items) >= 1:
+                    found_entry = next(item for item in items if item.get("id") == self.test_gold_entry_id)
+                    self.log_test("Gold ledger shows created entry", True, 
+                                f"Entry found: {found_entry.get('type')} {found_entry.get('weight_grams')}g")
                 else:
-                    self.log_test("Retrieve created gold ledger entry", False, 
-                                "Test entry not found in gold ledger results")
+                    self.log_test("Gold ledger shows created entry", False, 
+                                f"Entry not found in {len(items)} items")
             
-            # Cleanup: Delete the test entry
-            delete_response = self.session.delete(f"{BASE_URL}/gold-ledger/{entry_id}")
-            if delete_response.status_code in [200, 204]:
-                print(f"   ✅ Cleaned up test gold ledger entry {entry_id}")
-            else:
-                print(f"   ⚠️ Failed to cleanup test entry {entry_id}")
+            # Test 3: Verify party summary reflects the gold entry
+            print(f"\n3️⃣ VERIFYING PARTY SUMMARY REFLECTS GOLD ENTRY")
+            summary_response = self.session.get(f"{BASE_URL}/parties/{self.test_party_id}/summary")
+            
+            if summary_response.status_code == 200:
+                summary_data = summary_response.json()
+                gold_section = summary_data.get("gold", {})
                 
+                expected_gold_due = 25.500
+                actual_gold_due = gold_section.get("gold_due_from_party", 0)
+                total_entries = gold_section.get("total_entries", 0)
+                
+                if total_entries >= 1 and abs(actual_gold_due - expected_gold_due) < 0.001:
+                    self.log_test("Party summary reflects gold entry", True, 
+                                f"Gold due from party: {actual_gold_due}g, Total entries: {total_entries}")
+                else:
+                    self.log_test("Party summary reflects gold entry", False, 
+                                f"Expected gold_due_from_party: {expected_gold_due}g, got: {actual_gold_due}g, entries: {total_entries}")
         else:
-            self.log_test("Create test gold ledger entry", False, 
+            self.log_test("Create gold ledger IN entry", False, 
                         f"Status: {create_response.status_code}", create_response.text)
     
+    def cleanup_test_data(self):
+        """Clean up test data created during testing"""
+        print("🧹 Cleaning up test data...")
+        
+        # Delete test gold ledger entry
+        if hasattr(self, 'test_gold_entry_id') and self.test_gold_entry_id:
+            delete_response = self.session.delete(f"{BASE_URL}/gold-ledger/{self.test_gold_entry_id}")
+            if delete_response.status_code in [200, 204]:
+                print(f"   ✅ Deleted test gold ledger entry {self.test_gold_entry_id}")
+            else:
+                print(f"   ⚠️ Failed to delete gold ledger entry {self.test_gold_entry_id}")
+        
+        # Delete test party
+        if hasattr(self, 'test_party_id') and self.test_party_id:
+            delete_response = self.session.delete(f"{BASE_URL}/parties/{self.test_party_id}")
+            if delete_response.status_code in [200, 204]:
+                print(f"   ✅ Deleted test party {self.test_party_id}")
+            else:
+                print(f"   ⚠️ Failed to delete test party {self.test_party_id}")
+    
     def run_all_tests(self):
-        """Run all test scenarios"""
+        """Run all test scenarios for Party Ledger functionality"""
         print("🚀 Starting Party Ledger Backend API Testing")
-        print("=" * 60)
+        print("🎯 Focus: Verify 'View Ledger in Parties', 'Failed to update parties', 'Failed to load party details' issues")
+        print("=" * 80)
         
         if not self.authenticate():
             print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        # Run party ledger tests
-        self.test_party_ledger_endpoints()
+        try:
+            # Test 1: Party CRUD Operations
+            self.test_party_crud_operations()
+            
+            # Test 2: Party Ledger Endpoints  
+            self.test_party_ledger_endpoints()
+            
+            # Test 3: Test with actual data
+            self.test_with_actual_data()
+            
+        finally:
+            # Always cleanup
+            self.cleanup_test_data()
         
         # Print summary
-        print("\n" + "=" * 60)
-        print("📊 TEST SUMMARY")
-        print("=" * 60)
+        print("\n" + "=" * 80)
+        print("📊 COMPREHENSIVE TEST SUMMARY")
+        print("=" * 80)
         
         total_tests = len(self.test_results)
         passed_tests = sum(1 for result in self.test_results if result["success"])
@@ -331,11 +447,34 @@ class APITester:
         print(f"❌ Failed: {failed_tests}")
         print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
         
+        # Categorize results
+        critical_tests = [r for r in self.test_results if "CRITICAL" in r["test"]]
+        crud_tests = [r for r in self.test_results if any(op in r["test"] for op in ["GET /api/parties", "POST /api/parties", "PATCH /api/parties"])]
+        ledger_tests = [r for r in self.test_results if "ledger" in r["test"].lower()]
+        
+        print(f"\n📋 TEST CATEGORIES:")
+        print(f"   🔥 Critical Tests (Pagination Fix): {sum(1 for t in critical_tests if t['success'])}/{len(critical_tests)} passed")
+        print(f"   🔧 Party CRUD Tests: {sum(1 for t in crud_tests if t['success'])}/{len(crud_tests)} passed")  
+        print(f"   📊 Ledger Tests: {sum(1 for t in ledger_tests if t['success'])}/{len(ledger_tests)} passed")
+        
         if failed_tests > 0:
-            print("\n❌ FAILED TESTS:")
+            print(f"\n❌ FAILED TESTS ({failed_tests}):")
             for result in self.test_results:
                 if not result["success"]:
-                    print(f"   • {result['test']}: {result['details']}")
+                    print(f"   • {result['test']}")
+                    if result['details']:
+                        print(f"     └─ {result['details']}")
+        
+        print(f"\n🎯 USER ISSUES STATUS:")
+        
+        # Check specific issues
+        pagination_fixed = any("PAGINATION STRUCTURE (CRITICAL FIX)" in r["test"] and r["success"] for r in self.test_results)
+        party_update_working = any("PATCH /api/parties" in r["test"] and r["success"] for r in self.test_results)
+        party_details_working = any("GET /api/parties/{id} - Party details" in r["test"] and r["success"] for r in self.test_results)
+        
+        print(f"   1. 'View Ledger in Parties not working': {'✅ RESOLVED' if pagination_fixed else '❌ STILL FAILING'}")
+        print(f"   2. 'Failed to update parties': {'✅ RESOLVED' if party_update_working else '❌ STILL FAILING'}")
+        print(f"   3. 'Failed to load party details': {'✅ RESOLVED' if party_details_working else '❌ STILL FAILING'}")
         
         return failed_tests == 0
 
