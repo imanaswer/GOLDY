@@ -1583,6 +1583,9 @@ async def get_purchases(
     # Get paginated results
     purchases = await db.purchases.find(query).sort("date", -1).skip(skip).limit(per_page).to_list(per_page)
     
+    # CRITICAL FIX: Process purchases through decimal_to_float to handle Decimal serialization
+    purchases = [decimal_to_float(p) for p in purchases]
+    
     return create_pagination_response(purchases, total_count, page, per_page)
 
 @api_router.patch("/purchases/{purchase_id}")
