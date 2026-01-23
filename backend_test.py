@@ -1,401 +1,329 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend Testing for Pagination Endpoints
-Testing all 7 pagination endpoints that were previously returning 520 errors
+Comprehensive Backend API Testing Suite
+Tests duplicate phone number validation in parties API endpoints
 """
 
 import requests
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 
-# Backend URL from environment
-BACKEND_URL = "https://unique-phone-check.preview.emergentagent.com/api"
+# Configuration
+BASE_URL = "https://unique-phone-check.preview.emergentagent.com/api"
+USERNAME = "admin"
+PASSWORD = "admin123"
 
-# Test credentials
-TEST_USERNAME = "admin"
-TEST_PASSWORD = "admin123"
-
-class PaginationTester:
+class APITester:
     def __init__(self):
+        self.session = requests.Session()
         self.token = None
-        self.headers = {}
         self.test_results = []
         
+    def log_test(self, test_name, success, details="", response_data=None):
+        """Log test results"""
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} {test_name}")
+        if details:
+            print(f"   Details: {details}")
+        if response_data and not success:
+            print(f"   Response: {response_data}")
+        print()
+        
+        self.test_results.append({
+            "test": test_name,
+            "success": success,
+            "details": details,
+            "response": response_data
+        })
+    
     def authenticate(self):
         """Authenticate and get JWT token"""
         print("🔐 Authenticating...")
-        
-        login_data = {
-            "username": TEST_USERNAME,
-            "password": TEST_PASSWORD
-        }
-        
         try:
-            response = requests.post(f"{BACKEND_URL}/auth/login", json=login_data)
+            response = self.session.post(f"{BASE_URL}/auth/login", json={
+                "username": USERNAME,
+                "password": PASSWORD
+            })
+            
             if response.status_code == 200:
                 data = response.json()
-                self.token = data["access_token"]
-                self.headers = {"Authorization": f"Bearer {self.token}"}
-                print(f"✅ Authentication successful - User: {data['user']['full_name']}")
+                self.token = data.get("access_token")
+                self.session.headers.update({"Authorization": f"Bearer {self.token}"})
+                self.log_test("Authentication", True, f"Logged in as {USERNAME}")
                 return True
             else:
-                print(f"❌ Authentication failed: {response.status_code} - {response.text}")
+                self.log_test("Authentication", False, f"Status: {response.status_code}", response.text)
                 return False
+                
         except Exception as e:
-            print(f"❌ Authentication error: {str(e)}")
+            self.log_test("Authentication", False, f"Exception: {str(e)}")
             return False
     
-    def test_pagination_endpoint(self, endpoint_name, url, test_params=None):
-        """Test a single pagination endpoint with comprehensive checks"""
-        print(f"\n📊 Testing {endpoint_name}")
-        print(f"URL: {url}")
+    def test_duplicate_phone_validation(self):
+        """Test all duplicate phone number validation scenarios"""
+        print("📱 Testing Duplicate Phone Number Validation...")
         
-        if test_params is None:
-            test_params = [
-                {"page": 1, "per_page": 50},
-                {"page": 1, "per_page": 25},
-                {"page": 1, "per_page": 100},
-                {"page": 2, "per_page": 50}
-            ]
-        
-        endpoint_results = {
-            "endpoint": endpoint_name,
-            "url": url,
-            "tests": [],
-            "overall_status": "PASS"
-        }
-        
-        for params in test_params:
-            test_result = self._test_single_request(endpoint_name, url, params)
-            endpoint_results["tests"].append(test_result)
-            
-            if test_result["status"] != "PASS":
-                endpoint_results["overall_status"] = "FAIL"
-        
-        self.test_results.append(endpoint_results)
-        return endpoint_results
-    
-    def _test_single_request(self, endpoint_name, url, params):
-        """Test a single request with specific parameters"""
-        print(f"  🔍 Testing with params: {params}")
-        
-        test_result = {
-            "params": params,
-            "status": "FAIL",
-            "status_code": None,
-            "response_structure": {},
-            "pagination_metadata": {},
-            "errors": []
-        }
+        # Store party IDs for cleanup
+        created_parties = []
         
         try:
-            response = requests.get(url, params=params, headers=self.headers)
-            test_result["status_code"] = response.status_code
-            
-            # Check status code
-            if response.status_code != 200:
-                test_result["errors"].append(f"Expected 200, got {response.status_code}")
-                print(f"    ❌ Status Code: {response.status_code}")
-                if response.status_code == 520:
-                    print(f"    🚨 CRITICAL: Still getting 520 Internal Server Error!")
-                return test_result
-            
-            # Parse JSON response
-            try:
-                data = response.json()
-            except json.JSONDecodeError as e:
-                test_result["errors"].append(f"Invalid JSON response: {str(e)}")
-                print(f"    ❌ Invalid JSON response")
-                return test_result
-            
-            # Check response structure
-            if not isinstance(data, dict):
-                test_result["errors"].append("Response is not a dictionary")
-                print(f"    ❌ Response is not a dictionary")
-                return test_result
-            
-            # Check required top-level keys
-            required_keys = ["items", "pagination"]
-            missing_keys = [key for key in required_keys if key not in data]
-            if missing_keys:
-                test_result["errors"].append(f"Missing required keys: {missing_keys}")
-                print(f"    ❌ Missing keys: {missing_keys}")
-                return test_result
-            
-            # Check items array
-            items = data.get("items", [])
-            if not isinstance(items, list):
-                test_result["errors"].append("'items' is not a list")
-                print(f"    ❌ 'items' is not a list")
-                return test_result
-            
-            test_result["response_structure"]["items_count"] = len(items)
-            test_result["response_structure"]["items_type"] = "list"
-            
-            # Check pagination metadata
-            pagination = data.get("pagination", {})
-            if not isinstance(pagination, dict):
-                test_result["errors"].append("'pagination' is not a dictionary")
-                print(f"    ❌ 'pagination' is not a dictionary")
-                return test_result
-            
-            # Check required pagination fields
-            required_pagination_fields = [
-                "total_count", "page", "per_page", "total_pages", "has_next", "has_prev"
-            ]
-            missing_pagination_fields = [field for field in required_pagination_fields if field not in pagination]
-            if missing_pagination_fields:
-                test_result["errors"].append(f"Missing pagination fields: {missing_pagination_fields}")
-                print(f"    ❌ Missing pagination fields: {missing_pagination_fields}")
-                return test_result
-            
-            # Validate pagination values
-            total_count = pagination.get("total_count", 0)
-            page = pagination.get("page", 0)
-            per_page = pagination.get("per_page", 0)
-            total_pages = pagination.get("total_pages", 0)
-            has_next = pagination.get("has_next", False)
-            has_prev = pagination.get("has_prev", False)
-            
-            test_result["pagination_metadata"] = {
-                "total_count": total_count,
-                "page": page,
-                "per_page": per_page,
-                "total_pages": total_pages,
-                "has_next": has_next,
-                "has_prev": has_prev
+            # Test 1: Create Party with Phone (Baseline)
+            print("\n1️⃣ BASELINE - Create Party with Phone")
+            party_a_data = {
+                "name": "Test Party A",
+                "phone": "12345678",
+                "party_type": "customer"
             }
             
-            # Validate pagination calculations
-            expected_total_pages = (total_count + per_page - 1) // per_page if per_page > 0 else 0
-            if total_pages != expected_total_pages:
-                test_result["errors"].append(f"Incorrect total_pages calculation: expected {expected_total_pages}, got {total_pages}")
-            
-            # Validate has_next and has_prev
-            expected_has_next = page < total_pages
-            expected_has_prev = page > 1
-            
-            if has_next != expected_has_next:
-                test_result["errors"].append(f"Incorrect has_next: expected {expected_has_next}, got {has_next}")
-            
-            if has_prev != expected_has_prev:
-                test_result["errors"].append(f"Incorrect has_prev: expected {expected_has_prev}, got {has_prev}")
-            
-            # Validate items count for current page
-            expected_items_count = min(per_page, max(0, total_count - (page - 1) * per_page))
-            if len(items) != expected_items_count and total_count > 0:
-                # Allow for empty results when no data exists
-                if not (total_count == 0 and len(items) == 0):
-                    test_result["errors"].append(f"Incorrect items count: expected {expected_items_count}, got {len(items)}")
-            
-            # If no errors, mark as PASS
-            if not test_result["errors"]:
-                test_result["status"] = "PASS"
-                print(f"    ✅ PASS - Items: {len(items)}, Total: {total_count}, Page: {page}/{total_pages}")
+            response = self.session.post(f"{BASE_URL}/parties", json=party_a_data)
+            if response.status_code in [200, 201]:
+                party_a = response.json()
+                party_a_id = party_a.get("id")
+                created_parties.append(party_a_id)
+                self.log_test("Create Party A with phone 12345678", True, 
+                            f"Party created with ID: {party_a_id}")
             else:
-                print(f"    ❌ FAIL - Errors: {test_result['errors']}")
+                self.log_test("Create Party A with phone 12345678", False, 
+                            f"Status: {response.status_code}", response.text)
+                return
             
-        except requests.exceptions.RequestException as e:
-            test_result["errors"].append(f"Request error: {str(e)}")
-            print(f"    ❌ Request error: {str(e)}")
-        except Exception as e:
-            test_result["errors"].append(f"Unexpected error: {str(e)}")
-            print(f"    ❌ Unexpected error: {str(e)}")
-        
-        return test_result
-    
-    def create_test_data(self):
-        """Create minimal test data if needed"""
-        print("\n📝 Creating test data if needed...")
-        
-        # Create a test party for data population
-        party_data = {
-            "name": "Pagination Test Party",
-            "phone": "99999999",
-            "address": "Test Address",
-            "party_type": "customer",
-            "notes": "Created for pagination testing"
-        }
-        
-        try:
-            response = requests.post(f"{BACKEND_URL}/parties", json=party_data, headers=self.headers)
+            # Test 2: Duplicate Phone Test (Create) - Should Fail
+            print("\n2️⃣ DUPLICATE PHONE TEST (Create)")
+            party_b_data = {
+                "name": "Test Party B", 
+                "phone": "12345678",
+                "party_type": "customer"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/parties", json=party_b_data)
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", "")
+                if "Test Party A" in error_msg and "12345678" in error_msg:
+                    self.log_test("Duplicate phone validation (CREATE)", True, 
+                                f"Correctly blocked duplicate phone. Error: {error_msg}")
+                else:
+                    self.log_test("Duplicate phone validation (CREATE)", False, 
+                                f"Error message doesn't include existing party name: {error_msg}")
+            else:
+                self.log_test("Duplicate phone validation (CREATE)", False, 
+                            f"Expected 400 error, got {response.status_code}", response.text)
+            
+            # Test 3: Unique Phone Test - Should Succeed
+            print("\n3️⃣ UNIQUE PHONE TEST")
+            party_c_data = {
+                "name": "Test Party C",
+                "phone": "87654321", 
+                "party_type": "customer"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/parties", json=party_c_data)
+            if response.status_code in [200, 201]:
+                party_c = response.json()
+                party_c_id = party_c.get("id")
+                created_parties.append(party_c_id)
+                self.log_test("Create Party C with unique phone 87654321", True,
+                            f"Party created with ID: {party_c_id}")
+            else:
+                self.log_test("Create Party C with unique phone 87654321", False,
+                            f"Status: {response.status_code}", response.text)
+                return
+            
+            # Test 4: Duplicate Name with Unique Phone - Should Succeed
+            print("\n4️⃣ DUPLICATE NAME WITH UNIQUE PHONE (Should Succeed)")
+            party_d_data = {
+                "name": "Test Party A",  # Same name as Party A
+                "phone": "99999999",     # Different phone
+                "party_type": "vendor"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/parties", json=party_d_data)
+            if response.status_code in [200, 201]:
+                party_d = response.json()
+                party_d_id = party_d.get("id")
+                created_parties.append(party_d_id)
+                self.log_test("Duplicate name with unique phone", True,
+                            f"Correctly allowed duplicate name. Party ID: {party_d_id}")
+            else:
+                self.log_test("Duplicate name with unique phone", False,
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 5: Update with Duplicate Phone - Should Fail
+            print("\n5️⃣ UPDATE WITH DUPLICATE PHONE (Should Fail)")
+            update_data = {"phone": "12345678"}  # Try to use Party A's phone
+            
+            response = self.session.patch(f"{BASE_URL}/parties/{party_c_id}", json=update_data)
+            if response.status_code == 400:
+                error_msg = response.json().get("detail", "")
+                if "Test Party A" in error_msg and "12345678" in error_msg:
+                    self.log_test("Duplicate phone validation (UPDATE)", True,
+                                f"Correctly blocked duplicate phone update. Error: {error_msg}")
+                else:
+                    self.log_test("Duplicate phone validation (UPDATE)", False,
+                                f"Error message doesn't include existing party name: {error_msg}")
+            else:
+                self.log_test("Duplicate phone validation (UPDATE)", False,
+                            f"Expected 400 error, got {response.status_code}", response.text)
+            
+            # Test 6: Update with Unique Phone - Should Succeed
+            print("\n6️⃣ UPDATE WITH UNIQUE PHONE (Should Succeed)")
+            update_data = {"phone": "11111111"}
+            
+            response = self.session.patch(f"{BASE_URL}/parties/{party_c_id}", json=update_data)
             if response.status_code == 200:
-                party = response.json()
-                print(f"✅ Created test party: {party['name']} (ID: {party['id']})")
-                return party["id"]
+                updated_party = response.json()
+                if updated_party.get("phone") == "11111111":
+                    self.log_test("Update with unique phone", True,
+                                f"Phone successfully updated to 11111111")
+                else:
+                    self.log_test("Update with unique phone", False,
+                                f"Phone not updated correctly: {updated_party.get('phone')}")
             else:
-                print(f"⚠️ Could not create test party: {response.status_code}")
-                return None
-        except Exception as e:
-            print(f"⚠️ Error creating test data: {str(e)}")
-            return None
+                self.log_test("Update with unique phone", False,
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 7: Update Same Phone - Should Succeed
+            print("\n7️⃣ UPDATE SAME PHONE (Should Succeed)")
+            update_data = {"phone": "11111111"}  # Same phone as current
+            
+            response = self.session.patch(f"{BASE_URL}/parties/{party_c_id}", json=update_data)
+            if response.status_code == 200:
+                self.log_test("Update to same phone number", True,
+                            "Correctly allowed updating to own phone number")
+            else:
+                self.log_test("Update to same phone number", False,
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 8: Empty Phone Test - Should Succeed
+            print("\n8️⃣ EMPTY PHONE TEST")
+            party_e_data = {
+                "name": "Party No Phone 1",
+                "phone": "",
+                "party_type": "customer"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/parties", json=party_e_data)
+            if response.status_code in [200, 201]:
+                party_e = response.json()
+                party_e_id = party_e.get("id")
+                created_parties.append(party_e_id)
+                
+                # Create second party with empty phone
+                party_f_data = {
+                    "name": "Party No Phone 2",
+                    "phone": "",
+                    "party_type": "customer"
+                }
+                
+                response2 = self.session.post(f"{BASE_URL}/parties", json=party_f_data)
+                if response2.status_code in [200, 201]:
+                    party_f = response2.json()
+                    party_f_id = party_f.get("id")
+                    created_parties.append(party_f_id)
+                    self.log_test("Multiple parties with empty phone", True,
+                                "Both parties with empty phone created successfully")
+                else:
+                    self.log_test("Multiple parties with empty phone", False,
+                                f"Second party creation failed: {response2.status_code}", response2.text)
+            else:
+                self.log_test("Multiple parties with empty phone", False,
+                            f"First party creation failed: {response.status_code}", response.text)
+            
+            # Test 9: NULL Phone Test - Should Succeed
+            print("\n9️⃣ NULL PHONE TEST")
+            party_g_data = {
+                "name": "Party Null Phone",
+                "party_type": "customer"
+                # No phone field provided (null)
+            }
+            
+            response = self.session.post(f"{BASE_URL}/parties", json=party_g_data)
+            if response.status_code in [200, 201]:
+                party_g = response.json()
+                party_g_id = party_g.get("id")
+                created_parties.append(party_g_id)
+                self.log_test("Party with null phone", True,
+                            f"Party with null phone created successfully. ID: {party_g_id}")
+            else:
+                self.log_test("Party with null phone", False,
+                            f"Status: {response.status_code}", response.text)
+            
+            # Test 10: Error Message Validation
+            print("\n🔟 ERROR MESSAGE VALIDATION")
+            # Try creating another duplicate to verify error message format
+            test_duplicate_data = {
+                "name": "Another Test Party",
+                "phone": "12345678",  # Party A's phone
+                "party_type": "vendor"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/parties", json=test_duplicate_data)
+            if response.status_code == 400:
+                error_detail = response.json().get("detail", "")
+                
+                # Check error message components
+                has_phone = "12345678" in error_detail
+                has_party_name = "Test Party A" in error_detail
+                has_clear_message = "already registered" in error_detail.lower()
+                
+                if has_phone and has_party_name and has_clear_message:
+                    self.log_test("Error message validation", True,
+                                f"Error message contains all required elements: {error_detail}")
+                else:
+                    self.log_test("Error message validation", False,
+                                f"Error message missing elements. Phone: {has_phone}, Name: {has_party_name}, Clear: {has_clear_message}. Message: {error_detail}")
+            else:
+                self.log_test("Error message validation", False,
+                            f"Expected 400 error, got {response.status_code}", response.text)
+            
+        finally:
+            # Cleanup: Delete created parties
+            print("\n🧹 CLEANUP - Deleting test parties...")
+            for party_id in created_parties:
+                try:
+                    response = self.session.delete(f"{BASE_URL}/parties/{party_id}")
+                    if response.status_code in [200, 204]:
+                        print(f"   ✅ Deleted party {party_id}")
+                    else:
+                        print(f"   ⚠️ Failed to delete party {party_id}: {response.status_code}")
+                except Exception as e:
+                    print(f"   ⚠️ Exception deleting party {party_id}: {str(e)}")
     
-    def run_all_pagination_tests(self):
-        """Run tests for all 7 pagination endpoints"""
-        print("🚀 Starting Comprehensive Pagination Endpoint Testing")
-        print("=" * 80)
+    def run_all_tests(self):
+        """Run all test scenarios"""
+        print("🚀 Starting Comprehensive Backend API Testing")
+        print("=" * 60)
         
         if not self.authenticate():
+            print("❌ Authentication failed. Cannot proceed with tests.")
             return False
         
-        # Create test data
-        test_party_id = self.create_test_data()
+        # Run duplicate phone validation tests
+        self.test_duplicate_phone_validation()
         
-        # Define all 7 pagination endpoints to test
-        endpoints = [
-            {
-                "name": "Parties",
-                "url": f"{BACKEND_URL}/parties",
-                "priority": "previously_fixed"
-            },
-            {
-                "name": "Gold Ledger", 
-                "url": f"{BACKEND_URL}/gold-ledger",
-                "priority": "previously_fixed"
-            },
-            {
-                "name": "Purchases",
-                "url": f"{BACKEND_URL}/purchases", 
-                "priority": "previously_fixed"
-            },
-            {
-                "name": "Job Cards",
-                "url": f"{BACKEND_URL}/jobcards",
-                "priority": "newly_fixed"
-            },
-            {
-                "name": "Invoices",
-                "url": f"{BACKEND_URL}/invoices",
-                "priority": "newly_fixed"
-            },
-            {
-                "name": "Transactions",
-                "url": f"{BACKEND_URL}/transactions",
-                "priority": "newly_fixed"
-            },
-            {
-                "name": "Audit Logs",
-                "url": f"{BACKEND_URL}/audit-logs",
-                "priority": "newly_fixed"
-            }
-        ]
+        # Print summary
+        print("\n" + "=" * 60)
+        print("📊 TEST SUMMARY")
+        print("=" * 60)
         
-        print(f"\n📋 Testing {len(endpoints)} pagination endpoints:")
-        for i, endpoint in enumerate(endpoints, 1):
-            print(f"  {i}. {endpoint['name']} ({endpoint['priority']})")
+        total_tests = len(self.test_results)
+        passed_tests = sum(1 for result in self.test_results if result["success"])
+        failed_tests = total_tests - passed_tests
         
-        # Test each endpoint
-        all_passed = True
+        print(f"Total Tests: {total_tests}")
+        print(f"✅ Passed: {passed_tests}")
+        print(f"❌ Failed: {failed_tests}")
+        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
         
-        # Test newly fixed endpoints first (priority)
-        newly_fixed = [ep for ep in endpoints if ep["priority"] == "newly_fixed"]
-        previously_fixed = [ep for ep in endpoints if ep["priority"] == "previously_fixed"]
+        if failed_tests > 0:
+            print("\n❌ FAILED TESTS:")
+            for result in self.test_results:
+                if not result["success"]:
+                    print(f"   • {result['test']}: {result['details']}")
         
-        print(f"\n🎯 PRIORITY: Testing 4 newly fixed endpoints first...")
-        for endpoint in newly_fixed:
-            result = self.test_pagination_endpoint(endpoint["name"], endpoint["url"])
-            if result["overall_status"] != "PASS":
-                all_passed = False
-        
-        print(f"\n🔄 VERIFICATION: Testing 3 previously fixed endpoints...")
-        for endpoint in previously_fixed:
-            result = self.test_pagination_endpoint(endpoint["name"], endpoint["url"])
-            if result["overall_status"] != "PASS":
-                all_passed = False
-        
-        # Print comprehensive summary
-        self.print_comprehensive_summary()
-        
-        return all_passed
-    
-    def print_comprehensive_summary(self):
-        """Print detailed test results summary"""
-        print("\n" + "=" * 80)
-        print("📊 COMPREHENSIVE PAGINATION TESTING RESULTS")
-        print("=" * 80)
-        
-        total_endpoints = len(self.test_results)
-        passed_endpoints = len([r for r in self.test_results if r["overall_status"] == "PASS"])
-        failed_endpoints = total_endpoints - passed_endpoints
-        
-        print(f"\n📈 OVERALL SUMMARY:")
-        print(f"  Total Endpoints Tested: {total_endpoints}")
-        print(f"  ✅ Passed: {passed_endpoints}")
-        print(f"  ❌ Failed: {failed_endpoints}")
-        print(f"  Success Rate: {(passed_endpoints/total_endpoints)*100:.1f}%")
-        
-        # Detailed results by endpoint
-        print(f"\n📋 DETAILED RESULTS:")
-        
-        for result in self.test_results:
-            status_icon = "✅" if result["overall_status"] == "PASS" else "❌"
-            print(f"\n{status_icon} {result['endpoint']}")
-            
-            # Count test cases
-            total_tests = len(result["tests"])
-            passed_tests = len([t for t in result["tests"] if t["status"] == "PASS"])
-            
-            print(f"    Tests: {passed_tests}/{total_tests} passed")
-            
-            # Show failed test details
-            failed_tests = [t for t in result["tests"] if t["status"] == "FAIL"]
-            if failed_tests:
-                print(f"    ❌ Failed Tests:")
-                for test in failed_tests:
-                    print(f"      - Params: {test['params']}")
-                    print(f"        Status Code: {test['status_code']}")
-                    if test["errors"]:
-                        print(f"        Errors: {test['errors']}")
-            else:
-                # Show sample successful test
-                if result["tests"]:
-                    sample_test = result["tests"][0]
-                    if "pagination_metadata" in sample_test:
-                        meta = sample_test["pagination_metadata"]
-                        print(f"    📊 Sample Data: {meta.get('total_count', 0)} total items, {meta.get('total_pages', 0)} pages")
-        
-        # Critical issues summary
-        critical_issues = []
-        for result in self.test_results:
-            if result["overall_status"] == "FAIL":
-                for test in result["tests"]:
-                    if test["status_code"] == 520:
-                        critical_issues.append(f"{result['endpoint']}: Still returning 520 Internal Server Error")
-                    elif test["status_code"] != 200:
-                        critical_issues.append(f"{result['endpoint']}: HTTP {test['status_code']}")
-        
-        if critical_issues:
-            print(f"\n🚨 CRITICAL ISSUES:")
-            for issue in critical_issues:
-                print(f"  - {issue}")
-        
-        # Success summary
-        working_endpoints = [r["endpoint"] for r in self.test_results if r["overall_status"] == "PASS"]
-        if working_endpoints:
-            print(f"\n✅ WORKING ENDPOINTS:")
-            for endpoint in working_endpoints:
-                print(f"  - {endpoint}")
-        
-        print("\n" + "=" * 80)
-
-def main():
-    """Main test execution"""
-    tester = PaginationTester()
-    
-    print("🧪 PAGINATION ENDPOINTS COMPREHENSIVE TESTING")
-    print("Testing all 7 pagination endpoints for 520 error fixes")
-    print(f"Backend URL: {BACKEND_URL}")
-    print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}")
-    
-    success = tester.run_all_pagination_tests()
-    
-    if success:
-        print("\n🎉 ALL PAGINATION ENDPOINTS WORKING CORRECTLY!")
-        sys.exit(0)
-    else:
-        print("\n⚠️ SOME PAGINATION ENDPOINTS HAVE ISSUES")
-        sys.exit(1)
+        return failed_tests == 0
 
 if __name__ == "__main__":
-    main()
+    tester = APITester()
+    success = tester.run_all_tests()
+    sys.exit(0 if success else 1)
