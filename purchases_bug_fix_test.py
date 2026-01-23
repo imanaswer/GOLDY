@@ -39,8 +39,19 @@ class PurchasesBugFixTester:
             "passed": passed,
             "details": details
         })
-        
-    def authenticate(self):
+    def get_account_by_id(self, account_id):
+        """Helper to get account by ID from the accounts list"""
+        try:
+            response = self.session.get(f"{BASE_URL}/accounts")
+            if response.status_code != 200:
+                return None
+            accounts = response.json()
+            for account in accounts:
+                if account.get('id') == account_id:
+                    return account
+            return None
+        except:
+            return None
         """Authenticate and get JWT token"""
         print("\n🔐 AUTHENTICATION")
         try:
