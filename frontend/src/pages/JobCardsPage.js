@@ -370,6 +370,8 @@ export default function JobCardsPage() {
   const handleCloseDialog = () => {
     setShowDialog(false);
     setEditingJobCard(null);
+    setEditingTemplate(null);
+    setSaveAsTemplate(false);
     // Reset form to default - use first inventory header if available
     const defaultCategory = inventoryHeaders.length > 0 ? inventoryHeaders[0].name : 'Chain';
     
@@ -385,6 +387,8 @@ export default function JobCardsPage() {
       notes: '',
       gold_rate_at_jobcard: '',  // MODULE 8: Reset gold rate
       status: 'created',
+      template_name: '',
+      delivery_days_offset: '',
       items: [{
         category: defaultCategory,
         description: '',
