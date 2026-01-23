@@ -1133,21 +1133,7 @@ agent_communication:
   - agent: "main"
     message: "Fixed pagination-related errors across multiple frontend pages. The backend was returning paginated responses with structure {items: [], pagination: {}} but frontend was expecting direct arrays. Updated 6 pages: JobCardsPage, InvoicesPage, PurchasesPage, AuditLogsPage, FinancePage, and ReportsPageEnhanced to properly extract the items array using response.data.items || []. All changes have been applied and frontend has been recompiled successfully. The app is now running and should display all data correctly."
 
-user_problem_statement: |
-  Gold Inventory Management System - Module 2/10 Implementation
-  Upgrade Parties report to show both Gold + Money balances combined.
-  
-  Backend: Add GET /api/parties/{id}/summary endpoint that returns:
-  - Party info
-  - Money due from party (invoice outstanding)
-  - Money due to party (vendor payable/credits)
-  - Gold due from party
-  - Gold due to party
-  
-  Frontend: In Party detail page:
-  - Show 4 cards: Gold they owe us, Gold we owe them, Money they owe us, Money we owe them
-  - Show 2 tables: Gold ledger entries, Money ledger (invoices + transactions)
-  - Add date filters + search inside party view
+user_problem_statement: "Implement strict workflow controls and confirmations across Job Cards, Invoices, Purchases, Inventory, and Finance to ensure audit safety and prevent irreversible mistakes. 1) Status Transition Validation: Enforce sequential status transitions only (no skipping states) at backend level. Example Job Cards: Created → In Progress → Completed → Delivered. 2) Confirmation Dialogs: Add mandatory confirmation dialogs for any irreversible or high-impact action showing summary-based confirmation with what will be locked/finalized. Actions requiring confirmation: Job Card Complete/Deliver/Delete, Invoice Finalize/Delete, Purchase Finalize/Delete, Inventory Adjustment, Finance Transactions, Party deletion. 3) Cost & Impact Visibility: Show item-wise breakdown, financial impact summary, impact summary before delete. 4) General Requirements: Finalized/Completed records must be read-only, all transitions logged in audit logs, clear error messages."
 
 backend:
   - task: "Create GET /api/parties/{party_id}/summary endpoint"
