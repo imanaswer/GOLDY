@@ -2810,7 +2810,7 @@ async def delete_jobcard(jobcard_id: str, current_user: User = Depends(require_p
     return {"message": "Job card deleted successfully"}
 
 @api_router.get("/jobcards/{jobcard_id}/impact")
-async def get_jobcard_impact(jobcard_id: str, current_user: User = Depends(get_current_user)):
+async def get_jobcard_impact(jobcard_id: str, current_user: User = Depends(require_permission('jobcards.view'))):
     """
     Get impact summary for job card actions (status changes or deletion).
     Shows decision-critical data: items count, total weight, estimated cost, linked data.
