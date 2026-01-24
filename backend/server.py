@@ -231,6 +231,44 @@ class InputSanitizationMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
+
+# ============================================================================
+# HTTPS ENFORCEMENT MIDDLEWARE (Phase 7)
+# ============================================================================
+
+class HTTPSRedirectMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to enforce HTTPS by redirecting all HTTP requests to HTTPS.
+    
+    Security Benefits:
+    - Forces encrypted connections
+    - Works with HSTS header for comprehensive HTTPS enforcement
+    - Prevents downgrade attacks
+    
+    Note: In production, this should be combined with HSTS preloading
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        # Check if request is HTTP (not HTTPS)
+        # In production with reverse proxy, check X-Forwarded-Proto header
+        forwarded_proto = request.headers.get('X-Forwarded-Proto', '')
+        
+        # If explicitly HTTP or no secure connection
+        if forwarded_proto == 'http' or (
+            not forwarded_proto and 
+            request.url.scheme == 'http' and 
+            request.url.hostname not in ['localhost', '127.0.0.1', 'testserver']
+        ):
+            # Construct HTTPS URL
+            https_url = request.url.replace(scheme='https')
+            return StarletteResponse(
+                status_code=301,  # Permanent redirect
+                headers={'Location': str(https_url)}
+            )
+        
+        response = await call_next(request)
+        return response
+
 # ============================================================================
 # CSRF PROTECTION MIDDLEWARE
 # ============================================================================
