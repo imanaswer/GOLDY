@@ -153,7 +153,7 @@ def test_csrf_protection():
     parties_response = session.get(f"{BASE_URL}/parties")
     if parties_response.status_code == 200:
         parties = parties_response.json()
-        if parties:
+        if parties and len(parties) > 0:
             party_id = parties[0]['id']
             
             response = session.put(
@@ -170,6 +170,10 @@ def test_csrf_protection():
                 response.status_code == 200,
                 f"PUT request successful with status {response.status_code} (expected 200)"
             )
+        else:
+            print_result(False, "No parties found to update")
+    else:
+        print_result(False, f"Failed to get parties: {parties_response.status_code}")
     
     # Test 7: DELETE request with valid CSRF token
     print_test_header("Test 7: DELETE Request With Valid CSRF Token (Should Succeed)")
