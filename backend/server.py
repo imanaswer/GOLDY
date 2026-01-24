@@ -4179,7 +4179,7 @@ async def get_transactions_summary(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     account_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('finance.view'))
 ):
     """
     Get transaction summary including:
