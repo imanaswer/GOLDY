@@ -1450,10 +1450,25 @@ async def change_password(user_id: str, password_data: dict, current_user: User 
     
     return {"message": "Password changed successfully"}
 
-@api_router.get("/inventory/headers", response_model=List[InventoryHeader])
-async def get_inventory_headers(current_user: User = Depends(require_permission('inventory.view'))):
-    headers = await db.inventory_headers.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
-    return headers
+@api_router.get("/inventory/headers")
+async def get_inventory_headers(
+    page: int = 1,
+    page_size: int = 10,
+    current_user: User = Depends(require_permission('inventory.view'))
+):
+    """Get inventory headers with pagination support"""
+    query = {"is_deleted": False}
+    
+    # Calculate skip value
+    skip = (page - 1) * page_size
+    
+    # Get total count for pagination
+    total_count = await db.inventory_headers.count_documents(query)
+    
+    # Get paginated results
+    headers = await db.inventory_headers.find(query, {"_id": 0}).skip(skip).limit(page_size).to_list(page_size)
+    
+    return create_pagination_response(headers, total_count, page, page_size)
 
 @api_router.post("/inventory/headers", response_model=InventoryHeader)
 async def create_inventory_header(header_data: dict, current_user: User = Depends(require_permission('inventory.adjust'))):
