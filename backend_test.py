@@ -24,7 +24,7 @@ import uuid
 import time
 
 # Configuration
-BASE_URL = "https://api-dependency-fix.preview.emergentagent.com/api"
+BASE_URL = "https://list-navigator-1.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
