@@ -2213,12 +2213,9 @@ async def get_purchases(
     status: Optional[str] = None,
     page: int = 1,
     per_page: int = 50,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('purchases.view'))
 ):
     """Get all purchases with optional filters and pagination"""
-    if not user_has_permission(current_user, 'purchases.view'):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view purchases")
-    
     query = {"is_deleted": False}
     
     # Filter by vendor
