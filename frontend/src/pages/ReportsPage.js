@@ -1,17 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import axios from 'axios';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { API } from '../contexts/AuthContext';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Button } from '../components/ui/button';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { toast } from 'sonner';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Download, FileSpreadsheet, TrendingUp, DollarSign, Package } from 'lucide-react';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 
 export default function ReportsPage() {
   const [loading, setLoading] = useState(false);

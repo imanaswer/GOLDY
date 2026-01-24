@@ -1,25 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import axios from 'axios';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { API, useAuth } from '../contexts/AuthContext';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Button } from '../components/ui/button';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Input } from '../components/ui/input';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Label } from '../components/ui/label';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { Badge } from '../components/ui/badge';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { toast } from 'sonner';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 import { CalendarCheck, Plus, Lock, Unlock, Calculator, RefreshCw, Edit, AlertCircle } from 'lucide-react';
-import { formatWeight, formatCurrency, safeToFixed } from '../utils/numberFormat';
 
 export default function DailyClosingPage() {
   const { user } = useAuth();
