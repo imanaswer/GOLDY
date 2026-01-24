@@ -530,12 +530,17 @@ export default function PurchasesPage() {
               </thead>
               <tbody>
                 {purchases.length === 0 ? (
-                  <tr>
-                    <td colSpan="11" className="text-center p-8 text-gray-500">
-                      <Package className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                      <p>No purchases found</p>
-                    </td>
-                  </tr>
+                  <TableEmptyState
+                    colSpan={11}
+                    icon="cart"
+                    title="No Purchases Found"
+                    message="Start by creating your first purchase to track gold inventory and vendor transactions."
+                    action={{
+                      label: "Create Purchase",
+                      onClick: () => handleOpenDialog(),
+                      icon: ShoppingCart
+                    }}
+                  />
                 ) : (
                   purchases.map((purchase) => (
                     <tr key={purchase.id} className="border-b hover:bg-gray-50">
