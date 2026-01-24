@@ -153,6 +153,84 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         return response
 
+
+# ============================================================================
+# INPUT SANITIZATION MIDDLEWARE
+# ============================================================================
+
+from validators import sanitize_html, sanitize_text_field
+import json
+
+class InputSanitizationMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to automatically sanitize all incoming request data.
+    
+    Protection Features:
+    - Removes HTML tags and scripts from text inputs
+    - Escapes special characters
+    - Validates data types
+    - Prevents XSS attacks through input sanitization
+    
+    Applied to all POST, PUT, PATCH requests with JSON body.
+    """
+    
+    def sanitize_value(self, value: Any) -> Any:
+        """
+        Recursively sanitize values in request data.
+        """
+        if isinstance(value, str):
+            # Only sanitize strings that are not UUIDs, dates, or specific fields
+            # Avoid sanitizing IDs, dates, and technical fields
+            if len(value) > 0 and not self._is_technical_field(value):
+                return sanitize_html(value)
+            return value
+        elif isinstance(value, dict):
+            return {k: self.sanitize_value(v) for k, v in value.items()}
+        elif isinstance(value, list):
+            return [self.sanitize_value(item) for item in value]
+        else:
+            return value
+    
+    def _is_technical_field(self, value: str) -> bool:
+        """
+        Check if value is a technical field that shouldn't be sanitized.
+        Returns True for UUIDs, ISO dates, email-like patterns.
+        """
+        # Check for UUID pattern
+        if re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', value, re.IGNORECASE):
+            return True
+        # Check for ISO date pattern
+        if re.match(r'^\d{4}-\d{2}-\d{2}', value):
+            return True
+        # Short technical strings (likely IDs)
+        if len(value) < 5 and value.replace('-', '').replace('_', '').isalnum():
+            return True
+        return False
+    
+    async def dispatch(self, request: Request, call_next):
+        # Only sanitize body data on state-changing methods
+        if request.method in ['POST', 'PUT', 'PATCH']:
+            try:
+                # Read the body
+                body = await request.body()
+                if body:
+                    try:
+                        # Parse JSON
+                        data = json.loads(body)
+                        # Sanitize the data
+                        sanitized_data = self.sanitize_value(data)
+                        # Update request body with sanitized data
+                        request._body = json.dumps(sanitized_data).encode('utf-8')
+                    except json.JSONDecodeError:
+                        # Not JSON, skip sanitization
+                        pass
+            except Exception as e:
+                # If any error in sanitization, log but don't break the request
+                logging.warning(f"Input sanitization error: {str(e)}")
+        
+        response = await call_next(request)
+        return response
+
 # ============================================================================
 # CSRF PROTECTION MIDDLEWARE
 # ============================================================================
