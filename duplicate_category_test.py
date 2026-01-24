@@ -190,7 +190,7 @@ class DuplicateCategoryTester:
         except Exception as e:
             self.log_result("Create Duplicate - Exact Match", "ERROR", f"Error: {str(e)}")
     
-    def test_create_duplicate_case_insensitive(self):
+    def test_create_duplicate_exact_match(self):
         """
         TEST 2: Create duplicate category (case-insensitive)
         If category "Gold Rings" exists, try creating "gold rings" or "GOLD RINGS"
