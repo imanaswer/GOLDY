@@ -25,7 +25,7 @@ def test_cookie_auth():
     
     login_data = {
         "username": "admin",
-        "password": "Admin@12345"
+        "password": "admin123"
     }
     
     response = session.post(f"{API_BASE}/auth/login", json=login_data)
