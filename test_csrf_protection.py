@@ -185,17 +185,24 @@ def test_csrf_protection():
     # Get the party we created for CSRF test
     parties_response = session.get(f"{BASE_URL}/parties")
     if parties_response.status_code == 200:
-        parties = parties_response.json()
-        csrf_test_party = next((p for p in parties if p['name'] == 'CSRF Test Party'), None)
+        parties_data = parties_response.json()
+        # API returns dictionary with party IDs as keys
+        csrf_test_party_id = None
+        for p_id, p_data in parties_data.items():
+            if p_data.get('name') == 'CSRF Test Party':
+                csrf_test_party_id = p_id
+                break
         
-        if csrf_test_party:
+        if csrf_test_party_id:
             response = session.delete(
-                f"{BASE_URL}/parties/{csrf_test_party['id']}",
+                f"{BASE_URL}/parties/{csrf_test_party_id}",
                 headers=headers
             )
             
             print_result(
                 response.status_code == 200,
+                f"DELETE request successful with status {response.status_code} (expected 200)"
+            )
                 f"DELETE request successful with status {response.status_code} (expected 200)"
             )
     
