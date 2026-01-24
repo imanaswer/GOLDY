@@ -944,14 +944,7 @@ async def get_users(current_user: User = Depends(require_permission('users.view'
     return users
 
 @api_router.patch("/users/{user_id}")
-async def update_user(user_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
-    # Check permission
-    if not user_has_permission(current_user, 'users.update'):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to update users"
-        )
-    
+async def update_user(user_id: str, update_data: dict, current_user: User = Depends(require_permission('users.update'))):
     existing = await db.users.find_one({"id": user_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="User not found")
