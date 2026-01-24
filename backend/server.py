@@ -1844,7 +1844,7 @@ async def get_gold_ledger_entries(
     date_to: Optional[str] = None,
     page: int = 1,
     per_page: int = 50,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('finance.view'))
 ):
     """Get gold ledger entries with optional filters and pagination"""
     query = {"is_deleted": False}
