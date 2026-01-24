@@ -684,20 +684,28 @@ export default function PurchasesPage() {
               </div>
 
               {formData.amount_total && formData.paid_amount_money && (
-                <div className="p-3 bg-white border rounded">
-                  <div className="flex justify-between text-sm">
-                    <span>Total Amount:</span>
-                    <span className="font-mono">{parseFloat(formData.amount_total || 0).toFixed(2)} OMR</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>Paid Amount:</span>
-                    <span className="font-mono">{parseFloat(formData.paid_amount_money || 0).toFixed(2)} OMR</span>
-                  </div>
-                  <div className="flex justify-between text-sm font-semibold border-t pt-2 mt-2">
-                    <span>Balance Due:</span>
-                    <span className="font-mono text-red-600">
-                      {(parseFloat(formData.amount_total || 0) - parseFloat(formData.paid_amount_money || 0)).toFixed(2)} OMR
-                    </span>
+                <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
+                  <h4 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Payment Breakdown
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center p-2 bg-white rounded border border-green-200">
+                      <span className="text-gray-700">Total Amount:</span>
+                      <span className="font-mono font-bold text-lg text-gray-900">{parseFloat(formData.amount_total || 0).toFixed(2)} OMR</span>
+                    </div>
+                    <div className="flex justify-between items-center p-2 bg-white rounded border border-green-200">
+                      <span className="text-gray-700">Paid Amount:</span>
+                      <span className="font-mono font-semibold text-green-700">{parseFloat(formData.paid_amount_money || 0).toFixed(2)} OMR</span>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg mt-2">
+                      <span className="font-semibold">Balance Due:</span>
+                      <span className="font-mono font-bold text-xl">
+                        {(parseFloat(formData.amount_total || 0) - parseFloat(formData.paid_amount_money || 0)).toFixed(2)} OMR
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
