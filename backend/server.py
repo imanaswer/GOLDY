@@ -2166,6 +2166,9 @@ async def get_party_summary(party_id: str, current_user: User = Depends(get_curr
 @api_router.post("/purchases", response_model=Purchase)
 async def create_purchase(purchase_data: dict, current_user: User = Depends(get_current_user)):
     """Create a new purchase in draft status"""
+    if not user_has_permission(current_user, 'purchases.create'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to create purchases")
+    
     # Validate vendor exists and is vendor type
     vendor = await db.parties.find_one({"id": purchase_data.get("vendor_party_id"), "is_deleted": False})
     if not vendor:
