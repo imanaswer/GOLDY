@@ -3850,6 +3850,9 @@ async def get_invoice_impact(invoice_id: str, current_user: User = Depends(get_c
 
 @api_router.delete("/invoices/{invoice_id}")
 async def delete_invoice(invoice_id: str, current_user: User = Depends(get_current_user)):
+    if not user_has_permission(current_user, 'invoices.delete'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete invoices")
+    
     existing = await db.invoices.find_one({"id": invoice_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Invoice not found")
