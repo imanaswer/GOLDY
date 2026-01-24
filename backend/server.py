@@ -1389,6 +1389,9 @@ async def delete_stock_movement(movement_id: str, current_user: User = Depends(g
 
 @api_router.get("/inventory/stock-totals")
 async def get_stock_totals(current_user: User = Depends(get_current_user)):
+    if not user_has_permission(current_user, 'inventory.view'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view inventory")
+    
     # Return current stock directly from inventory headers
     headers = await db.inventory_headers.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
     return [
