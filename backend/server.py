@@ -4356,6 +4356,71 @@ async def generate_invoice_pdf(invoice_id: str, current_user: User = Depends(req
         headers={"Content-Disposition": f"attachment; filename=invoice_{invoice.get('invoice_number', 'unknown')}.pdf"}
     )
 
+@api_router.get("/invoices/{invoice_id}/full-details")
+async def get_invoice_full_details(invoice_id: str, current_user: User = Depends(require_permission('invoices.view'))):
+    """
+    Get invoice with full details including payment transactions for professional invoice printing
+    """
+    invoice = await db.invoices.find_one({"id": invoice_id, "is_deleted": False}, {"_id": 0})
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    # Get all payment transactions for this invoice
+    payments = await db.transactions.find({
+        "reference_type": "invoice",
+        "reference_id": invoice_id,
+        "is_deleted": False
+    }, {"_id": 0}).to_list(length=100)
+    
+    # Get customer details if saved customer
+    customer_details = None
+    if invoice.get('customer_type') == 'saved' and invoice.get('customer_id'):
+        party = await db.parties.find_one({"id": invoice['customer_id'], "is_deleted": False}, {"_id": 0})
+        if party:
+            customer_details = {
+                "name": party.get('name'),
+                "phone": party.get('phone'),
+                "address": party.get('address'),
+                "gstin": party.get('gstin')  # If you add GSTIN field to Party model
+            }
+    
+    return {
+        "invoice": Invoice(**invoice),
+        "payments": payments,
+        "customer_details": customer_details
+    }
+
+@api_router.get("/settings/shop")
+async def get_shop_settings(current_user: User = Depends(get_current_user)):
+    """
+    Get shop settings for invoice printing. Returns placeholder data if not configured.
+    """
+    settings = await db.shop_settings.find_one({}, {"_id": 0})
+    if not settings:
+        # Return default placeholder settings
+        default_settings = ShopSettings()
+        return default_settings
+    return ShopSettings(**settings)
+
+@api_router.put("/settings/shop")
+async def update_shop_settings(settings_data: dict, current_user: User = Depends(require_permission('users.update'))):
+    """
+    Update shop settings for invoice printing (admin only)
+    """
+    settings_data['updated_at'] = datetime.now(timezone.utc)
+    settings_data['updated_by'] = current_user.id
+    
+    existing = await db.shop_settings.find_one({})
+    if existing:
+        await db.shop_settings.update_one({"id": existing['id']}, {"$set": settings_data})
+    else:
+        # Create new settings
+        new_settings = ShopSettings(**settings_data)
+        await db.shop_settings.insert_one(new_settings.model_dump())
+    
+    await create_audit_log(current_user.id, current_user.full_name, "settings", "shop_settings", "update", settings_data)
+    return {"message": "Shop settings updated successfully"}
+
 @api_router.post("/invoices", response_model=Invoice)
 async def create_invoice(invoice_data: dict, current_user: User = Depends(require_permission('invoices.create'))):
     if not user_has_permission(current_user, 'invoices.create'):
