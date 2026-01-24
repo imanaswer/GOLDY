@@ -29,7 +29,8 @@ export default function InventoryPage() {
     qty_delta: 0,
     weight_delta: 0,
     purity: 916,
-    notes: ''
+    notes: '',
+    confirmation_reason: ''
   });
 
   useEffect(() => {
