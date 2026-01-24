@@ -1059,7 +1059,7 @@ async def create_inventory_header(header_data: dict, current_user: User = Depend
 async def update_inventory_header(
     header_id: str, 
     header_data: dict, 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('inventory.adjust'))
 ):
     """
     Update an existing inventory header (category name)
@@ -1101,7 +1101,7 @@ async def update_inventory_header(
     return InventoryHeader(**updated_header)
 
 @api_router.delete("/inventory/headers/{header_id}")
-async def delete_inventory_header(header_id: str, current_user: User = Depends(get_current_user)):
+async def delete_inventory_header(header_id: str, current_user: User = Depends(require_permission('inventory.adjust'))):
     """
     Soft delete an inventory header
     Note: This will not affect existing stock movements (audit trail preserved)
@@ -1137,7 +1137,7 @@ async def delete_inventory_header(header_id: str, current_user: User = Depends(g
     return {"message": "Inventory header deleted successfully", "id": header_id}
 
 @api_router.get("/inventory/movements", response_model=List[StockMovement])
-async def get_stock_movements(header_id: Optional[str] = None, current_user: User = Depends(get_current_user)):
+async def get_stock_movements(header_id: Optional[str] = None, current_user: User = Depends(require_permission('inventory.view'))):
     if not user_has_permission(current_user, 'inventory.view'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view inventory")
     
@@ -1148,7 +1148,7 @@ async def get_stock_movements(header_id: Optional[str] = None, current_user: Use
     return movements
 
 @api_router.post("/inventory/movements", response_model=StockMovement)
-async def create_stock_movement(movement_data: dict, current_user: User = Depends(get_current_user)):
+async def create_stock_movement(movement_data: dict, current_user: User = Depends(require_permission('inventory.adjust'))):
     """
     Create manual stock movement for inventory adjustments.
     
@@ -1265,7 +1265,7 @@ async def create_stock_movement(movement_data: dict, current_user: User = Depend
     return movement
 
 @api_router.delete("/inventory/movements/{movement_id}")
-async def delete_stock_movement(movement_id: str, current_user: User = Depends(get_current_user)):
+async def delete_stock_movement(movement_id: str, current_user: User = Depends(require_permission('inventory.adjust'))):
     """
     Delete a stock movement and reverse its effect on inventory.
     
@@ -1349,7 +1349,7 @@ async def delete_stock_movement(movement_id: str, current_user: User = Depends(g
     }
 
 @api_router.get("/inventory/stock-totals")
-async def get_stock_totals(current_user: User = Depends(get_current_user)):
+async def get_stock_totals(current_user: User = Depends(require_permission('inventory.view'))):
     if not user_has_permission(current_user, 'inventory.view'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view inventory")
     
@@ -1370,7 +1370,7 @@ async def get_stock_totals(current_user: User = Depends(get_current_user)):
 # ============================================================================
 
 @api_router.get("/dashboard")
-async def get_dashboard(current_user: User = Depends(get_current_user)):
+async def get_dashboard(current_user: User = Depends(require_permission('reports.view'))):
     """
     Dashboard endpoint - Returns pre-aggregated statistics
     Combines data from multiple endpoints for convenience
@@ -1438,7 +1438,7 @@ async def get_dashboard(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to load dashboard: {str(e)}")
 
 @api_router.get("/reports")
-async def get_reports_list(current_user: User = Depends(get_current_user)):
+async def get_reports_list(current_user: User = Depends(require_permission('reports.view'))):
     """
     Reports listing endpoint - Returns available report types with metadata
     """
@@ -1561,7 +1561,7 @@ async def get_reports_list(current_user: User = Depends(get_current_user)):
 async def get_inventory(
     category: Optional[str] = None,
     min_qty: Optional[float] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('inventory.view'))
 ):
     """
     Basic inventory listing endpoint - Wrapper around inventory headers
@@ -1642,7 +1642,7 @@ async def get_parties(
     return create_pagination_response(parties, total_count, page, per_page)
 
 @api_router.post("/parties", response_model=Party)
-async def create_party(party_data: dict, current_user: User = Depends(get_current_user)):
+async def create_party(party_data: dict, current_user: User = Depends(require_permission('parties.create'))):
     if not user_has_permission(current_user, 'parties.create'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to create parties")
     
@@ -1665,7 +1665,7 @@ async def create_party(party_data: dict, current_user: User = Depends(get_curren
     return party
 
 @api_router.get("/parties/outstanding-summary")
-async def get_outstanding_summary(current_user: User = Depends(get_current_user)):
+async def get_outstanding_summary(current_user: User = Depends(require_permission('parties.view'))):
     invoices = await db.invoices.find({"is_deleted": False, "payment_status": {"$ne": "paid"}}, {"_id": 0}).to_list(10000)
     
     total_customer_due = sum(inv.get('balance_due', 0) for inv in invoices)
@@ -1683,14 +1683,14 @@ async def get_outstanding_summary(current_user: User = Depends(get_current_user)
     return {"total_customer_due": total_customer_due, "top_10_outstanding": top_10}
 
 @api_router.get("/parties/{party_id}", response_model=Party)
-async def get_party(party_id: str, current_user: User = Depends(get_current_user)):
+async def get_party(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     party = await db.parties.find_one({"id": party_id, "is_deleted": False}, {"_id": 0})
     if not party:
         raise HTTPException(status_code=404, detail="Party not found")
     return Party(**party)
 
 @api_router.patch("/parties/{party_id}", response_model=Party)
-async def update_party(party_id: str, party_data: dict, current_user: User = Depends(get_current_user)):
+async def update_party(party_id: str, party_data: dict, current_user: User = Depends(require_permission('parties.update'))):
     if not user_has_permission(current_user, 'parties.update'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to update parties")
     
@@ -1719,7 +1719,7 @@ async def update_party(party_id: str, party_data: dict, current_user: User = Dep
     return Party(**updated)
 
 @api_router.get("/parties/{party_id}/impact")
-async def get_party_impact(party_id: str, current_user: User = Depends(get_current_user)):
+async def get_party_impact(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     """
     Get impact summary for party deletion.
     Shows what data is linked to this party and will be affected.
@@ -1770,7 +1770,7 @@ async def get_party_impact(party_id: str, current_user: User = Depends(get_curre
     return impact
 
 @api_router.delete("/parties/{party_id}")
-async def delete_party(party_id: str, current_user: User = Depends(get_current_user)):
+async def delete_party(party_id: str, current_user: User = Depends(require_permission('parties.delete'))):
     if not user_has_permission(current_user, 'parties.delete'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete parties")
     
@@ -1786,7 +1786,7 @@ async def delete_party(party_id: str, current_user: User = Depends(get_current_u
     return {"message": "Party deleted successfully"}
 
 @api_router.get("/parties/{party_id}/ledger")
-async def get_party_ledger(party_id: str, current_user: User = Depends(get_current_user)):
+async def get_party_ledger(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     invoices = await db.invoices.find({"customer_id": party_id, "is_deleted": False}, {"_id": 0}).to_list(1000)
     transactions = await db.transactions.find({"party_id": party_id, "is_deleted": False}, {"_id": 0}).to_list(1000)
     
@@ -1798,7 +1798,7 @@ async def get_party_ledger(party_id: str, current_user: User = Depends(get_curre
 
 # Gold Ledger Endpoints
 @api_router.post("/gold-ledger", response_model=GoldLedgerEntry)
-async def create_gold_ledger_entry(entry_data: dict, current_user: User = Depends(get_current_user)):
+async def create_gold_ledger_entry(entry_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     # Validate required fields
     if 'party_id' not in entry_data:
         raise HTTPException(status_code=400, detail="party_id is required")
@@ -1880,7 +1880,7 @@ async def get_gold_ledger_entries(
     return create_pagination_response(entries, total_count, page, per_page)
 
 @api_router.delete("/gold-ledger/{entry_id}")
-async def delete_gold_ledger_entry(entry_id: str, current_user: User = Depends(get_current_user)):
+async def delete_gold_ledger_entry(entry_id: str, current_user: User = Depends(require_permission('finance.delete'))):
     # Check if entry exists
     entry = await db.gold_ledger.find_one({"id": entry_id, "is_deleted": False})
     if not entry:
@@ -1904,7 +1904,7 @@ async def delete_gold_ledger_entry(entry_id: str, current_user: User = Depends(g
 # ============================================================================
 
 @api_router.post("/gold-deposits", response_model=GoldLedgerEntry)
-async def create_gold_deposit(deposit_data: dict, current_user: User = Depends(get_current_user)):
+async def create_gold_deposit(deposit_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     """
     Create a gold deposit entry - specifically for recording gold RECEIVED from customer.
     This is a convenience endpoint that creates a GoldLedgerEntry with type="IN".
@@ -2006,7 +2006,7 @@ async def get_gold_deposits(
 # ============================================================================
 
 @api_router.get("/parties/{party_id}/gold-summary")
-async def get_party_gold_summary(party_id: str, current_user: User = Depends(get_current_user)):
+async def get_party_gold_summary(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     # Verify party exists
     party = await db.parties.find_one({"id": party_id, "is_deleted": False})
     if not party:
@@ -2043,7 +2043,7 @@ async def get_party_gold_summary(party_id: str, current_user: User = Depends(get
     }
 
 @api_router.get("/parties/{party_id}/summary")
-async def get_party_summary(party_id: str, current_user: User = Depends(get_current_user)):
+async def get_party_summary(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     """
     Get comprehensive party summary including both gold and money balances.
     This endpoint combines gold ledger data and financial data (invoices + transactions).
@@ -2134,7 +2134,7 @@ async def get_party_summary(party_id: str, current_user: User = Depends(get_curr
 # ===========================
 
 @api_router.post("/purchases", response_model=Purchase)
-async def create_purchase(purchase_data: dict, current_user: User = Depends(get_current_user)):
+async def create_purchase(purchase_data: dict, current_user: User = Depends(require_permission('purchases.create'))):
     """Create a new purchase in draft status"""
     if not user_has_permission(current_user, 'purchases.create'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to create purchases")
@@ -2258,7 +2258,7 @@ async def get_purchases(
 async def update_purchase(
     purchase_id: str,
     updates: Dict,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('purchases.create'))
 ):
     """Update a purchase (only draft purchases can be edited)"""
     # Get existing purchase
@@ -2332,7 +2332,7 @@ async def update_purchase(
     return updated
 
 @api_router.get("/purchases/{purchase_id}/impact")
-async def get_purchase_impact(purchase_id: str, current_user: User = Depends(get_current_user)):
+async def get_purchase_impact(purchase_id: str, current_user: User = Depends(require_permission('purchases.view'))):
     """
     Get impact summary for purchase actions (finalization or deletion).
     Shows decision-critical data: weight, cost, stock impact, vendor payable, what will be locked.
@@ -2380,7 +2380,7 @@ async def get_purchase_impact(purchase_id: str, current_user: User = Depends(get
     return impact
 
 @api_router.post("/purchases/{purchase_id}/finalize")
-async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_current_user)):
+async def finalize_purchase(purchase_id: str, current_user: User = Depends(require_permission('purchases.finalize'))):
     """
     Finalize a purchase - performs all required operations atomically.
     
@@ -2652,7 +2652,7 @@ async def finalize_purchase(purchase_id: str, current_user: User = Depends(get_c
 async def get_jobcards(
     page: int = 1,
     per_page: int = 50,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('jobcards.view'))
 ):
     """Get job cards with pagination support"""
     if not user_has_permission(current_user, 'jobcards.view'):
@@ -2672,7 +2672,7 @@ async def get_jobcards(
     return create_pagination_response(jobcards, total_count, page, per_page)
 
 @api_router.post("/jobcards", response_model=JobCard)
-async def create_jobcard(jobcard_data: dict, current_user: User = Depends(get_current_user)):
+async def create_jobcard(jobcard_data: dict, current_user: User = Depends(require_permission('jobcards.create'))):
     # Validate customer type data
     customer_type = jobcard_data.get('customer_type', 'saved')
     
@@ -2695,14 +2695,14 @@ async def create_jobcard(jobcard_data: dict, current_user: User = Depends(get_cu
     return jobcard
 
 @api_router.get("/jobcards/{jobcard_id}", response_model=JobCard)
-async def get_jobcard(jobcard_id: str, current_user: User = Depends(get_current_user)):
+async def get_jobcard(jobcard_id: str, current_user: User = Depends(require_permission('jobcards.view'))):
     jobcard = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False}, {"_id": 0})
     if not jobcard:
         raise HTTPException(status_code=404, detail="Job card not found")
     return JobCard(**jobcard)
 
 @api_router.patch("/jobcards/{jobcard_id}")
-async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User = Depends(require_permission('jobcards.update'))):
     existing = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Job card not found")
@@ -2757,7 +2757,7 @@ async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User 
     return {"message": "Updated successfully"}
 
 @api_router.delete("/jobcards/{jobcard_id}")
-async def delete_jobcard(jobcard_id: str, current_user: User = Depends(get_current_user)):
+async def delete_jobcard(jobcard_id: str, current_user: User = Depends(require_permission('jobcards.delete'))):
     existing = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Job card not found")
@@ -2848,7 +2848,7 @@ async def get_jobcard_impact(jobcard_id: str, current_user: User = Depends(get_c
     return impact
 
 @api_router.post("/jobcards/{jobcard_id}/convert-to-invoice")
-async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, current_user: User = Depends(get_current_user)):
+async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, current_user: User = Depends(require_permission('jobcards.create'))):
     jobcard = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False}, {"_id": 0})
     if not jobcard:
         raise HTTPException(status_code=404, detail="Job card not found")
@@ -2998,14 +2998,14 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
 # ============================================================================
 
 @api_router.get("/jobcard-templates")
-async def get_jobcard_templates(current_user: User = Depends(get_current_user)):
+async def get_jobcard_templates(current_user: User = Depends(require_permission('jobcards.view'))):
     """Get all job card templates (accessible to all users)"""
     query = {"card_type": "template", "is_deleted": False}
     templates = await db.jobcards.find(query, {"_id": 0}).sort("template_name", 1).to_list(None)
     return {"items": templates}
 
 @api_router.post("/jobcard-templates")
-async def create_jobcard_template(template_data: dict, current_user: User = Depends(get_current_user)):
+async def create_jobcard_template(template_data: dict, current_user: User = Depends(require_permission('jobcards.create'))):
     """Create a new job card template (admin only)"""
     # Check if user is admin
     if current_user.role != 'admin':
@@ -3039,7 +3039,7 @@ async def create_jobcard_template(template_data: dict, current_user: User = Depe
     return template
 
 @api_router.patch("/jobcard-templates/{template_id}")
-async def update_jobcard_template(template_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+async def update_jobcard_template(template_id: str, update_data: dict, current_user: User = Depends(require_permission('jobcards.update'))):
     """Update a job card template (admin only)"""
     # Check if user is admin
     if current_user.role != 'admin':
@@ -3066,7 +3066,7 @@ async def update_jobcard_template(template_id: str, update_data: dict, current_u
     return {"message": "Template updated successfully"}
 
 @api_router.delete("/jobcard-templates/{template_id}")
-async def delete_jobcard_template(template_id: str, current_user: User = Depends(get_current_user)):
+async def delete_jobcard_template(template_id: str, current_user: User = Depends(require_permission('jobcards.delete'))):
     """Delete a job card template (admin only)"""
     # Check if user is admin
     if current_user.role != 'admin':
@@ -3090,7 +3090,7 @@ async def delete_jobcard_template(template_id: str, current_user: User = Depends
 async def get_invoices(
     page: int = 1,
     per_page: int = 50,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('invoices.view'))
 ):
     """Get invoices with pagination support"""
     if not user_has_permission(current_user, 'invoices.view'):
@@ -3110,14 +3110,14 @@ async def get_invoices(
     return create_pagination_response(invoices, total_count, page, per_page)
 
 @api_router.get("/invoices/{invoice_id}", response_model=Invoice)
-async def get_invoice(invoice_id: str, current_user: User = Depends(get_current_user)):
+async def get_invoice(invoice_id: str, current_user: User = Depends(require_permission('invoices.view'))):
     invoice = await db.invoices.find_one({"id": invoice_id, "is_deleted": False}, {"_id": 0})
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     return Invoice(**invoice)
 
 @api_router.patch("/invoices/{invoice_id}")
-async def update_invoice(invoice_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+async def update_invoice(invoice_id: str, update_data: dict, current_user: User = Depends(require_permission('invoices.create'))):
     if not user_has_permission(current_user, 'invoices.create'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to update invoices")
     
@@ -3146,7 +3146,7 @@ async def update_invoice(invoice_id: str, update_data: dict, current_user: User 
 
 
 @api_router.post("/invoices/{invoice_id}/finalize")
-async def finalize_invoice(invoice_id: str, current_user: User = Depends(get_current_user)):
+async def finalize_invoice(invoice_id: str, current_user: User = Depends(require_permission('invoices.finalize'))):
     """
     Finalize a draft invoice - this is when all financial operations happen atomically.
     Once finalized, the invoice becomes immutable to maintain financial integrity.
@@ -3387,7 +3387,7 @@ async def finalize_invoice(invoice_id: str, current_user: User = Depends(get_cur
 async def add_payment_to_invoice(
     invoice_id: str, 
     payment_data: dict, 
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('invoices.create'))
 ):
     """
     Add payment to an invoice and create a transaction record.
@@ -3822,7 +3822,7 @@ async def get_invoice_impact(invoice_id: str, current_user: User = Depends(get_c
     return impact
 
 @api_router.delete("/invoices/{invoice_id}")
-async def delete_invoice(invoice_id: str, current_user: User = Depends(get_current_user)):
+async def delete_invoice(invoice_id: str, current_user: User = Depends(require_permission('invoices.delete'))):
     if not user_has_permission(current_user, 'invoices.delete'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to delete invoices")
     
@@ -3846,7 +3846,7 @@ async def delete_invoice(invoice_id: str, current_user: User = Depends(get_curre
     return {"message": "Invoice deleted successfully"}
 
 @api_router.get("/invoices/{invoice_id}/pdf")
-async def generate_invoice_pdf(invoice_id: str, current_user: User = Depends(get_current_user)):
+async def generate_invoice_pdf(invoice_id: str, current_user: User = Depends(require_permission('invoices.view'))):
     from fastapi.responses import StreamingResponse
     from io import BytesIO
     from reportlab.lib.pagesizes import letter, A4
@@ -3948,7 +3948,7 @@ async def generate_invoice_pdf(invoice_id: str, current_user: User = Depends(get
     )
 
 @api_router.post("/invoices", response_model=Invoice)
-async def create_invoice(invoice_data: dict, current_user: User = Depends(get_current_user)):
+async def create_invoice(invoice_data: dict, current_user: User = Depends(require_permission('invoices.create'))):
     if not user_has_permission(current_user, 'invoices.create'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to create invoices")
     
@@ -3967,7 +3967,7 @@ async def create_invoice(invoice_data: dict, current_user: User = Depends(get_cu
     return invoice
 
 @api_router.get("/accounts", response_model=List[Account])
-async def get_accounts(current_user: User = Depends(get_current_user)):
+async def get_accounts(current_user: User = Depends(require_permission('finance.view'))):
     if not user_has_permission(current_user, 'finance.view'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view finance data")
     
@@ -3983,14 +3983,14 @@ async def get_account(account_id: str, current_user: User = Depends(get_current_
     return account
 
 @api_router.post("/accounts", response_model=Account)
-async def create_account(account_data: dict, current_user: User = Depends(get_current_user)):
+async def create_account(account_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     account = Account(**account_data, created_by=current_user.id)
     await db.accounts.insert_one(account.model_dump())
     await create_audit_log(current_user.id, current_user.full_name, "account", account.id, "create")
     return account
 
 @api_router.patch("/accounts/{account_id}")
-async def update_account(account_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+async def update_account(account_id: str, update_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     existing = await db.accounts.find_one({"id": account_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -4000,7 +4000,7 @@ async def update_account(account_id: str, update_data: dict, current_user: User 
     return {"message": "Account updated successfully"}
 
 @api_router.delete("/accounts/{account_id}")
-async def delete_account(account_id: str, current_user: User = Depends(get_current_user)):
+async def delete_account(account_id: str, current_user: User = Depends(require_permission('finance.delete'))):
     existing = await db.accounts.find_one({"id": account_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Account not found")
@@ -4144,7 +4144,7 @@ async def get_transactions(
     return create_pagination_response(transactions, total_count, page, per_page)
 
 @api_router.post("/transactions", response_model=Transaction)
-async def create_transaction(transaction_data: dict, current_user: User = Depends(get_current_user)):
+async def create_transaction(transaction_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     year = datetime.now(timezone.utc).year
     count = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{year}"}})
     transaction_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
@@ -4279,12 +4279,12 @@ async def get_transactions_summary(
 
 
 @api_router.get("/daily-closings", response_model=List[DailyClosing])
-async def get_daily_closings(current_user: User = Depends(get_current_user)):
+async def get_daily_closings(current_user: User = Depends(require_permission('finance.view'))):
     closings = await db.daily_closings.find({}, {"_id": 0}).sort("date", -1).to_list(1000)
     return closings
 
 @api_router.post("/daily-closings", response_model=DailyClosing)
-async def create_daily_closing(closing_data: dict, current_user: User = Depends(get_current_user)):
+async def create_daily_closing(closing_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     """
     Create a new daily closing record.
     If opening_cash, total_credit, total_debit, expected_closing, or difference are not provided,
@@ -4418,7 +4418,7 @@ async def calculate_daily_closing(date: str, current_user: User = Depends(get_cu
 
 
 @api_router.patch("/daily-closings/{closing_id}", response_model=DailyClosing)
-async def update_daily_closing(closing_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+async def update_daily_closing(closing_id: str, update_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     """
     Update an existing daily closing record.
     Can update actual_closing, notes, or lock status.
@@ -4603,7 +4603,7 @@ async def export_inventory(
 @api_router.get("/reports/parties-export")
 async def export_parties(
     party_type: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     from fastapi.responses import StreamingResponse
     from io import BytesIO
@@ -4770,7 +4770,7 @@ async def view_inventory_report(
 async def view_parties_report(
     party_type: Optional[str] = None,
     sort_by: Optional[str] = None,  # NEW: "outstanding_desc", "name_asc"
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     """View parties with filters - returns JSON for UI"""
     query = {"is_deleted": False}
@@ -4917,7 +4917,7 @@ async def view_transactions_report(
     }
 
 @api_router.get("/reports/invoice/{invoice_id}")
-async def get_invoice_report(invoice_id: str, current_user: User = Depends(get_current_user)):
+async def get_invoice_report(invoice_id: str, current_user: User = Depends(require_permission('reports.view'))):
     """Get detailed report for a single invoice"""
     invoice = await db.invoices.find_one({"id": invoice_id, "is_deleted": False}, {"_id": 0})
     if not invoice:
@@ -5040,7 +5040,7 @@ async def get_inventory_stock_report(
 async def get_financial_summary(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     """Get financial summary with optional date filtering"""
     # Build query for invoices
@@ -5582,7 +5582,7 @@ async def export_invoices_pdf(
 @api_router.get("/reports/parties-pdf")
 async def export_parties_pdf(
     party_type: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     """Export parties report as PDF"""
     from reportlab.lib.pagesizes import A4
@@ -6496,7 +6496,7 @@ async def delete_purchase(purchase_id: str, current_user: User = Depends(get_cur
     return {"message": "Purchase deleted successfully"}
 
 @api_router.get("/parties/{party_id}/delete-impact")
-async def get_party_delete_impact(party_id: str, current_user: User = Depends(get_current_user)):
+async def get_party_delete_impact(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     """Get impact summary before deleting a party"""
     party = await db.parties.find_one({"id": party_id, "is_deleted": False})
     if not party:
