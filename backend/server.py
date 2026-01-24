@@ -998,12 +998,26 @@ async def change_password(user_id: str, password_data: dict, current_user: User 
         raise HTTPException(status_code=404, detail="User not found")
     
     new_password = password_data.get('new_password')
-    if not new_password or len(new_password) < 6:
-        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    if not new_password:
+        raise HTTPException(status_code=400, detail="New password is required")
+    
+    # Validate password complexity
+    is_valid, error_msg = validate_password_complexity(new_password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
     
     hashed_password = pwd_context.hash(new_password)
     await db.users.update_one({"id": user_id}, {"$set": {"hashed_password": hashed_password}})
     await create_audit_log(current_user.id, current_user.full_name, "user", user_id, "password_change")
+    
+    # Log password change
+    await create_auth_audit_log(
+        username=existing['username'],
+        action="password_change",
+        success=True,
+        user_id=user_id
+    )
+    
     return {"message": "Password changed successfully"}
 
 @api_router.get("/inventory/headers", response_model=List[InventoryHeader])
