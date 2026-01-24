@@ -826,6 +826,121 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+@api_router.post("/auth/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    """Logout endpoint - creates audit log for logout action"""
+    await create_auth_audit_log(
+        username=current_user.username,
+        action="logout",
+        success=True,
+        user_id=current_user.id
+    )
+    return {"message": "Logged out successfully"}
+
+@api_router.post("/auth/request-password-reset")
+async def request_password_reset(email_data: dict):
+    """Request password reset - generates reset token"""
+    email = email_data.get('email')
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    user_doc = await db.users.find_one({"email": email, "is_deleted": False}, {"_id": 0})
+    
+    # Always return success to prevent email enumeration
+    if not user_doc:
+        return {"message": "If an account with this email exists, a password reset link will be sent."}
+    
+    # Generate reset token
+    reset_token = str(uuid.uuid4())
+    token_obj = PasswordResetToken(
+        user_id=user_doc['id'],
+        token=reset_token,
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=1)  # Token valid for 1 hour
+    )
+    
+    await db.password_reset_tokens.insert_one(token_obj.model_dump())
+    
+    # Log password reset request
+    await create_auth_audit_log(
+        username=user_doc['username'],
+        action="password_reset_request",
+        success=True,
+        user_id=user_doc['id']
+    )
+    
+    # In production, send email with reset link containing token
+    # For now, return token (in production, this should only be sent via email)
+    return {
+        "message": "If an account with this email exists, a password reset link will be sent.",
+        "reset_token": reset_token  # REMOVE IN PRODUCTION - only for testing
+    }
+
+@api_router.post("/auth/reset-password")
+async def reset_password(reset_data: dict):
+    """Reset password using reset token"""
+    token = reset_data.get('token')
+    new_password = reset_data.get('new_password')
+    
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and new password are required")
+    
+    # Find valid token
+    token_doc = await db.password_reset_tokens.find_one({
+        "token": token,
+        "used": False
+    }, {"_id": 0})
+    
+    if not token_doc:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    
+    # Check token expiration
+    expires_at = token_doc.get('expires_at')
+    if isinstance(expires_at, str):
+        expires_at = datetime.fromisoformat(expires_at)
+    
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    
+    # Validate password complexity
+    is_valid, error_msg = validate_password_complexity(new_password)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
+    
+    # Update password
+    user_id = token_doc.get('user_id')
+    hashed_password = pwd_context.hash(new_password)
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {
+            'hashed_password': hashed_password,
+            'failed_login_attempts': 0,  # Reset failed attempts
+            'locked_until': None  # Unlock account if locked
+        }}
+    )
+    
+    # Mark token as used
+    await db.password_reset_tokens.update_one(
+        {"token": token},
+        {"$set": {
+            'used': True,
+            'used_at': datetime.now(timezone.utc)
+        }}
+    )
+    
+    # Get user for audit log
+    user_doc = await db.users.find_one({"id": user_id}, {"_id": 0})
+    
+    # Log password reset
+    await create_auth_audit_log(
+        username=user_doc['username'],
+        action="password_reset",
+        success=True,
+        user_id=user_id
+    )
+    
+    return {"message": "Password reset successfully"}
+
 @api_router.get("/users", response_model=List[User])
 async def get_users(current_user: User = Depends(get_current_user)):
     users = await db.users.find({"is_deleted": False}, {"_id": 0, "hashed_password": 0}).to_list(1000)
