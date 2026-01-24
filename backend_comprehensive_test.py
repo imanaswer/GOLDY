@@ -28,7 +28,7 @@ import uuid
 import traceback
 
 # Configuration
-BASE_URL = "https://dashboard-metrics-23.preview.emergentagent.com/api"
+BASE_URL = "https://errorcrusher-1.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
