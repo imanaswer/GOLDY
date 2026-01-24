@@ -4861,7 +4861,7 @@ async def view_transactions_report(
     account_id: Optional[str] = None,
     party_id: Optional[str] = None,  # NEW: Filter by specific party
     sort_by: Optional[str] = None,  # NEW: "date_asc", "date_desc", "amount_desc"
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     """View financial transactions with filters - returns JSON for UI"""
     query = {"is_deleted": False}
