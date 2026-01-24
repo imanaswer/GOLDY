@@ -164,8 +164,8 @@ def test_csrf_protection():
                 f"{BASE_URL}/parties/{party_id}",
                 json={
                     "name": "Updated Party Name",
-                    "party_type": parties[0]['party_type'],
-                    "contact_number": parties[0].get('contact_number', '')
+                    "party_type": party.get('party_type'),
+                    "contact_number": party.get('contact_number', '')
                 },
                 headers=headers
             )
