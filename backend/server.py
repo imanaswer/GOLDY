@@ -6841,6 +6841,9 @@ app.add_middleware(
 # Add Security Headers middleware (must be after CORS)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Add CSRF Protection middleware (must be after CORS and Security Headers)
+app.add_middleware(CSRFProtectionMiddleware)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
