@@ -17,6 +17,7 @@ from passlib.context import CryptContext
 import jwt
 from decimal import Decimal
 from bson import Decimal128, ObjectId
+import secrets
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
