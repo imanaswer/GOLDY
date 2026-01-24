@@ -47,7 +47,8 @@ export default function InventoryPage() {
         })
       ]);
 
-      setHeaders(Array.isArray(headersRes.data) ? headersRes.data : []);
+      // inventory/headers now returns paginated response with {items: [], pagination: {}}
+      setHeaders(Array.isArray(headersRes.data.items) ? headersRes.data.items : []);
       setMovements(Array.isArray(movementsRes.data) ? movementsRes.data : []);
       setStockTotals(Array.isArray(totalsRes.data) ? totalsRes.data : []);
       setInventory(Array.isArray(inventoryRes.data.items) ? inventoryRes.data.items : []);
