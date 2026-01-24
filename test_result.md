@@ -3020,6 +3020,102 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
+      📋 DASHBOARD PRODUCTION-READY TESTING - COMPREHENSIVE DATA SETUP COMPLETE
+      
+      TASK: Make Dashboard production ready with focused, comprehensive testing
+      
+      DATA PREPARATION COMPLETED:
+      ================================================================================
+      Created comprehensive test data using /app/backend/seed_dashboard_data.py:
+      
+      ✅ Inventory System:
+         • 10 inventory headers (categories): Chain, Ring, Bangle, Necklace, 
+           Bracelet, Coin, Biscuit, Others, Earrings, Pendant
+         • 81 stock movements across 8 categories
+         • Various purities (916, 875, 999, 750)
+         • Realistic weights and quantities
+      
+      ✅ Parties:
+         • 12 customers with realistic Omani names and contact details
+         • 4 vendors for gold supply
+         • Credit limits and current balances configured
+      
+      ✅ Sales & Invoices:
+         • 30 invoices with varying payment statuses
+         • Full, partial, and unpaid invoices
+         • Outstanding amounts for Dashboard display
+      
+      ✅ Purchases:
+         • 24 purchases from vendors
+         • Different purities and weights
+         • Draft and finalized statuses
+      
+      ✅ Job Cards:
+         • 21 job cards with various statuses
+         • Different job types (repair, making, polishing, resizing)
+         • Worker assignments and due dates
+      
+      ✅ Finance:
+         • 6 accounts (Cash, Bank accounts, Petty cash)
+         • 84 transactions across different categories
+         • Realistic opening and current balances
+      
+      DASHBOARD COMPONENTS TO TEST:
+      ================================================================================
+      
+      1. Metric Cards (4 cards):
+         ✓ Categories - Should show 10 categories
+         ✓ Total Stock - Should show sum of all stock weights in grams
+         ✓ Outstanding - Should show total customer outstanding in OMR
+         ✓ Low Stock - Should show items with quantity < 5
+      
+      2. Stock Summary Table:
+         ✓ Should display all 10 categories
+         ✓ Should show quantity per category
+         ✓ Should show weight per category (3 decimal precision)
+         ✓ Should calculate totals correctly
+      
+      3. API Endpoints to Validate:
+         ✓ GET /api/inventory/headers - Returns categories
+         ✓ GET /api/inventory/stock-totals - Returns aggregated stock data
+         ✓ GET /api/parties/outstanding-summary - Returns outstanding amounts
+      
+      4. UI/UX Testing:
+         ✓ Page loads without errors
+         ✓ All metric cards render correctly
+         ✓ Stock table displays properly
+         ✓ Numbers formatted correctly (decimals, units)
+         ✓ Responsive design works
+         ✓ No console errors
+      
+      5. Data Accuracy:
+         ✓ Stock calculations are correct
+         ✓ Outstanding amounts match invoice data
+         ✓ Low stock count is accurate
+         ✓ All categories displayed
+      
+      6. Performance:
+         ✓ Page loads quickly with realistic data volume
+         ✓ No lag or delays in rendering
+         ✓ API responses are fast
+      
+      7. Edge Cases:
+         ✓ Handles large numbers correctly
+         ✓ Zero stock categories display properly
+         ✓ Negative balances handled
+         ✓ Decimal precision maintained
+      
+      READY FOR TESTING:
+      ================================================================================
+      • Database populated with comprehensive, realistic test data
+      • All Dashboard dependencies satisfied
+      • Backend APIs ready to serve data
+      • Frontend components ready to display
+      
+      NEXT STEP: Run comprehensive Dashboard testing with testing agent
+      
+  - agent: "main"
+    message: |
       🎉 SECURITY HARDENING - PHASES 6, 7, 8 COMPLETE
       
       ✅ ALL REMAINING SECURITY PHASES SUCCESSFULLY IMPLEMENTED
