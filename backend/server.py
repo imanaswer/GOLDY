@@ -913,7 +913,8 @@ async def logout(response: Response, current_user: User = Depends(get_current_us
     return {"message": "Logged out successfully"}
 
 @api_router.post("/auth/request-password-reset")
-async def request_password_reset(email_data: dict):
+@limiter.limit("3/minute")  # Strict rate limit: 3 password reset requests per minute per IP
+async def request_password_reset(request: Request, email_data: dict):
     """Request password reset - generates reset token"""
     email = email_data.get('email')
     if not email:
