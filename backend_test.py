@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
-Backend Testing Script for Professional Invoice Printing Endpoints
+Backend Testing Script for Inventory Headers API Endpoint
 
-NEW FEATURES TO TEST:
-1. ✅ Shop Settings Endpoint (GET /api/settings/shop) - placeholder data
-2. ✅ Invoice Full Details Endpoint (GET /api/invoices/{invoice_id}/full-details) - enhanced fields
-3. ✅ Invoice Model Enhancements - new fields accessibility
-4. ✅ InvoiceItem Model Enhancements - new fields accessibility
+CRITICAL TEST FOCUS:
+✅ Inventory Headers API Endpoint (GET /api/inventory/headers) - Paginated Structure Testing
 
 TEST OBJECTIVES:
-1. Test GET /api/settings/shop returns placeholder shop settings
-2. Test GET /api/invoices/{invoice_id}/full-details with existing invoice
-3. Verify response structure includes invoice, payments array, customer_details
-4. Verify new invoice fields are accessible (customer_phone, customer_address, customer_gstin, tax breakdown)
-5. Verify new invoice item fields are accessible (weights, charges, etc.)
+1. Test GET /api/inventory/headers returns correct paginated structure: {items: [...], pagination: {...}}
+2. Verify items array contains inventory headers with proper id and name fields
+3. Verify each header has required fields: id, name, current_qty, current_weight
+4. Test pagination parameters work correctly (page=1, page_size=10)
+5. Ensure Category dropdown in Add Stock Movement dialog will populate correctly
+
+This test ensures the Category dropdown in the Add Stock Movement dialog will populate correctly.
 """
 
 import requests
