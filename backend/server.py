@@ -794,7 +794,8 @@ async def register(user_data: UserCreate):
     return user
 
 @api_router.post("/auth/login", response_model=TokenResponse)
-async def login(credentials: UserLogin, response: Response):
+@limiter.limit("5/minute")  # Strict rate limit: 5 login attempts per minute per IP
+async def login(request: Request, credentials: UserLogin, response: Response):
     user_doc = await db.users.find_one({"username": credentials.username, "is_deleted": False}, {"_id": 0})
     
     # Check if user exists
