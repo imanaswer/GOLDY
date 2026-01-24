@@ -7,7 +7,7 @@ Verifies all critical scenarios for the bug fix
 import requests
 import json
 
-BASE_URL = "https://errorcrusher-1.preview.emergentagent.com/api"
+BASE_URL = "https://page-validator-3.preview.emergentagent.com/api"
 ADMIN_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 def authenticate():
