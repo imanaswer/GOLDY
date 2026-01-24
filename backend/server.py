@@ -4834,8 +4834,13 @@ async def get_transactions_summary(
 
 @api_router.get("/daily-closings", response_model=List[DailyClosing])
 async def get_daily_closings(current_user: User = Depends(require_permission('finance.view'))):
-    closings = await db.daily_closings.find({}, {"_id": 0}).sort("date", -1).to_list(1000)
-    return closings
+    try:
+        closings = await db.daily_closings.find({}, {"_id": 0}).sort("date", -1).to_list(1000)
+        return closings if closings else []
+    except Exception as e:
+        print(f"Error in get_daily_closings: {str(e)}")
+        # Return empty list instead of crashing
+        return []
 
 @api_router.post("/daily-closings", response_model=DailyClosing)
 async def create_daily_closing(closing_data: dict, current_user: User = Depends(require_permission('finance.create'))):
