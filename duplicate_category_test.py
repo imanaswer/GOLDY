@@ -95,7 +95,7 @@ class DuplicateCategoryTester:
                 category_names = [item.get('name', 'Unknown') for item in items]
                 self.log_result("Setup - Get Existing Categories", "PASS", 
                               f"Found {len(items)} existing categories: {', '.join(category_names[:5])}")
-                return True
+                return len(items) > 0
             else:
                 self.log_result("Setup - Get Existing Categories", "FAIL", 
                               f"Failed to get categories: {response.status_code} - {response.text}")
@@ -104,6 +104,8 @@ class DuplicateCategoryTester:
         except Exception as e:
             self.log_result("Setup - Get Existing Categories", "ERROR", f"Error: {str(e)}")
             return False
+    
+    def setup_test_data(self):
         """Create initial test categories for testing"""
         try:
             # Create some initial categories for testing
@@ -129,29 +131,8 @@ class DuplicateCategoryTester:
         except Exception as e:
             self.log_result("Setup - Create Initial Categories", "ERROR", f"Error: {str(e)}")
             return False
-        """Get list of existing categories"""
-        try:
-            response = self.session.get(f"{BASE_URL}/inventory/headers")
-            
-            if response.status_code == 200:
-                data = response.json()
-                items = data.get('items', [])
-                self.existing_categories = items
-                
-                category_names = [item.get('name', 'Unknown') for item in items]
-                self.log_result("Setup - Get Existing Categories", "PASS", 
-                              f"Found {len(items)} existing categories: {', '.join(category_names[:5])}")
-                return True
-            else:
-                self.log_result("Setup - Get Existing Categories", "FAIL", 
-                              f"Failed to get categories: {response.status_code} - {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log_result("Setup - Get Existing Categories", "ERROR", f"Error: {str(e)}")
-            return False
     
-    def setup_test_data(self):
+    def test_create_duplicate_exact_match(self):
         """
         TEST 1: Create duplicate category (exact match)
         Try to create a category with a name that already exists
@@ -190,7 +171,7 @@ class DuplicateCategoryTester:
         except Exception as e:
             self.log_result("Create Duplicate - Exact Match", "ERROR", f"Error: {str(e)}")
     
-    def test_create_duplicate_exact_match(self):
+    def test_create_duplicate_case_insensitive(self):
         """
         TEST 2: Create duplicate category (case-insensitive)
         If category "Gold Rings" exists, try creating "gold rings" or "GOLD RINGS"
