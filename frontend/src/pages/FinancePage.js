@@ -92,10 +92,6 @@ export default function FinancePageEnhanced() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-      console.error('Failed to load data:', error);
-      toast.error('Failed to load data');
-    }
-  };
 
   const handleCreateAccount = async () => {
     try {
