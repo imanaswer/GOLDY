@@ -182,6 +182,7 @@ class InvoiceWorkflowTester:
             
             # Create job card with items for invoice conversion
             job_card_data = {
+                "card_type": "job",  # Required field
                 "customer_type": "saved",
                 "customer_id": self.created_entities['customers'][0],
                 "worker_id": None,
