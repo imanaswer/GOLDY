@@ -3120,6 +3120,9 @@ async def get_invoices(
     current_user: User = Depends(get_current_user)
 ):
     """Get invoices with pagination support"""
+    if not user_has_permission(current_user, 'invoices.view'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view invoices")
+    
     query = {"is_deleted": False}
     
     # Calculate skip value
