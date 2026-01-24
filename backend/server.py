@@ -933,14 +933,7 @@ async def reset_password(reset_data: dict):
     return {"message": "Password reset successfully"}
 
 @api_router.get("/users", response_model=List[User])
-async def get_users(current_user: User = Depends(get_current_user)):
-    # Check permission
-    if not user_has_permission(current_user, 'users.view'):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to view users"
-        )
-    
+async def get_users(current_user: User = Depends(require_permission('users.view'))):
     users = await db.users.find({"is_deleted": False}, {"_id": 0, "hashed_password": 0}).to_list(1000)
     for user in users:
         if isinstance(user.get('created_at'), str):
