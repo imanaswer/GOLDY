@@ -115,7 +115,7 @@ export default function Dashboard() {
                   <tr key={idx} className="border-t hover:bg-muted/30 transition-colors">
                     <td className="px-4 py-3 font-medium">{item.header_name}</td>
                     <td className="px-4 py-3 text-right font-mono">{item.total_qty}</td>
-                    <td className="px-4 py-3 text-right font-mono">{(item.total_weight || 0).toFixed(3)}</td>
+                    <td className="px-4 py-3 text-right font-mono">{formatWeight(item.total_weight || 0)}</td>
                   </tr>
                 ))}
               </tbody>
