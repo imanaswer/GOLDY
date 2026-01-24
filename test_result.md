@@ -4439,3 +4439,125 @@ agent_communication:
       9. Test error handling
       10. Check responsive design on different viewports
 
+
+#====================================================================================================
+# Dashboard Stock Calculation Fix - Latest Task
+#====================================================================================================
+
+user_problem_statement: |
+  Fix Dashboard Stock Calculation System - Critical Data Integrity Issues:
+  1. Categories Card - Shows empty value (should show "10")
+  2. Total Stock Card - Shows 0.000g (should show positive weight with 3 decimals)
+  3. Stock Summary Table - All quantities/weights show 0
+  Root Cause: Inventory headers missing current_qty and current_weight fields, stock movements don't update header totals
+
+backend:
+  - task: "Fix Inventory Data Schema and Seed Script"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/seed_dashboard_data.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ FIXED: Updated seed_dashboard_data.py to create proper inventory data:
+          1. Added current_qty and current_weight initialization to inventory headers (lines 83-84)
+          2. Fixed stock movements to use correct schema: movement_type (not transaction_type), qty_delta (not quantity), weight_delta (not net_weight), header_name (was missing)
+          3. Implemented smart movement generation: More IN movements (8-12) with larger quantities (5-15), fewer OUT movements (2-5) to maintain positive stock
+          4. Added running totals calculation and header updates after movement creation
+          5. Re-seeded database with correct data
+
+  - task: "Create Stock Reconciliation Script"
+    implemented: true
+    working: true
+    file: "/app/reconcile_inventory_stock.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ CREATED: Stock reconciliation script to fix existing data:
+          1. Fetches all inventory headers and stock movements
+          2. Calculates correct totals from movements (handles IN/OUT with qty_delta and weight_delta)
+          3. Updates inventory headers with calculated current_qty and current_weight
+          4. Provides verification summary
+          Script successfully reconciled all inventory data.
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Dashboard Page - Verify all metrics display correctly"
+    - "Stock Summary Table - Verify all rows show proper quantities and weights"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ✅ DASHBOARD STOCK CALCULATION FIX COMPLETED
+      
+      FIXES IMPLEMENTED:
+      ================================================================================
+      
+      1. SEED SCRIPT FIXES (seed_dashboard_data.py):
+         - Fixed inventory header creation to include current_qty: 0.0 and current_weight: 0.0
+         - Fixed stock movement schema to match StockMovement model:
+           • movement_type (IN/OUT) instead of transaction_type (in/out)
+           • qty_delta (positive/negative) instead of quantity
+           • weight_delta (positive/negative) instead of net_weight
+           • header_name added (was missing)
+         - Implemented smart movement generation to ensure positive stock:
+           • Create 8-12 IN movements first with qty 5-15 and weight 10-200g
+           • Then create 2-5 OUT movements with max 30% of current stock
+         - Added running totals and header updates after movements
+      
+      2. RECONCILIATION SCRIPT (reconcile_inventory_stock.py):
+         - Created reusable script to calculate and fix inventory totals
+         - Processes all movements to calculate correct current_qty and current_weight
+         - Updates headers in database
+         - Provides verification summary
+      
+      3. DATABASE STATUS:
+         ✅ 10 inventory headers with proper current_qty and current_weight
+         ✅ 113 stock movements with correct schema
+         ✅ Total stock: 7,022.456g (verified)
+         ✅ Total quantity: 373 items (verified)
+         ✅ Outstanding: 41,917.07 OMR (verified)
+         ✅ Low stock: 2 items (qty < 5) (verified)
+      
+      4. VERIFICATION:
+         - Direct database testing confirms all calculations are correct
+         - Sample data shows:
+           • Chain: qty=52.0, weight=1187.642g
+           • Ring: qty=39.0, weight=730.594g
+           • Bangle: qty=48.0, weight=955.212g
+           • Necklace: qty=52.0, weight=1002.851g
+           • Bracelet: qty=48.0, weight=436.794g
+      
+      TESTING NEEDED:
+      ================================================================================
+      Please test the Dashboard page to verify:
+      1. Categories card shows "10" (not empty)
+      2. Total Stock card shows "7022.456g" (not 0.000g)
+      3. Outstanding card shows correct OMR value
+      4. Low Stock card shows correct count
+      5. Stock Summary Table displays 10 rows with proper quantities and weights
+      
+      LOGIN CREDENTIALS:
+      - Username: admin
+      - Password: admin123
+      
+      NOTE: Backend was restarted and is running on port 8001.
+      Install missing annotated-doc dependency has been resolved.
+
