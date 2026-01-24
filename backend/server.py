@@ -203,6 +203,14 @@ class CSRFProtectionMiddleware(BaseHTTPMiddleware):
                 # Get CSRF token from header
                 csrf_header = request.headers.get('X-CSRF-Token')
                 
+                # Debug logging
+                print(f"CSRF Debug - Path: {request.url.path}")
+                print(f"CSRF Debug - Method: {request.method}")
+                print(f"CSRF Debug - Cookie: {csrf_cookie}")
+                print(f"CSRF Debug - Header: {csrf_header}")
+                print(f"CSRF Debug - All cookies: {dict(request.cookies)}")
+                print(f"CSRF Debug - All headers: {dict(request.headers)}")
+                
                 # Validate that both exist and match
                 if not csrf_cookie or not csrf_header:
                     return StarletteResponse(
