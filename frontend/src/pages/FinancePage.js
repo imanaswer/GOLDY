@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
+import { formatCurrency } from '../utils/numberFormat';
 import { 
   Plus, 
   Wallet as WalletIcon, 
