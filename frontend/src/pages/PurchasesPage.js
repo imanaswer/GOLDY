@@ -261,6 +261,11 @@ export default function PurchasesPage() {
     }
   };
 
+  const handleViewPurchase = (purchase) => {
+    setViewPurchase(purchase);
+    setShowViewDialog(true);
+  };
+
   const getVendorName = (vendorId) => {
     const vendor = vendors.find(v => v.id === vendorId);
     return vendor ? vendor.name : 'Unknown Vendor';
