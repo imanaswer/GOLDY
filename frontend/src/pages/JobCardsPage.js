@@ -545,7 +545,7 @@ export default function JobCardsPage() {
     setEditingTemplate(null);
     setSaveAsTemplate(false);
     // Reset form to default - use first inventory header if available
-    const defaultCategory = inventoryHeaders.length > 0 ? inventoryHeaders[0].name : 'Chain';
+    const defaultCategory = (inventoryHeaders && inventoryHeaders.length > 0) ? inventoryHeaders[0].name : 'Chain';
     
     setFormData({
       card_type: 'individual',
