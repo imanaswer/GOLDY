@@ -172,7 +172,7 @@ export default function InventoryPage() {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {headers.map(h => (
+                      {Array.isArray(headers) && headers.map(h => (
                         <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>
                       ))}
                     </SelectContent>
