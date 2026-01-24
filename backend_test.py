@@ -313,7 +313,10 @@ class InvoiceWorkflowTester:
                 self.log_result("Issue #3 - Get Inventory", "FAIL", f"Failed to get inventory: {response.status_code}")
                 return
             
-            headers = response.json().get("items", [])
+            headers = response.json()
+            if isinstance(headers, dict) and "items" in headers:
+                headers = headers["items"]
+            
             ring_header = None
             for header in headers:
                 if header.get("name") == "Ring":
