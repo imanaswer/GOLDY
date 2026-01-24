@@ -581,6 +581,55 @@ export default function PurchasesPage() {
                   <strong>Note:</strong> Stock will be added at <strong>916 purity (22K)</strong> for valuation purposes, regardless of entered purity.
                 </p>
               </div>
+
+              {/* Cost Breakdown Preview - Option C */}
+              {formData.weight_grams && formData.rate_per_gram && formData.amount_total && (
+                <div className="mt-4 p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 rounded-lg">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg className="w-5 h-5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <h4 className="font-semibold text-amber-900">Purchase Cost Breakdown</h4>
+                  </div>
+                  
+                  <div className="space-y-2 text-sm">
+                    {/* Base Calculation */}
+                    <div className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
+                      <span className="text-gray-700">Weight × Rate</span>
+                      <span className="font-mono font-semibold text-amber-900">
+                        {(parseFloat(formData.weight_grams || 0) * parseFloat(formData.rate_per_gram || 0)).toFixed(2)} OMR
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 pl-2">
+                      {parseFloat(formData.weight_grams || 0).toFixed(3)}g × {parseFloat(formData.rate_per_gram || 0).toFixed(2)} OMR/g
+                    </div>
+
+                    {/* Purity Info */}
+                    <div className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
+                      <span className="text-gray-700">Entered Purity</span>
+                      <span className="font-mono font-semibold">{formData.entered_purity}K</span>
+                    </div>
+                    <div className="text-xs text-indigo-600 pl-2 font-medium">
+                      ✓ Stock valued at 916K (22K) standard
+                    </div>
+
+                    {/* Total Amount */}
+                    <div className="flex items-center justify-between p-3 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg mt-3">
+                      <span className="font-semibold">Total Purchase Amount</span>
+                      <span className="font-mono font-bold text-xl">
+                        {parseFloat(formData.amount_total || 0).toFixed(2)} OMR
+                      </span>
+                    </div>
+
+                    {/* Additional charges indicator */}
+                    {parseFloat(formData.amount_total || 0) !== (parseFloat(formData.weight_grams || 0) * parseFloat(formData.rate_per_gram || 0)) && (
+                      <div className="text-xs text-orange-600 pl-2 mt-1 font-medium">
+                        ℹ️ Amount includes adjustments: {(parseFloat(formData.amount_total || 0) - (parseFloat(formData.weight_grams || 0) * parseFloat(formData.rate_per_gram || 0))).toFixed(2)} OMR
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Payment Details */}
