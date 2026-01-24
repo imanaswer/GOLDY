@@ -8,7 +8,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "https://jewel-invoice-pro-1.preview.emergentagent.com/api"
+BASE_URL = "https://api-dependency-fix.preview.emergentagent.com/api"
 ADMIN_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 def setup_test_data():

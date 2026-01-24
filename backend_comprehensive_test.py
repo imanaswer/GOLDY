@@ -28,7 +28,7 @@ import uuid
 import traceback
 
 # Configuration
-BASE_URL = "https://jewel-invoice-pro-1.preview.emergentagent.com/api"
+BASE_URL = "https://api-dependency-fix.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
