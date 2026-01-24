@@ -76,6 +76,7 @@ async def seed_comprehensive_dashboard_data():
     ]
     
     header_ids = []
+    header_names = {}  # Store mapping for header_id -> header_name
     for header_name in inventory_headers:
         existing = await db.inventory_headers.find_one({"name": header_name, "is_deleted": False})
         if not existing:
@@ -83,6 +84,8 @@ async def seed_comprehensive_dashboard_data():
             header = {
                 "id": header_id,
                 "name": header_name,
+                "current_qty": 0.0,  # Initialize stock tracking fields
+                "current_weight": 0.0,  # Initialize weight tracking fields
                 "is_active": True,
                 "created_at": get_random_date(180).isoformat(),
                 "created_by": admin_id,
@@ -90,9 +93,11 @@ async def seed_comprehensive_dashboard_data():
             }
             await db.inventory_headers.insert_one(header)
             header_ids.append(header_id)
+            header_names[header_id] = header_name
             print(f"  ✓ Created header: {header_name}")
         else:
             header_ids.append(existing["id"])
+            header_names[existing["id"]] = existing["name"]
             print(f"  ✓ Header exists: {header_name}")
     
     # ==================== 2. STOCK MOVEMENTS ====================
