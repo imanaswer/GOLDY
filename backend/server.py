@@ -1049,7 +1049,7 @@ async def get_inventory_headers(current_user: User = Depends(require_permission(
     return headers
 
 @api_router.post("/inventory/headers", response_model=InventoryHeader)
-async def create_inventory_header(header_data: dict, current_user: User = Depends(get_current_user)):
+async def create_inventory_header(header_data: dict, current_user: User = Depends(require_permission('inventory.adjust'))):
     header = InventoryHeader(name=header_data['name'], created_by=current_user.id)
     await db.inventory_headers.insert_one(header.model_dump())
     await create_audit_log(current_user.id, current_user.full_name, "inventory_header", header.id, "create")
