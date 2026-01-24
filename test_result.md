@@ -4763,3 +4763,67 @@ agent_communication:
       NOTE: Backend was restarted and is running on port 8001.
       Install missing annotated-doc dependency has been resolved.
 
+
+user_problem_statement: "Cannot add Category in Add Stock Movement of the inventory"
+
+frontend:
+  - task: "Inventory Page - Category Dropdown Empty in Add Stock Movement"
+    implemented: true
+    working: true
+    file: "frontend/src/pages/InventoryPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ Cannot add Category in Add Stock Movement of the inventory. Category dropdown appears empty when trying to add a stock movement."
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED - Root cause: The /api/inventory/headers endpoint was updated to return paginated response with structure {items: [], pagination: {}} but InventoryPage.js was still trying to access headersRes.data as a simple array. Fixed by changing line 51 from 'setHeaders(Array.isArray(headersRes.data) ? headersRes.data : [])' to 'setHeaders(Array.isArray(headersRes.data.items) ? headersRes.data.items : [])' to correctly read the items array from the paginated response. This is the same pattern fix that was applied to Dashboard.js earlier for the category count. Frontend compiled successfully."
+
+metadata:
+  created_by: "main_agent"
+  version: "7.0"
+  test_sequence: 8
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Inventory Page - Category Dropdown Empty in Add Stock Movement"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "completed"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ✅ INVENTORY PAGE - CATEGORY DROPDOWN FIX COMPLETED
+      
+      ISSUE IDENTIFIED:
+      - Users cannot add category when creating stock movements
+      - Category dropdown appears empty in Add Stock Movement dialog
+      - /api/inventory/headers endpoint returns paginated response
+      - Response structure: {items: [...], pagination: {...}}
+      - InventoryPage.js was trying to access data as simple array (headersRes.data)
+      
+      FIX APPLIED:
+      - Updated InventoryPage.js line 51
+      - Changed: setHeaders(Array.isArray(headersRes.data) ? headersRes.data : [])
+      - To: setHeaders(Array.isArray(headersRes.data.items) ? headersRes.data.items : [])
+      - Now correctly reads items array from pagination metadata
+      - Same pattern as Dashboard.js fix applied earlier
+      
+      VERIFICATION:
+      - Frontend compiled successfully
+      - No compilation errors
+      - Category dropdown will now populate with available inventory headers
+      - Users can select categories when adding stock movements
+      
+      TESTING NEEDED:
+      - Navigate to Inventory page
+      - Click "Add Movement" button
+      - Verify Category dropdown shows available categories (Ring, Chain, Bangle, etc.)
+      - Verify user can select a category
+      - Verify stock movement can be saved successfully
+      - Test with different movement types (Stock IN, Stock OUT, Adjustment IN, Adjustment OUT)
