@@ -6976,6 +6976,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add HTTPS Redirect middleware (enforces HTTPS connections)
+app.add_middleware(HTTPSRedirectMiddleware)
+
 # Add Security Headers middleware (must be after CORS)
 app.add_middleware(SecurityHeadersMiddleware)
 
