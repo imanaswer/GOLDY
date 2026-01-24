@@ -85,6 +85,10 @@ def test_csrf_protection():
         'X-CSRF-Token': csrf_token
     }
     
+    # Debug: print cookies before request
+    print(f"   Debug: Cookies being sent: {dict(session.cookies)}")
+    print(f"   Debug: CSRF token in header: {csrf_token[:20]}...")
+    
     response = session.post(
         f"{BASE_URL}/parties",
         json={
@@ -103,6 +107,8 @@ def test_csrf_protection():
     if response.status_code == 200:
         party_data = response.json()
         print(f"   Created party: {party_data.get('name')} (ID: {party_data.get('id')})")
+    elif response.status_code == 403:
+        print(f"   Error: {response.json().get('detail', 'Unknown error')}")
     
     # Test 4: POST request with mismatched CSRF token (should fail)
     print_test_header("Test 4: POST Request With Invalid CSRF Token (Should Fail 403)")
