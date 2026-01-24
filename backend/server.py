@@ -517,7 +517,7 @@ class PaginationResponse(BaseModel):
     items: List[Any]
     pagination: PaginationMetadata
 
-def create_pagination_response(items: list, total_count: int, page: int, per_page: int):
+def create_pagination_response(items: list, total_count: int, page: int, page_size: int):
     """
     Helper function to create standardized pagination response
     
@@ -525,19 +525,19 @@ def create_pagination_response(items: list, total_count: int, page: int, per_pag
         items: List of items for current page
         total_count: Total number of items across all pages
         page: Current page number (1-indexed)
-        per_page: Number of items per page
+        page_size: Number of items per page
     
     Returns:
         Dictionary with items and pagination metadata
     """
-    total_pages = (total_count + per_page - 1) // per_page  # Ceiling division
+    total_pages = (total_count + page_size - 1) // page_size  # Ceiling division
     
     return {
         "items": items,
         "pagination": {
             "total_count": total_count,
             "page": page,
-            "per_page": per_page,
+            "page_size": page_size,
             "total_pages": total_pages,
             "has_next": page < total_pages,
             "has_prev": page > 1
