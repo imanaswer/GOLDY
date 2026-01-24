@@ -67,16 +67,27 @@ export default function InventoryPage() {
   };
 
   const handleAddHeader = async () => {
-    if (!newHeader.trim()) return;
+    if (!newHeader.trim()) {
+      setCategoryNameError('Category name is required');
+      return;
+    }
 
     try {
+      setCategoryNameError(''); // Clear any previous errors
       await axios.post(`${API}/inventory/headers`, { name: newHeader });
       toast.success('Category added successfully');
       setNewHeader('');
       setShowAddHeader(false);
       loadInventoryData();
     } catch (error) {
-      toast.error('Failed to add category');
+      // Check if it's a duplicate name error
+      if (error.response?.data?.detail) {
+        // Show inline error for duplicate names
+        setCategoryNameError(error.response.data.detail);
+      } else {
+        // Show toast for other errors
+        toast.error('Failed to add category');
+      }
     }
   };
 
