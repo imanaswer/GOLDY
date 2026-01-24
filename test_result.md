@@ -105,6 +105,36 @@
 user_problem_statement: "COMPREHENSIVE STRESS TESTING FOR GOLD SHOP ERP - IDENTIFY PRODUCTION-READINESS BLOCKERS. Execute ALL stress test scenarios including authentication stress tests, purchases module edge cases, job cards status transitions, invoices payment edge cases, inventory stock movements, party management CRUD operations, navigation state persistence, and concurrent operations testing. Surface UX gaps, missing confirmations, ambiguous copy, broken expectations, silent failures, data loss, double submission, inconsistent state, validation gaps, navigation breaks, stale data, and race conditions."
 
 backend:
+  - task: "Purchases API - Model Validation Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ PURCHASES APIs - CRITICAL ISSUE - Endpoint expects Purchase model object but receives dictionary, causing validation errors"
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED - Changed create_purchase endpoint from accepting Purchase model directly to accepting dictionary (purchase_data: dict). This matches the pattern used by other endpoints (create_invoice, create_transaction, create_account). The endpoint now properly accepts dictionary from frontend, validates and transforms the data, then constructs the Purchase model. Backend restarted successfully."
+
+  - task: "Transactions API - Account Dependency"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "user"
+        comment: "❌ TRANSACTIONS APIs - DEPENDENCY ISSUE - Requires valid account_id, but test account creation needed first"
+      - working: true
+        agent: "main"
+        comment: "✅ VALIDATED - Transactions API is working correctly. The issue is a test dependency - transactions require a valid account_id to exist in the database before creating transactions. This is by design for data integrity. The create_transaction endpoint properly validates account existence and returns clear error message if account not found. Testing workflow should create accounts first, then test transactions."
+
   - task: "Application Infrastructure & Service Management"
     implemented: true
     working: true
