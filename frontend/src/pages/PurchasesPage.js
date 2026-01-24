@@ -32,6 +32,10 @@ export default function PurchasesPage() {
   const [editingPurchase, setEditingPurchase] = useState(null);
   const [finalizing, setFinalizing] = useState(null);
   
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
   // View dialog state
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [viewPurchase, setViewPurchase] = useState(null);
@@ -48,6 +52,9 @@ export default function PurchasesPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  
+  // Form validation errors
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState({
     vendor_party_id: '',
