@@ -754,7 +754,8 @@ async def get_current_user(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 @api_router.post("/auth/register", response_model=User)
-async def register(user_data: UserCreate):
+@limiter.limit("5/minute")  # Strict rate limit: 5 registrations per minute per IP
+async def register(request: Request, user_data: UserCreate):
     existing = await db.users.find_one({"username": user_data.username, "is_deleted": False})
     if existing:
         raise HTTPException(status_code=400, detail="Username already exists")
