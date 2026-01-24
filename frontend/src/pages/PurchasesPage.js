@@ -440,6 +440,17 @@ export default function PurchasesPage() {
                       <td className="p-3 text-center">{getStatusBadge(purchase.status)}</td>
                       <td className="p-3">
                         <div className="flex gap-2 justify-center">
+                          {/* View button - always available */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-indigo-600 hover:text-indigo-700"
+                            onClick={() => handleViewPurchase(purchase)}
+                            title="View Purchase Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          
                           {purchase.status === 'draft' && (
                             <>
                               <Button
