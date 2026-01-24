@@ -46,14 +46,19 @@ export default function InventoryPage() {
         })
       ]);
 
-      setHeaders(headersRes.data);
-      setMovements(movementsRes.data);
-      setStockTotals(totalsRes.data);
-      setInventory(inventoryRes.data.items || []);
+      setHeaders(Array.isArray(headersRes.data) ? headersRes.data : []);
+      setMovements(Array.isArray(movementsRes.data) ? movementsRes.data : []);
+      setStockTotals(Array.isArray(totalsRes.data) ? totalsRes.data : []);
+      setInventory(Array.isArray(inventoryRes.data.items) ? inventoryRes.data.items : []);
       setPagination(inventoryRes.data.pagination);
     } catch (error) {
       console.error('Failed to load inventory:', error);
       toast.error('Failed to load inventory data');
+      // Ensure arrays are set even on error
+      setHeaders([]);
+      setMovements([]);
+      setStockTotals([]);
+      setInventory([]);
     }
   };
 
