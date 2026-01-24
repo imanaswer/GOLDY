@@ -964,14 +964,7 @@ async def update_user(user_id: str, update_data: dict, current_user: User = Depe
     return {"message": "User updated successfully"}
 
 @api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
-    # Check permission
-    if not user_has_permission(current_user, 'users.delete'):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to delete users"
-        )
-    
+async def delete_user(user_id: str, current_user: User = Depends(require_permission('users.delete'))):
     if user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot delete your own account")
     
