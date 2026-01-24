@@ -1577,6 +1577,278 @@ export default function JobCardsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* View Job Card Dialog - Option B Enhancement */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-serif">Job Card Details</DialogTitle>
+          </DialogHeader>
+
+          {viewJobCard && (
+            <div className="space-y-6">
+              {/* Job Card Header */}
+              <div className="grid grid-cols-2 gap-6 p-4 bg-muted/50 rounded-lg">
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Job Card Number</p>
+                    <p className="font-mono font-semibold text-lg">{viewJobCard.job_card_number}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Customer</p>
+                    {viewJobCard.customer_type === 'walk_in' ? (
+                      <div>
+                        <p className="font-medium">{viewJobCard.walk_in_name || 'Walk-in Customer'}</p>
+                        <Badge variant="outline" className="mt-1 text-xs bg-amber-50 text-amber-700">
+                          Walk-in
+                        </Badge>
+                      </div>
+                    ) : (
+                      <p className="font-medium">{viewJobCard.customer_name || '-'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Worker</p>
+                    <p className="font-medium">{viewJobCard.worker_name || '-'}</p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Status</p>
+                    <div className="mt-1">{getStatusBadge(viewJobCard.status)}</div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Date Created</p>
+                    <p className="font-medium">{new Date(viewJobCard.date_created).toLocaleDateString()}</p>
+                  </div>
+                  {viewJobCard.delivery_date && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Delivery Date</p>
+                      <p className="font-medium">{new Date(viewJobCard.delivery_date).toLocaleDateString()}</p>
+                    </div>
+                  )}
+                  {viewJobCard.notes && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">Notes</p>
+                      <p className="font-medium text-sm">{viewJobCard.notes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Items</h3>
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold">Category</th>
+                        <th className="px-3 py-2 text-left font-semibold">Description</th>
+                        <th className="px-3 py-2 text-right font-semibold">Qty</th>
+                        <th className="px-3 py-2 text-right font-semibold">Weight In (g)</th>
+                        <th className="px-3 py-2 text-right font-semibold">Weight Out (g)</th>
+                        <th className="px-3 py-2 text-right font-semibold">Purity</th>
+                        <th className="px-3 py-2 text-left font-semibold">Work Type</th>
+                        <th className="px-3 py-2 text-left font-semibold">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(viewJobCard.items || []).map((item, idx) => (
+                        <tr key={idx} className="border-t hover:bg-muted/20">
+                          <td className="px-3 py-2">{item.category || '-'}</td>
+                          <td className="px-3 py-2">{item.description || '-'}</td>
+                          <td className="px-3 py-2 text-right font-mono">{item.qty || 0}</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.weight_in || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{(item.weight_out || 0).toFixed(3)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{item.purity || 916}K</td>
+                          <td className="px-3 py-2 capitalize">{item.work_type || '-'}</td>
+                          <td className="px-3 py-2 text-xs">{item.remarks || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* ENHANCED Cost Estimation Section - Option B Improvements */}
+              {viewJobCard.gold_rate_at_jobcard && (
+                <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 border-2 border-indigo-300 rounded-xl p-5 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-lg text-indigo-900 flex items-center gap-2">
+                      <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      Cost Estimation Breakdown
+                    </h3>
+                    <Badge className="bg-purple-100 text-purple-800 px-3 py-1">ESTIMATE ONLY</Badge>
+                  </div>
+
+                  {/* Item-wise Breakdown */}
+                  <div className="space-y-3 mb-4">
+                    {(viewJobCard.items || []).map((item, idx) => {
+                      const goldRate = parseFloat(viewJobCard.gold_rate_at_jobcard) || 0;
+                      const weightIn = parseFloat(item.weight_in) || 0;
+                      const makingValue = parseFloat(item.making_charge_value) || 0;
+                      const vatPercent = parseFloat(item.vat_percent) || 0;
+                      
+                      // Calculate metal value (weight × gold rate)
+                      const metalValue = weightIn * goldRate;
+                      
+                      // Calculate making charges
+                      const makingCharges = item.making_charge_type === 'per_gram' 
+                        ? makingValue * weightIn 
+                        : makingValue;
+                      
+                      // Calculate subtotal before VAT
+                      const subtotal = metalValue + makingCharges;
+                      
+                      // Calculate VAT
+                      const vat = (subtotal * vatPercent) / 100;
+                      
+                      // Calculate total
+                      const total = subtotal + vat;
+                      
+                      return (
+                        <div key={idx} className="bg-white rounded-lg p-4 border-2 border-indigo-200 shadow-sm">
+                          <div className="font-semibold text-sm text-indigo-900 mb-3 flex items-center justify-between">
+                            <span>{item.description || `Item ${idx + 1}`}</span>
+                            <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="flex justify-between p-2 bg-amber-50 rounded border border-amber-200">
+                              <span className="text-gray-700">Est. Metal Value:</span>
+                              <span className="font-mono font-semibold text-amber-800">{metalValue.toFixed(2)} OMR</span>
+                            </div>
+                            <div className="flex justify-between p-2 bg-green-50 rounded border border-green-200">
+                              <span className="text-gray-700">Est. Making:</span>
+                              <span className="font-mono font-semibold text-green-800">{makingCharges.toFixed(2)} OMR</span>
+                            </div>
+                            <div className="flex justify-between p-2 bg-blue-50 rounded border border-blue-200">
+                              <span className="text-gray-700">Est. VAT ({vatPercent}%):</span>
+                              <span className="font-mono font-semibold text-blue-800">{vat.toFixed(2)} OMR</span>
+                            </div>
+                            <div className="flex justify-between p-2 bg-indigo-100 rounded border border-indigo-300">
+                              <span className="font-semibold text-indigo-900">Est. Item Total:</span>
+                              <span className="font-mono font-bold text-indigo-900">{total.toFixed(2)} OMR</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="bg-gradient-to-br from-amber-100 to-amber-200 rounded-lg p-3 border border-amber-300">
+                      <div className="text-xs text-amber-800 font-medium uppercase mb-1">Est. Metal Total</div>
+                      <div className="font-mono font-bold text-xl text-amber-900">
+                        {(viewJobCard.items || []).reduce((total, item) => {
+                          const goldRate = parseFloat(viewJobCard.gold_rate_at_jobcard) || 0;
+                          const weightIn = parseFloat(item.weight_in) || 0;
+                          return total + (weightIn * goldRate);
+                        }, 0).toFixed(2)} OMR
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-lg p-3 border border-green-300">
+                      <div className="text-xs text-green-800 font-medium uppercase mb-1">Est. Making Total</div>
+                      <div className="font-mono font-bold text-xl text-green-900">
+                        {(viewJobCard.items || []).reduce((total, item) => {
+                          const weightIn = parseFloat(item.weight_in) || 0;
+                          const makingValue = parseFloat(item.making_charge_value) || 0;
+                          const makingCharges = item.making_charge_type === 'per_gram' ? makingValue * weightIn : makingValue;
+                          return total + makingCharges;
+                        }, 0).toFixed(2)} OMR
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-3 border border-blue-300">
+                      <div className="text-xs text-blue-800 font-medium uppercase mb-1">Est. VAT Total</div>
+                      <div className="font-mono font-bold text-xl text-blue-900">
+                        {(viewJobCard.items || []).reduce((total, item) => {
+                          const goldRate = parseFloat(viewJobCard.gold_rate_at_jobcard) || 0;
+                          const weightIn = parseFloat(item.weight_in) || 0;
+                          const makingValue = parseFloat(item.making_charge_value) || 0;
+                          const vatPercent = parseFloat(item.vat_percent) || 0;
+                          const metalValue = weightIn * goldRate;
+                          const makingCharges = item.making_charge_type === 'per_gram' ? makingValue * weightIn : makingValue;
+                          const subtotal = metalValue + makingCharges;
+                          const vat = (subtotal * vatPercent) / 100;
+                          return total + vat;
+                        }, 0).toFixed(2)} OMR
+                      </div>
+                    </div>
+                  </div>
+                    
+                  {/* Grand Total - Most Prominent */}
+                  <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 rounded-xl p-5 shadow-xl border-2 border-indigo-400">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-indigo-100 text-xs font-medium uppercase mb-1">Estimated Job Card Total</div>
+                        <div className="font-mono font-black text-4xl text-white">
+                          {(viewJobCard.items || []).reduce((total, item) => {
+                            const goldRate = parseFloat(viewJobCard.gold_rate_at_jobcard) || 0;
+                            const weightIn = parseFloat(item.weight_in) || 0;
+                            const makingValue = parseFloat(item.making_charge_value) || 0;
+                            const vatPercent = parseFloat(item.vat_percent) || 0;
+                            
+                            const metalValue = weightIn * goldRate;
+                            const makingCharges = item.making_charge_type === 'per_gram' ? makingValue * weightIn : makingValue;
+                            const subtotal = metalValue + makingCharges;
+                            const vat = (subtotal * vatPercent) / 100;
+                            const itemTotal = subtotal + vat;
+                            
+                            return total + itemTotal;
+                          }, 0).toFixed(2)} <span className="text-xl text-indigo-200">OMR</span>
+                        </div>
+                      </div>
+                      <svg className="w-16 h-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                    
+                  {/* Important Disclaimers */}
+                  <div className="mt-4 p-3 bg-amber-50 border-l-4 border-amber-400 rounded">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-amber-900">
+                        <p className="font-semibold mb-1">Important: This is an ESTIMATE only</p>
+                        <ul className="list-disc list-inside space-y-0.5 text-amber-800">
+                          <li>Based on gold rate: {parseFloat(viewJobCard.gold_rate_at_jobcard).toFixed(2)} OMR/g (at time of job card creation)</li>
+                          <li>Actual invoice amount may vary based on final weight and current market rates</li>
+                          <li>Final costs determined at invoice conversion</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* No Cost Estimation Message */}
+              {!viewJobCard.gold_rate_at_jobcard && (
+                <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
+                  <p className="text-sm text-gray-600">
+                    💡 Cost estimation not available - Gold rate was not set at the time of job card creation
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowViewDialog(false)}
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Enhanced Confirmation Dialog */}
       <ConfirmationDialog
         open={confirmDialog.open}
