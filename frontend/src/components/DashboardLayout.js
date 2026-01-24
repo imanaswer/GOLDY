@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -16,22 +16,35 @@ import {
   ShoppingCart
 } from 'lucide-react';
 
-const navItems = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/inventory', icon: Package, label: 'Inventory' },
-  { path: '/jobcards', icon: ClipboardList, label: 'Job Cards' },
-  { path: '/invoices', icon: FileText, label: 'Invoices' },
-  { path: '/parties', icon: Users, label: 'Parties' },
-  { path: '/purchases', icon: ShoppingCart, label: 'Purchases' },
-  { path: '/finance', icon: Wallet, label: 'Finance' },
-  { path: '/daily-closing', icon: CalendarCheck, label: 'Daily Closing' },
-  { path: '/reports', icon: BarChart3, label: 'Reports' },
-  { path: '/audit-logs', icon: History, label: 'Audit Logs' },
-  { path: '/settings', icon: Settings, label: 'Settings' }
+const allNavItems = [
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: null }, // Everyone can view dashboard
+  { path: '/inventory', icon: Package, label: 'Inventory', permission: 'inventory.view' },
+  { path: '/jobcards', icon: ClipboardList, label: 'Job Cards', permission: 'jobcards.view' },
+  { path: '/invoices', icon: FileText, label: 'Invoices', permission: 'invoices.view' },
+  { path: '/parties', icon: Users, label: 'Parties', permission: 'parties.view' },
+  { path: '/purchases', icon: ShoppingCart, label: 'Purchases', permission: 'purchases.view' },
+  { path: '/finance', icon: Wallet, label: 'Finance', permission: 'finance.view' },
+  { path: '/daily-closing', icon: CalendarCheck, label: 'Daily Closing', permission: 'finance.view' },
+  { path: '/reports', icon: BarChart3, label: 'Reports', permission: 'reports.view' },
+  { path: '/audit-logs', icon: History, label: 'Audit Logs', permission: 'audit.view' },
+  { path: '/settings', icon: Settings, label: 'Settings', permission: null } // Everyone can access settings
 ];
 
 export const DashboardLayout = ({ children }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
+
+  // Filter navigation items based on user permissions
+  const navItems = useMemo(() => {
+    if (!user) return [];
+    
+    return allNavItems.filter(item => {
+      // If no permission required, show to everyone
+      if (!item.permission) return true;
+      
+      // Check if user has the required permission
+      return hasPermission(item.permission);
+    });
+  }, [user, hasPermission]);
 
   return (
     <div className="min-h-screen flex">
