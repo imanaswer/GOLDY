@@ -4357,7 +4357,7 @@ async def create_daily_closing(closing_data: dict, current_user: User = Depends(
         raise HTTPException(status_code=400, detail=f"Failed to create daily closing: {str(e)}")
 
 @api_router.get("/daily-closings/calculate/{date}")
-async def calculate_daily_closing(date: str, current_user: User = Depends(get_current_user)):
+async def calculate_daily_closing(date: str, current_user: User = Depends(require_permission('finance.view'))):
     """
     Auto-calculate daily closing values for a specific date.
     Returns:
