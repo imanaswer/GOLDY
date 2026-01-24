@@ -24,7 +24,7 @@ import uuid
 import time
 
 # Configuration
-BASE_URL = "https://table-pagination.preview.emergentagent.com/api"
+BASE_URL = "https://smart-pagination.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 

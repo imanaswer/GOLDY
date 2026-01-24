@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import time
 
 # Configuration
-BASE_URL = "https://table-pagination.preview.emergentagent.com/api"
+BASE_URL = "https://smart-pagination.preview.emergentagent.com/api"
 
 # Test credentials from review request
 TEST_CREDENTIALS = [
