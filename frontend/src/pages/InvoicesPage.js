@@ -62,120 +62,15 @@ export default function InvoicesPage() {
     }
   };
 
-  const handlePrintInvoice = (invoice) => {
+  const handlePrintInvoice = async (invoice) => {
     try {
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(20);
-      doc.setFont(undefined, 'bold');
-      doc.text('Gold Shop ERP', 105, 20, { align: 'center' });
-      
-      doc.setFontSize(14);
-      doc.text('TAX INVOICE', 105, 30, { align: 'center' });
-      
-      // Invoice Details
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      doc.text(`Invoice #: ${invoice.invoice_number || 'N/A'}`, 20, 45);
-      doc.text(`Date: ${invoice.date ? new Date(invoice.date).toLocaleDateString() : 'N/A'}`, 20, 52);
-      doc.text(`Customer: ${invoice.customer_name || 'Walk-in Customer'}`, 20, 59);
-      doc.text(`Type: ${invoice.invoice_type ? invoice.invoice_type.toUpperCase() : 'SALE'}`, 20, 66);
-      
-      // Items table
-      const tableData = (invoice.items || []).map(item => [
-        item.description || '',
-        (item.qty || 0).toString(),
-        (item.purity || 916).toString(),
-        (item.weight || 0).toFixed(3),
-        (item.metal_rate || 0).toFixed(3),
-        (item.gold_value || 0).toFixed(3),
-        (item.making_value || 0).toFixed(3),
-        (item.vat_amount || 0).toFixed(3),
-        (item.line_total || 0).toFixed(3)
-      ]);
-      
-      doc.autoTable({
-        startY: 75,
-        head: [['Description', 'Qty', 'Purity', 'Weight(g)', 'Rate', 'Gold Val', 'Making', 'VAT', 'Total']],
-        body: tableData,
-        theme: 'grid',
-        headStyles: { 
-          fillColor: [6, 95, 70], 
-          fontSize: 8,
-          fontStyle: 'bold',
-          halign: 'center'
-        },
-        bodyStyles: { fontSize: 8 },
-        columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 15, halign: 'right' },
-          2: { cellWidth: 15, halign: 'right' },
-          3: { cellWidth: 20, halign: 'right' },
-          4: { cellWidth: 18, halign: 'right' },
-          5: { cellWidth: 18, halign: 'right' },
-          6: { cellWidth: 18, halign: 'right' },
-          7: { cellWidth: 15, halign: 'right' },
-          8: { cellWidth: 20, halign: 'right' }
-        },
-        margin: { left: 10, right: 10 }
-      });
-      
-      // Totals section
-      const finalY = doc.lastAutoTable.finalY + 15;
-      doc.setFontSize(10);
-      doc.setFont(undefined, 'normal');
-      
-      const rightAlign = 190;
-      let currentY = finalY;
-      
-      doc.text('Subtotal:', 140, currentY);
-      doc.text(`${(invoice.subtotal || 0).toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
-      
-      // MODULE 7: Show discount line if discount exists
-      const discountAmount = invoice.discount_amount || 0;
-      if (discountAmount > 0) {
-        currentY += 7;
-        doc.text('Discount:', 140, currentY);
-        doc.text(`-${discountAmount.toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
+      toast.info('Generating professional invoice PDF...');
+      const result = await downloadProfessionalInvoicePDF(invoice.id, API, axios);
+      if (result.success) {
+        toast.success('Professional invoice PDF generated successfully!');
+      } else {
+        toast.error(result.error || 'Failed to generate invoice PDF');
       }
-      
-      currentY += 7;
-      doc.text('VAT Total:', 140, currentY);
-      doc.text(`${(invoice.vat_total || 0).toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
-      
-      // Grand Total - Bold
-      currentY += 9;
-      doc.setFont(undefined, 'bold');
-      doc.setFontSize(12);
-      doc.text('Grand Total:', 140, currentY);
-      doc.text(`${(invoice.grand_total || 0).toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
-      
-      // Balance Due
-      currentY += 8;
-      doc.setFontSize(10);
-      const balanceDue = invoice.balance_due || 0;
-      const balanceColor = balanceDue > 0 ? [200, 0, 0] : [0, 150, 0];
-      doc.setTextColor(...balanceColor);
-      doc.text('Balance Due:', 140, currentY);
-      doc.text(`${balanceDue.toFixed(3)} OMR`, rightAlign, currentY, { align: 'right' });
-      
-      // Payment Status
-      doc.setTextColor(0, 0, 0);
-      doc.setFont(undefined, 'normal');
-      doc.setFontSize(9);
-      const statusText = `Status: ${(invoice.payment_status || 'unpaid').toUpperCase()}`;
-      doc.text(statusText, 20, currentY);
-      
-      // Footer
-      doc.setFont(undefined, 'italic');
-      doc.setFontSize(8);
-      doc.text('Thank you for your business!', 105, 280, { align: 'center' });
-      doc.text('This is a computer generated invoice', 105, 285, { align: 'center' });
-      
-      // Save the PDF
-      doc.save(`Invoice_${invoice.invoice_number || 'unknown'}.pdf`);
-      toast.success('Invoice PDF generated successfully');
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Failed to generate invoice PDF');
