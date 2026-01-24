@@ -172,6 +172,9 @@ export default function InventoryPage() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Add Stock Movement</DialogTitle>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Note: Manual "Stock OUT" movements are prohibited. Stock can only be reduced through Invoice Finalization for audit compliance.
+                </p>
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
@@ -181,10 +184,8 @@ export default function InventoryPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Stock IN">Stock IN</SelectItem>
-                      <SelectItem value="Stock OUT">Stock OUT</SelectItem>
-                      <SelectItem value="Adjustment IN">Adjustment IN</SelectItem>
-                      <SelectItem value="Adjustment OUT">Adjustment OUT</SelectItem>
+                      <SelectItem value="Stock IN">Stock IN (Add Stock)</SelectItem>
+                      <SelectItem value="Adjustment">Adjustment (Reconciliation)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -207,6 +208,7 @@ export default function InventoryPage() {
                     data-testid="description-input"
                     value={movementForm.description}
                     onChange={(e) => setMovementForm({...movementForm, description: e.target.value})}
+                    placeholder="Brief description of the movement"
                   />
                 </div>
                 <div>
@@ -214,6 +216,7 @@ export default function InventoryPage() {
                   <Input
                     data-testid="quantity-input"
                     type="number"
+                    min="0"
                     value={movementForm.qty_delta}
                     onChange={(e) => setMovementForm({...movementForm, qty_delta: e.target.value})}
                   />
@@ -223,6 +226,7 @@ export default function InventoryPage() {
                   <Input
                     data-testid="weight-input"
                     type="number"
+                    min="0"
                     step="0.001"
                     value={movementForm.weight_delta}
                     onChange={(e) => setMovementForm({...movementForm, weight_delta: e.target.value})}
