@@ -3604,8 +3604,10 @@ async def create_transaction(transaction_data: dict, current_user: User = Depend
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     
+    # Remove conflicting keys and add required fields
+    transaction_data_clean = {k: v for k, v in transaction_data.items() if k not in ['transaction_number', 'account_name', 'created_by']}
     transaction = Transaction(
-        **transaction_data,
+        **transaction_data_clean,
         transaction_number=transaction_number,
         account_name=account['name'],
         created_by=current_user.id
