@@ -21,7 +21,7 @@ from typing import Dict, Any, List, Optional
 import sys
 
 # Configuration
-BACKEND_URL = "https://app-recovery-hub.preview.emergentagent.com"
+BACKEND_URL = "https://purchase-fix.preview.emergentagent.com"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
