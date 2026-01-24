@@ -952,7 +952,8 @@ async def request_password_reset(request: Request, email_data: dict):
     }
 
 @api_router.post("/auth/reset-password")
-async def reset_password(reset_data: dict):
+@limiter.limit("3/minute")  # Strict rate limit: 3 password reset attempts per minute per IP
+async def reset_password(request: Request, reset_data: dict):
     """Reset password using reset token"""
     token = reset_data.get('token')
     new_password = reset_data.get('new_password')
