@@ -432,3 +432,96 @@ agent_communication:
       
       🚀 DEPLOYMENT READINESS:
       The application is now PRODUCTION READY. All critical security and functionality issues have been resolved. Remaining items are cosmetic or limited to development environment.
+
+  - agent: "main"
+    message: |
+      ✅ CRITICAL API FIXES COMPLETED - PURCHASES & TRANSACTIONS ISSUES RESOLVED
+      
+      FIX STATUS: BOTH REPORTED ISSUES HAVE BEEN ADDRESSED
+      
+      🔧 FIXES IMPLEMENTED:
+      ================================================================================
+      
+      1. ✅ PURCHASES API - VALIDATION ERROR FIXED
+         Issue: "Endpoint expects Purchase model object but receives dictionary, causing validation errors"
+         Root Cause: The create_purchase endpoint was directly accepting Purchase model as parameter instead of dictionary
+         Fix Applied:
+           - Changed parameter from `purchase: Purchase` to `purchase_data: dict`
+           - Added proper data transformation and validation before model construction
+           - Now follows same pattern as other endpoints (create_invoice, create_transaction, etc.)
+           - All numeric fields are properly rounded to correct precision
+           - Purchase model is constructed from validated dictionary
+         File Modified: backend/server.py (lines 1624-1687)
+         Status: Backend restarted successfully, fix is live
+      
+      2. ✅ TRANSACTIONS API - DEPENDENCY CLARIFIED
+         Issue: "Requires valid account_id, but test account creation needed first"
+         Analysis: This is not a bug but a test dependency requirement
+         Clarification:
+           - Transactions API is working correctly by design
+           - It requires valid account_id for data integrity
+           - The endpoint properly validates account existence
+           - Returns clear error: "Account not found" if invalid account_id provided
+         Testing Protocol:
+           - Tests must create accounts FIRST before testing transactions
+           - Use POST /api/accounts endpoint to create test accounts
+           - Then use the returned account.id for transaction testing
+         File: backend/server.py (line 3597-3625)
+         Status: No code changes needed - API is functioning correctly
+      
+      📋 TESTING RECOMMENDATIONS:
+      ================================================================================
+      
+      FOR PURCHASES API TESTING:
+      1. Create a vendor party first (POST /api/parties with party_type="vendor")
+      2. Create an account if testing with payments (POST /api/accounts)
+      3. Test purchase creation with dictionary payload:
+         ```json
+         {
+           "vendor_party_id": "{vendor_id}",
+           "description": "Test Purchase",
+           "weight_grams": 100.5,
+           "entered_purity": 999,
+           "rate_per_gram": 55.50,
+           "amount_total": 5577.75,
+           "paid_amount_money": 0,
+           "date": "2024-01-24T10:00:00Z"
+         }
+         ```
+      4. Verify purchase is created in draft status
+      5. Test purchase finalization endpoint
+      
+      FOR TRANSACTIONS API TESTING:
+      1. FIRST create test account:
+         ```json
+         {
+           "name": "Test Cash Account",
+           "account_type": "cash",
+           "opening_balance": 1000.0
+         }
+         ```
+      2. Get the account.id from response
+      3. THEN create transaction with valid account_id:
+         ```json
+         {
+           "account_id": "{account_id}",
+           "transaction_type": "credit",
+           "mode": "cash",
+           "amount": 500.0,
+           "category": "sales",
+           "notes": "Test transaction"
+         }
+         ```
+      4. Verify transaction is created and account balance is updated
+      
+      🎯 CHANGES SUMMARY:
+      - Modified: 1 file (backend/server.py)
+      - Changed: 1 endpoint (POST /api/purchases)
+      - Backend Status: Restarted and running (PID 550)
+      - Ready for Testing: YES
+      
+      ⚠️ NEXT STEPS:
+      1. Test the fixed Purchases API with dictionary payload
+      2. Test Transactions API with proper account setup
+      3. Verify both APIs work end-to-end with frontend
+      4. Update any frontend code that might be affected by the changes
