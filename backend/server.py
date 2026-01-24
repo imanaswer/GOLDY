@@ -1056,10 +1056,17 @@ async def get_me(request: Request, current_user: User = Depends(get_current_user
 
 @api_router.post("/auth/logout")
 async def logout(response: Response, current_user: User = Depends(get_current_user)):
-    """Logout endpoint - clears authentication cookie and creates audit log"""
+    """Logout endpoint - clears authentication and CSRF cookies, creates audit log"""
     # Clear the authentication cookie
     response.delete_cookie(
         key="access_token",
+        path="/",
+        samesite="lax"
+    )
+    
+    # Clear the CSRF token cookie
+    response.delete_cookie(
+        key="csrf_token",
         path="/",
         samesite="lax"
     )
