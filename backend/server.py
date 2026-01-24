@@ -3973,6 +3973,9 @@ async def generate_invoice_pdf(invoice_id: str, current_user: User = Depends(get
 
 @api_router.post("/invoices", response_model=Invoice)
 async def create_invoice(invoice_data: dict, current_user: User = Depends(get_current_user)):
+    if not user_has_permission(current_user, 'invoices.create'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to create invoices")
+    
     year = datetime.now(timezone.utc).year
     count = await db.invoices.count_documents({"invoice_number": {"$regex": f"^INV-{year}"}})
     invoice_number = f"INV-{year}-{str(count + 1).zfill(4)}"
