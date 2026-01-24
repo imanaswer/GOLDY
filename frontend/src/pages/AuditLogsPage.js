@@ -70,8 +70,15 @@ export default function AuditLogsPage() {
                 ))}
               </tbody>
             </table>
+            {logs.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <History className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>No audit logs found</p>
+              </div>
+            )}
           </div>
         </CardContent>
+        {pagination && <Pagination pagination={pagination} onPageChange={setPage} />}
       </Card>
     </div>
   );
