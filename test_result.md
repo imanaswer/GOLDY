@@ -11197,3 +11197,304 @@ agent_communication:
       ✅ Consistent: Matches view dialog styling and patterns
       
       All services running. Ready for testing!
+
+user_problem_statement: "Comprehensive Invoice Workflow Testing - Execute complete invoice lifecycle including creation, modification, draft/confirmation states, finalization, print/export, calculation verification, inventory/financial impacts, incomplete/abandoned paths, and production-readiness assessment"
+
+backend:
+  - task: "Invoice Creation from Job Card"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test invoice creation API with job card conversion, item mapping, and cost calculations"
+
+  - task: "Invoice Draft State & Modifications"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify draft invoices don't impact inventory/finance, and can be modified/deleted"
+
+  - task: "Invoice Finalization with Atomic Operations"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test finalization creates stock OUT movements, finance transactions, updates job card status atomically"
+
+  - task: "Invoice Calculations (Metal Value + Making + VAT)"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify metal value (weight × rate), making charges (flat/per_gram), VAT calculations, discounts, grand total"
+
+  - task: "Inventory Impact on Invoice Finalization"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify stock movements created with correct Type (Stock OUT), weight deltas, purity, and inventory header updates. Backend bug fixed: create_audit_log parameter changed from details= to changes="
+
+  - task: "Financial Impact on Invoice Finalization"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify credit transactions created for payments (cash/bank), account balance updates, customer receivables"
+
+  - task: "Invoice Payment Processing"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test full payment, partial payment, balance due calculations, payment mode (cash/bank)"
+
+  - task: "Invoice Immutability After Finalization"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify finalized invoices cannot be edited or deleted (API should return 400 errors)"
+
+  - task: "Abandoned Draft Invoice Cleanup"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test draft invoice deletion without side effects (no inventory/finance impact)"
+
+frontend:
+  - task: "Invoice Creation UI from Job Card"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test invoice creation modal/form with job card selection, item display, calculation preview"
+
+  - task: "Invoice Draft State Visibility"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify draft badges, edit/delete actions available, no locked state"
+
+  - task: "Invoice Modification Experience"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test editing draft invoices, field modifications, recalculations"
+
+  - task: "Invoice Finalization Confirmation UI"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify enhanced confirmation dialog shows cost breakdown, impact summary, irreversible warning"
+
+  - task: "Invoice Cost Breakdown Display"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify visual hierarchy: Metal Value + Making Charges + VAT - Discount = Grand Total with color-coded cards"
+
+  - task: "Invoice View/Details Dialog"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test view dialog shows complete invoice details, items table, cost breakdown, payment info, status badges"
+
+  - task: "Invoice Print/Export Functionality"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to test print button, PDF generation, print preview, formatted invoice layout"
+
+  - task: "Invoice List & Filtering"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to verify invoice list shows all invoices, status badges (draft/finalized), search/filter functionality"
+
+  - task: "Invoice User Experience Assessment"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to assess: workflow clarity, trustworthiness, reversibility (drafts), error handling, loading states, production-readiness"
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 3
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Backend: Invoice Creation, Draft State, Finalization with Atomic Operations"
+    - "Backend: Inventory Impact (Stock OUT movements) - Bug Fixed"
+    - "Backend: Financial Impact (Credit transactions, account updates)"
+    - "Backend: Immutability and Payment Processing"
+    - "Frontend: Complete Invoice Workflow (Create → Draft → Modify → Finalize)"
+    - "Frontend: Print/Export, Cost Breakdown, User Experience"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🎯 COMPREHENSIVE INVOICE WORKFLOW TESTING - READY TO EXECUTE
+      
+      CONTEXT:
+      User requested complete invoice lifecycle testing covering:
+      ✅ Invoice creation and modification
+      ✅ Draft/confirmation state progression
+      ✅ Invoice finalization with atomic operations
+      ✅ Print/export functionality
+      ✅ Calculation verification (totals, taxes, charges, items)
+      ✅ Inventory and financial impact verification
+      ✅ Incomplete/abandoned invoice testing
+      ✅ Overall trustworthiness and production-readiness assessment
+      
+      CRITICAL BACKEND BUG FIX APPLIED:
+      Fixed parameter mismatch in create_audit_log() function (details= → changes=)
+      This bug was blocking stock movement creation in Module 4 testing
+      Backend service restarted successfully
+      
+      TESTING STRATEGY:
+      
+      Phase 1: Backend Testing (Priority: HIGH)
+      - Test invoice creation API with job card conversion
+      - Verify draft state (no inventory/finance impact)
+      - Test finalization atomic operations (stock OUT + finance + job card status)
+      - Verify calculations: metal value, making charges, VAT, discounts
+      - Test payment processing (full/partial, cash/bank)
+      - Verify immutability after finalization
+      - Test abandoned draft deletion
+      
+      Phase 2: Frontend Testing (Priority: HIGH) - REQUIRES USER APPROVAL
+      - Test invoice creation UI from job card
+      - Verify draft state visibility and modification
+      - Test finalization confirmation dialog
+      - Verify cost breakdown display with visual hierarchy
+      - Test print/export functionality
+      - Assess overall user experience and production-readiness
+      
+      TEST DATA REQUIREMENTS:
+      Need dummy data if not exists:
+      - Customer/Party records (at least 1 customer)
+      - Inventory headers with stock (for Stock OUT testing)
+      - Financial accounts (Cash/Bank accounts)
+      - Job cards (at least 1-2 job cards to convert to invoices)
+      - Gold rate configuration
+      
+      AUTHENTICATION:
+      Use admin/admin123 credentials for testing
+      
+      EXPECTED OUTCOMES:
+      ✅ Complete invoice workflow functional from creation to finalization
+      ✅ All calculations accurate (metal, making, VAT, totals)
+      ✅ Inventory decreases correctly on finalization (Stock OUT)
+      ✅ Financial transactions created correctly (credit for payments)
+      ✅ Draft invoices can be modified/deleted without side effects
+      ✅ Finalized invoices are immutable
+      ✅ Print/export works for finalized invoices
+      ✅ User experience feels trustworthy and production-ready
+      
+      READY FOR BACKEND TESTING FIRST, THEN FRONTEND WITH USER APPROVAL
