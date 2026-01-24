@@ -21,7 +21,7 @@ from typing import Dict, Any, List, Optional
 import sys
 
 # Configuration
-BACKEND_URL = "https://category-list-repair.preview.emergentagent.com"
+BACKEND_URL = "https://nodupes-catalog.preview.emergentagent.com"
 USERNAME = "admin"
 PASSWORD = "admin123"
 

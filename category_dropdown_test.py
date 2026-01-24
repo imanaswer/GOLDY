@@ -28,8 +28,8 @@ import uuid
 import time
 
 # Configuration
-BASE_URL = "https://category-list-repair.preview.emergentagent.com/api"
-FRONTEND_URL = "https://category-list-repair.preview.emergentagent.com"
+BASE_URL = "https://nodupes-catalog.preview.emergentagent.com/api"
+FRONTEND_URL = "https://nodupes-catalog.preview.emergentagent.com"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
