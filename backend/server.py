@@ -1019,7 +1019,8 @@ async def reset_password(request: Request, reset_data: dict):
     return {"message": "Password reset successfully"}
 
 @api_router.get("/users", response_model=List[User])
-async def get_users(current_user: User = Depends(require_permission('users.view'))):
+@limiter.limit("1000/hour")  # General authenticated rate limit: 1000 requests per hour
+async def get_users(request: Request, current_user: User = Depends(require_permission('users.view'))):
     users = await db.users.find({"is_deleted": False}, {"_id": 0, "hashed_password": 0}).to_list(1000)
     for user in users:
         if isinstance(user.get('created_at'), str):
