@@ -82,7 +82,28 @@ class DuplicateCategoryTester:
             self.log_result("Authentication", "ERROR", f"Authentication error: {str(e)}")
             return False
     
-    def setup_test_data(self):
+    def get_existing_categories(self):
+        """Get list of existing categories"""
+        try:
+            response = self.session.get(f"{BASE_URL}/inventory/headers")
+            
+            if response.status_code == 200:
+                data = response.json()
+                items = data.get('items', [])
+                self.existing_categories = items
+                
+                category_names = [item.get('name', 'Unknown') for item in items]
+                self.log_result("Setup - Get Existing Categories", "PASS", 
+                              f"Found {len(items)} existing categories: {', '.join(category_names[:5])}")
+                return True
+            else:
+                self.log_result("Setup - Get Existing Categories", "FAIL", 
+                              f"Failed to get categories: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Setup - Get Existing Categories", "ERROR", f"Error: {str(e)}")
+            return False
         """Create initial test categories for testing"""
         try:
             # Create some initial categories for testing
