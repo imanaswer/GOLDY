@@ -681,18 +681,24 @@ export default function PurchasesPage() {
                     min="0"
                     value={formData.weight_grams}
                     onChange={(e) => setFormData({...formData, weight_grams: e.target.value})}
+                    onBlur={(e) => validateField('weight_grams', e.target.value)}
                     placeholder="0.000"
+                    className={errors.weight_grams ? 'border-red-500' : ''}
                   />
+                  <FormErrorMessage error={errors.weight_grams} />
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Entered Purity</Label>
+                  <Label>Entered Purity *</Label>
                   <Input
                     type="number"
                     value={formData.entered_purity}
                     onChange={(e) => setFormData({...formData, entered_purity: e.target.value})}
+                    onBlur={(e) => validateField('entered_purity', e.target.value)}
                     placeholder="999"
+                    className={errors.entered_purity ? 'border-red-500' : ''}
                   />
+                  <FormErrorMessage error={errors.entered_purity} />
                   <p className="text-xs text-gray-600">Purity as claimed by vendor</p>
                 </div>
 
@@ -704,8 +710,11 @@ export default function PurchasesPage() {
                     min="0"
                     value={formData.rate_per_gram}
                     onChange={(e) => setFormData({...formData, rate_per_gram: e.target.value})}
+                    onBlur={(e) => validateField('rate_per_gram', e.target.value)}
                     placeholder="0.00"
+                    className={errors.rate_per_gram ? 'border-red-500' : ''}
                   />
+                  <FormErrorMessage error={errors.rate_per_gram} />
                 </div>
               </div>
 
@@ -717,8 +726,11 @@ export default function PurchasesPage() {
                   min="0"
                   value={formData.amount_total}
                   onChange={(e) => setFormData({...formData, amount_total: e.target.value})}
+                  onBlur={(e) => validateField('amount_total', e.target.value)}
                   placeholder="0.00"
+                  className={errors.amount_total ? 'border-red-500' : ''}
                 />
+                <FormErrorMessage error={errors.amount_total} />
               </div>
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
