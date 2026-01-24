@@ -5651,7 +5651,7 @@ async def export_transactions_pdf(
     end_date: Optional[str] = None,
     transaction_type: Optional[str] = None,
     party_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     """Export transactions report as PDF"""
     from reportlab.lib.pagesizes import A4
