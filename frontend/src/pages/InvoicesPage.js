@@ -172,7 +172,7 @@ export default function InvoicesPage() {
   const handleOpenPaymentDialog = (invoice) => {
     setSelectedInvoice(invoice);
     setPaymentData({
-      amount: invoice.balance_due.toFixed(3),  // Default to full balance
+      amount: safeToFixed(invoice.balance_due, 3),  // Default to full balance
       payment_mode: 'Cash',
       account_id: accounts.length > 0 ? accounts[0].id : '',
       notes: '',
