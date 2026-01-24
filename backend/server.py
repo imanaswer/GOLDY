@@ -4007,6 +4007,9 @@ async def create_invoice(invoice_data: dict, current_user: User = Depends(get_cu
 
 @api_router.get("/accounts", response_model=List[Account])
 async def get_accounts(current_user: User = Depends(get_current_user)):
+    if not user_has_permission(current_user, 'finance.view'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view finance data")
+    
     accounts = await db.accounts.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
     return accounts
 
