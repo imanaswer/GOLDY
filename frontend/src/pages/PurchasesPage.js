@@ -163,7 +163,94 @@ export default function PurchasesPage() {
         exchange_in_gold_grams: ''
       });
     }
+    setErrors({}); // Clear errors when opening dialog
     setShowDialog(true);
+  };
+
+  // Validate individual field
+  const validateField = (fieldName, value) => {
+    let validation = { isValid: true, error: '' };
+
+    switch (fieldName) {
+      case 'vendor_party_id':
+        validation = validateSelection(value, 'vendor');
+        break;
+      case 'weight_grams':
+        validation = validateWeight(value);
+        break;
+      case 'rate_per_gram':
+        validation = validateRate(value);
+        break;
+      case 'amount_total':
+        validation = validateAmount(value);
+        break;
+      case 'paid_amount_money':
+        validation = validatePaidAmount(value, formData.amount_total);
+        break;
+      case 'entered_purity':
+        validation = validatePurity(value);
+        break;
+      default:
+        break;
+    }
+
+    setErrors(prev => ({
+      ...prev,
+      [fieldName]: validation.error
+    }));
+
+    return validation.isValid;
+  };
+
+  // Validate all required fields
+  const validateForm = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    // Vendor validation
+    const vendorValidation = validateSelection(formData.vendor_party_id, 'vendor');
+    if (!vendorValidation.isValid) {
+      newErrors.vendor_party_id = vendorValidation.error;
+      isValid = false;
+    }
+
+    // Weight validation
+    const weightValidation = validateWeight(formData.weight_grams);
+    if (!weightValidation.isValid) {
+      newErrors.weight_grams = weightValidation.error;
+      isValid = false;
+    }
+
+    // Rate validation
+    const rateValidation = validateRate(formData.rate_per_gram);
+    if (!rateValidation.isValid) {
+      newErrors.rate_per_gram = rateValidation.error;
+      isValid = false;
+    }
+
+    // Amount validation
+    const amountValidation = validateAmount(formData.amount_total);
+    if (!amountValidation.isValid) {
+      newErrors.amount_total = amountValidation.error;
+      isValid = false;
+    }
+
+    // Paid amount validation
+    const paidValidation = validatePaidAmount(formData.paid_amount_money, formData.amount_total);
+    if (!paidValidation.isValid) {
+      newErrors.paid_amount_money = paidValidation.error;
+      isValid = false;
+    }
+
+    // Purity validation
+    const purityValidation = validatePurity(formData.entered_purity);
+    if (!purityValidation.isValid) {
+      newErrors.entered_purity = purityValidation.error;
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const handleSavePurchase = async () => {
