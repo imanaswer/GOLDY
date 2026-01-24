@@ -54,7 +54,7 @@ export default function AuditLogsPage() {
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => (
+                {Array.isArray(logs) && logs.map((log) => (
                   <tr key={log.id} className="border-t hover:bg-muted/30">
                     <td className="px-4 py-3 text-sm font-mono">
                       {new Date(log.timestamp).toLocaleString()}
