@@ -749,7 +749,7 @@ async def register(user_data: UserCreate):
     return user
 
 @api_router.post("/auth/login", response_model=TokenResponse)
-async def login(credentials: UserLogin):
+async def login(credentials: UserLogin, response: Response):
     user_doc = await db.users.find_one({"username": credentials.username, "is_deleted": False}, {"_id": 0})
     
     # Check if user exists
@@ -820,6 +820,17 @@ async def login(credentials: UserLogin):
         {"user_id": user.id, "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)},
         JWT_SECRET,
         algorithm=JWT_ALGORITHM
+    )
+    
+    # Set HttpOnly + Secure cookie for XSS protection
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,  # Prevents JavaScript access (XSS protection)
+        secure=True,    # Only sent over HTTPS
+        samesite="lax", # CSRF protection while allowing navigation
+        max_age=JWT_EXPIRATION_HOURS * 3600,  # 24 hours in seconds
+        path="/"        # Available to all routes
     )
     
     # Log successful login
