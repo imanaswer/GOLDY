@@ -1721,6 +1721,9 @@ async def get_party(party_id: str, current_user: User = Depends(get_current_user
 
 @api_router.patch("/parties/{party_id}", response_model=Party)
 async def update_party(party_id: str, party_data: dict, current_user: User = Depends(get_current_user)):
+    if not user_has_permission(current_user, 'parties.update'):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to update parties")
+    
     existing = await db.parties.find_one({"id": party_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Party not found")
