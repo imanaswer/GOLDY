@@ -102,7 +102,7 @@ export default function JobCardsPage() {
       setJobcards(jobcardsRes.data.items || []);
       setPagination(jobcardsRes.data.pagination);
       setParties(partiesRes.data.items || []);
-      setInventoryHeaders(Array.isArray(headersRes.data) ? headersRes.data : []);
+      setInventoryHeaders(headersRes.data?.items || []);
     } catch (error) {
       toast.error('Failed to load data');
       // Ensure arrays are set even on error
