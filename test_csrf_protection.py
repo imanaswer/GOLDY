@@ -25,7 +25,7 @@ def test_csrf_protection():
     
     login_response = session.post(
         f"{BASE_URL}/auth/login",
-        json={"username": "admin", "password": "Admin123!@#$"}
+        json={"username": "admin", "password": "admin123"}
     )
     
     if login_response.status_code == 200:
