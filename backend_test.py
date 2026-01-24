@@ -379,7 +379,10 @@ class InvoiceWorkflowTester:
             # Step 6: Verify inventory stock decreased
             response = self.session.get(f"{BASE_URL}/inventory/headers")
             if response.status_code == 200:
-                headers = response.json().get("items", [])
+                headers = response.json()
+                if isinstance(headers, dict) and "items" in headers:
+                    headers = headers["items"]
+                    
                 for header in headers:
                     if header.get("name") == "Ring":
                         final_qty = header.get("current_qty", 0)
