@@ -5474,7 +5474,7 @@ async def export_invoices_pdf(
     invoice_type: Optional[str] = None,
     payment_status: Optional[str] = None,
     party_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission('reports.view'))
 ):
     """Export invoices report as PDF"""
     from reportlab.lib.pagesizes import A4
