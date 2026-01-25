@@ -19,7 +19,7 @@ import sys
 from datetime import datetime, timezone, timedelta
 
 # Backend URL from frontend/.env
-BACKEND_URL = "https://service-workflow-2.preview.emergentagent.com/api"
+BACKEND_URL = "https://worker-tracker-11.preview.emergentagent.com/api"
 
 # Test credentials
 USERNAME = "admin"

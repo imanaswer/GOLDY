@@ -481,7 +481,7 @@ class DailyClosingTester:
 def main():
     """Main execution function"""
     # Configuration
-    BASE_URL = "https://service-workflow-2.preview.emergentagent.com"
+    BASE_URL = "https://worker-tracker-11.preview.emergentagent.com"
     USERNAME = "admin"
     PASSWORD = "admin123"
     
