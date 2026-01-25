@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      const response = await API.get('/auth/me');
+      const response = await API.get('/api/auth/me');
       setUser(response.data);
       setIsAuthenticated(true);
     } catch (error) {
