@@ -123,19 +123,19 @@ user_problem_statement: |
   - Frontend workflow testing
 
 backend:
-  - task: "Fix /api/transactions/summary endpoint HTTP 520 error"
+  - task: "Worker CRUD API endpoints (/api/workers)"
     implemented: true
-    working: "needs_testing"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-      - working: "needs_testing"
+      - working: true
         agent: "main"
-        comment: "Added comprehensive error handling with try-catch blocks, safe data access with .get(), and fallback empty response. Returns valid JSON structure even on errors to prevent HTTP 520."
+        comment: "Worker CRUD endpoints already implemented. Verified GET, POST, PATCH, DELETE endpoints are working properly."
   
-  - task: "Fix /api/daily-closings endpoint HTTP 520 error"
+  - task: "Job Card validation - Block completion without worker"
     implemented: true
     working: "needs_testing"
     file: "/app/backend/server.py"
@@ -145,109 +145,105 @@ backend:
     status_history:
       - working: "needs_testing"
         agent: "main"
-        comment: "Added try-catch error handling to return empty array instead of crashing on database errors."
+        comment: "Added validation in update_jobcard endpoint. When status changes to 'completed', checks if worker_id exists. Returns HTTP 422 error with message 'Please assign a worker before completing the job card' if worker not assigned."
+  
+  - task: "Invoice model - Add worker fields"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Added worker_id and worker_name fields to Invoice model as Optional fields."
+  
+  - task: "Invoice integration - Carry forward worker data"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Updated convert_jobcard_to_invoice endpoint to include worker_id and worker_name from job card in invoice creation."
 
 frontend:
-  - task: "Fix Inventory Page - headers.map is not a function"
+  - task: "Workers Management Page"
     implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/pages/InventoryPage.js"
+    working: true
+    file: "/app/frontend/src/pages/WorkersPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-      - working: "needs_testing"
+      - working: true
         agent: "main"
-        comment: "Added Array.isArray() checks and safe array initialization in error handlers. All .map() calls now check if data is array first."
+        comment: "WorkersPage already implemented with full CRUD functionality, search, filter by active status, and proper validation."
   
-  - task: "Fix Job Cards Page - inventoryHeaders.map is not a function"
+  - task: "Worker dropdown in Job Card form"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Worker dropdown already implemented in Job Card form with proper business rules: Optional at Created, Editable in Created and In Progress, Read-only when Completed."
+  
+  - task: "Display worker in job card list"
     implemented: true
     working: "needs_testing"
     file: "/app/frontend/src/pages/JobCardsPage.js"
     stuck_count: 0
-    priority: "high"
+    priority: "medium"
     needs_retesting: true
     status_history:
       - working: "needs_testing"
         agent: "main"
-        comment: "Added Array.isArray() check before inventoryHeaders.map() and safe array initialization in error handler."
+        comment: "Added Worker column to job cards list table to display worker_name for each job card."
   
-  - task: "Fix Finance Page - Handle /api/transactions/summary errors gracefully"
+  - task: "Display worker in view job card dialog"
     implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/pages/FinancePage.js"
+    working: true
+    file: "/app/frontend/src/pages/JobCardsPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
-      - working: "needs_testing"
+      - working: true
         agent: "main"
-        comment: "Added safe defaults for summary data structure and array validation in error handler to prevent crashes when API fails."
+        comment: "Worker information already displayed in View Job Card dialog."
   
-  - task: "Fix Daily Closing Page - Handle /api/daily-closings errors gracefully"
+  - task: "Worker info in confirmation dialogs"
     implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/pages/DailyClosingPage.js"
+    working: true
+    file: "/app/frontend/src/pages/JobCardsPage.js, /app/backend/server.py"
     stuck_count: 0
-    priority: "high"
-    needs_retesting: true
+    priority: "medium"
+    needs_retesting: false
     status_history:
-      - working: "needs_testing"
+      - working: true
         agent: "main"
-        comment: "Added Array.isArray() check and empty array fallback in error handler."
-  
-  - task: "Fix Reports Page - categories.map is not a function"
-    implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/pages/ReportsPageEnhanced.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "needs_testing"
-        agent: "main"
-        comment: "Added Array.isArray() check before categories.map() and safe array initialization in error handler."
-  
-  - task: "Fix Audit Logs Page - log.record_id.slice() error"
-    implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/pages/AuditLogsPage.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "needs_testing"
-        agent: "main"
-        comment: "Added null check before slice() operation and Array.isArray() check for logs array."
-  
-  - task: "Add Error Boundary component for React"
-    implemented: true
-    working: "needs_testing"
-    file: "/app/frontend/src/components/ErrorBoundary.js"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: "needs_testing"
-        agent: "main"
-        comment: "Created ErrorBoundary component and wrapped App component to catch any remaining uncaught errors."
+        comment: "Worker name already included in impact data from backend and displayed in ConfirmationDialog component."
 
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 1
-  run_ui: true
+  test_sequence: 2
+  run_ui: false
 
 test_plan:
   current_focus:
-    - "Fix /api/transactions/summary endpoint HTTP 520 error"
-    - "Fix /api/daily-closings endpoint HTTP 520 error"
-    - "Fix Inventory Page - headers.map is not a function"
-    - "Fix Job Cards Page - inventoryHeaders.map is not a function"
-    - "Fix Finance Page - Handle /api/transactions/summary errors gracefully"
-    - "Fix Daily Closing Page - Handle /api/daily-closings errors gracefully"
-    - "Fix Reports Page - categories.map is not a function"
-    - "Fix Audit Logs Page - log.record_id.slice() error"
+    - "Job Card validation - Block completion without worker"
+    - "Invoice model - Add worker fields"
+    - "Invoice integration - Carry forward worker data"
+    - "Display worker in job card list"
   stuck_tasks: []
   test_all: true
   test_priority: "high_first"
@@ -255,26 +251,37 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      Fixed all 6 critical failures:
+      WORKER MANAGEMENT FEATURE IMPLEMENTATION COMPLETE
       
-      BACKEND FIXES:
-      1. /api/transactions/summary - Added comprehensive error handling, safe data access with .get(), fallback empty responses
-      2. /api/daily-closings - Added try-catch to return empty array on errors
+      BACKEND CHANGES:
+      1. ✅ Worker CRUD API endpoints - Already implemented
+      2. ✅ Added validation in update_jobcard to block completion without worker (HTTP 422 error)
+      3. ✅ Added worker_id and worker_name fields to Invoice model
+      4. ✅ Updated convert_jobcard_to_invoice to carry forward worker data from job card
       
-      FRONTEND FIXES:
-      1. All pages with .map() errors now have Array.isArray() checks and safe array initialization
-      2. AuditLogsPage - Added null check before slice() operation
-      3. All error handlers now set empty arrays as fallback
-      4. Created ErrorBoundary component and wrapped App
+      FRONTEND CHANGES:
+      1. ✅ WorkersPage - Already implemented with full CRUD
+      2. ✅ Worker dropdown in Job Card form - Already implemented with proper rules
+      3. ✅ Added Worker column to job cards list table
+      4. ✅ Worker info in View Job Card dialog - Already implemented
+      5. ✅ Worker info in confirmation dialogs - Already implemented via impact data
+      
+      BUSINESS RULES IMPLEMENTED:
+      - Worker assignment is optional when creating job card
+      - Worker assignment is required before marking as "completed"
+      - Worker field is editable in "Created" and "In Progress" statuses
+      - Worker field is read-only once "Completed"
+      - Worker data flows from job card to invoice
       
       TESTING NEEDED:
-      - Test all API endpoints return valid responses (no 520 errors)
-      - Test all pages load without JavaScript errors
-      - Test pages handle API failures gracefully
-      - Verify error boundary catches any remaining errors
+      1. Create job card without worker - should succeed
+      2. Try to complete job card without worker - should fail with HTTP 422
+      3. Assign worker and complete job card - should succeed
+      4. Convert completed job card to invoice - should carry forward worker data
+      5. Verify worker column appears in job cards list
+      6. Verify worker management page CRUD operations
       
-      AUTHENTICATION:
-      Use test credentials or create a user to test. All pages require authentication.
+      Backend service has been restarted and is running.
 
 user_problem_statement: |
   Prevent duplicate category names in the inventory system.
