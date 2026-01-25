@@ -667,6 +667,7 @@ export default function JobCardsPage() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Job Card #</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Customer</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Worker</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Date</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Items</th>
