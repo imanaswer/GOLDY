@@ -686,6 +686,9 @@ export default function JobCardsPage() {
                         )}
                       </div>
                     </td>
+                    <td className="px-4 py-3 text-sm">
+                      {jc.worker_name || <span className="text-muted-foreground">-</span>}
+                    </td>
                     <td className="px-4 py-3 text-sm">{new Date(jc.date_created).toLocaleDateString()}</td>
                     <td className="px-4 py-3">{getStatusBadge(jc.status)}</td>
                     <td className="px-4 py-3 text-sm">{(jc.items && jc.items.length) || 0} items</td>
