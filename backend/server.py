@@ -3957,10 +3957,12 @@ async def finalize_invoice(invoice_id: str, current_user: User = Depends(require
                 await db.stock_movements.insert_one(movement.model_dump())
     
     # If there were stock errors, rollback the invoice finalization
+    # CRITICAL: Status rollback must NOT delete timestamps (audit safety)
+    # Keep finalized_at timestamp for audit trail, only change status
     if stock_errors:
         await db.invoices.update_one(
             {"id": invoice_id},
-            {"$set": {"status": "draft", "finalized_at": None, "finalized_by": None}}
+            {"$set": {"status": "draft", "finalized_by": None}}
         )
         raise HTTPException(
             status_code=400,
