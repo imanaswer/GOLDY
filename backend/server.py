@@ -4283,15 +4283,21 @@ async def add_payment_to_invoice(
         
         # Update invoice payment details
         new_payment_status = "paid" if new_balance_due < 0.01 else "partial"
+        
+        # Prepare update data
+        update_data = {
+            "paid_amount": new_paid_amount,
+            "balance_due": max(0, new_balance_due),
+            "payment_status": new_payment_status
+        }
+        
+        # Set paid_at timestamp when invoice becomes fully paid (immutability - set only once)
+        if new_payment_status == "paid" and not existing.get("paid_at"):
+            update_data["paid_at"] = datetime.now(timezone.utc)
+        
         await db.invoices.update_one(
             {"id": invoice_id},
-            {
-                "$set": {
-                    "paid_amount": new_paid_amount,
-                    "balance_due": max(0, new_balance_due),
-                    "payment_status": new_payment_status
-                }
-            }
+            {"$set": update_data}
         )
         
         # Create audit logs
