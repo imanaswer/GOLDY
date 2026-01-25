@@ -13,7 +13,8 @@ import {
   Settings,
   LogOut,
   History,
-  ShoppingCart
+  ShoppingCart,
+  UserCog
 } from 'lucide-react';
 
 const allNavItems = [
@@ -27,6 +28,7 @@ const allNavItems = [
   { path: '/daily-closing', icon: CalendarCheck, label: 'Daily Closing', permission: 'finance.view' },
   { path: '/reports', icon: BarChart3, label: 'Reports', permission: 'reports.view' },
   { path: '/audit-logs', icon: History, label: 'Audit Logs', permission: 'audit.view' },
+  { path: '/workers', icon: UserCog, label: 'Workers', permission: null }, // Everyone can access workers
   { path: '/settings', icon: Settings, label: 'Settings', permission: null } // Everyone can access settings
 ];
 
