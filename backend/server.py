@@ -675,7 +675,7 @@ class JobCard(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     job_card_number: str
-    card_type: str
+    card_type: str = "normal"  # Default to "normal" job card (can be "normal" or "template")
     date_created: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     delivery_date: Optional[datetime] = None
     status: str = "created"
