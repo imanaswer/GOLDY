@@ -732,7 +732,8 @@ class Invoice(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     invoice_number: str
-    date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # Alias for created_at
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # ISO 8601 UTC timestamp
     due_date: Optional[datetime] = None  # For overdue calculations, defaults to invoice date
     customer_type: str = "saved"  # "saved" or "walk_in"
     customer_id: Optional[str] = None  # For saved customers only
@@ -747,8 +748,9 @@ class Invoice(BaseModel):
     invoice_type: str = "sale"
     payment_status: str = "unpaid"
     status: str = "draft"  # "draft" or "finalized" - controls when stock is deducted
-    finalized_at: Optional[datetime] = None
+    finalized_at: Optional[datetime] = None  # Set when invoice is finalized
     finalized_by: Optional[str] = None
+    paid_at: Optional[datetime] = None  # Set when balance becomes zero (first full payment)
     items: List[InvoiceItem] = []
     subtotal: float = 0
     discount_amount: float = 0.0  # Invoice-level discount amount
