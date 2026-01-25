@@ -393,7 +393,7 @@ export default function InventoryPage() {
                 <tbody>
                   {Array.isArray(movements) && movements.slice(0, 20).map((mov) => (
                     <tr key={mov.id} className="border-t hover:bg-muted/30">
-                      <td className="px-4 py-3 text-sm">{new Date(mov.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-sm">{formatDate(mov.date)}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 rounded text-xs font-medium ${
                           mov.movement_type.includes('IN') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
