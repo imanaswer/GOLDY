@@ -524,6 +524,12 @@ export default function JobCardsPage() {
       const impactRes = await API.get(`/api/jobcards/${jobcardId}/deliver-impact`);
       const impact = impactRes.data;
       
+      // Check if invoice exists before allowing delivery
+      if (impact.invoice_required || !impact.has_invoice) {
+        toast.error('Please convert this job card to an invoice before delivery.');
+        return;
+      }
+      
       setConfirmDialog({
         open: true,
         type: 'status_change',
@@ -743,8 +749,8 @@ export default function JobCardsPage() {
                           </Button>
                         )}
                         
-                        {/* Deliver button - only for completed job cards */}
-                        {jc.status === 'completed' && !jc.locked && (
+                        {/* Deliver button - only for completed job cards that have been invoiced */}
+                        {jc.status === 'completed' && !jc.locked && jc.is_invoiced && (
                           <Button
                             data-testid={`deliver-${jc.job_card_number}`}
                             size="sm"

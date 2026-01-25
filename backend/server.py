@@ -3545,8 +3545,15 @@ async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User 
             if not existing.get("completed_at"):
                 update_data["completed_at"] = datetime.now(timezone.utc)
         
-        # Set delivered_at timestamp when status changes to delivered
+        # INVOICE VALIDATION: Block delivery without invoice
         if new_status == "delivered":
+            # Check if job card has been converted to invoice
+            if not existing.get("is_invoiced"):
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Please convert this job card to an invoice before delivery."
+                )
+            
             # Set delivered_at timestamp ONLY if not already set (immutability)
             if not existing.get("delivered_at"):
                 update_data["delivered_at"] = datetime.now(timezone.utc)
@@ -7369,13 +7376,20 @@ async def get_jobcard_deliver_impact(jobcard_id: str, current_user: User = Depen
     items = jobcard.get("items", [])
     total_weight = sum(item.get("weight_in", 0) for item in items)
     
+    # Check if job card has been converted to invoice
+    has_invoice = jobcard.get("is_invoiced", False)
+    invoice_id = jobcard.get("invoice_id", None)
+    
     return {
         "action": "Deliver Job Card",
         "item_count": len(items),
         "total_weight": round(total_weight, 3),
         "status_change": f"{jobcard.get('status', 'created')} → delivered",
         "warning": "This action cannot be undone. The job card will be marked as delivered and cannot be edited.",
-        "can_proceed": jobcard.get("status") == "completed"
+        "can_proceed": jobcard.get("status") == "completed" and has_invoice,
+        "has_invoice": has_invoice,
+        "invoice_id": invoice_id,
+        "invoice_required": not has_invoice
     }
 
 @api_router.get("/jobcards/{jobcard_id}/delete-impact")
