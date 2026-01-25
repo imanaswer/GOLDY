@@ -737,10 +737,6 @@ export default function FinancePageEnhanced() {
                     <span className="text-muted-foreground">Date:</span>
                     <p className="font-semibold mt-1">
                       {formatDate(transactionToDelete.date)}
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
                     </p>
                   </div>
                   <div>
