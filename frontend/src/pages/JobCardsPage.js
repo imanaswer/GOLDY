@@ -220,6 +220,7 @@ export default function JobCardsPage() {
     } catch (error) {
       const errorMsg = error.response?.data?.detail || `Failed to ${editingJobCard ? 'update' : 'create'} job card`;
       toast.error(errorMsg);
+      console.error('Job card error:', error);
     }
   };
 
