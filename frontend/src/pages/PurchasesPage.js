@@ -1396,7 +1396,7 @@ export default function PurchasesPage() {
                   <div>
                     <p className="text-xs text-muted-foreground">Created At</p>
                     <p className="font-mono text-sm">
-                      {viewPurchase.created_at ? new Date(viewPurchase.created_at).toLocaleString() : 'N/A'}
+                      {formatDateTime(viewPurchase.created_at)}
                     </p>
                   </div>
                   {viewPurchase.finalized_at && (
