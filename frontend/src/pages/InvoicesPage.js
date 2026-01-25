@@ -343,7 +343,7 @@ export default function InvoicesPage() {
                   invoices.map((inv) => (
                   <tr key={inv.id} className="border-t hover:bg-muted/30">
                     <td className="px-4 py-3 font-mono font-semibold">{inv.invoice_number}</td>
-                    <td className="px-4 py-3 text-sm">{new Date(inv.date).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-sm">{formatDate(inv.date)}</td>
                     <td className="px-4 py-3">
                       {inv.customer_type === 'walk_in' ? (
                         <div>
