@@ -19,6 +19,7 @@ import ReportsPage from './pages/ReportsPageEnhanced';
 import AuditLogsPage from './pages/AuditLogsPage';
 import SettingsPage from './pages/SettingsPage';
 import PurchasesPage from './pages/PurchasesPage';
+import WorkersPage from './pages/WorkersPage';
 
 function App() {
   return (
