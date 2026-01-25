@@ -5483,3 +5483,190 @@ agent_communication:
       READY FOR TESTING:
       Please test the Add Category dialog with duplicate and unique names to verify
       inline error display is working correctly.
+
+#====================================================================================================
+# Worker Management - Job Card Creation Fix & Invoice Integration Verification
+#====================================================================================================
+
+user_problem_statement: |
+  Fix remaining issues from Worker Management implementation:
+  1. Job Card Creation - Missing card_type default in backend
+  2. Invoice Worker Integration - Verify worker_id and worker_name carry forward from job card to invoice
+
+backend:
+  - task: "Job Card Model - Add card_type Default Value"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Job Card Creation card_type Default
+          
+          ISSUE IDENTIFIED:
+          - Line 678: card_type: str had no default value
+          - Job card creation could fail if card_type not provided in request
+          - Pydantic would raise validation error for missing required field
+          
+          FIX APPLIED:
+          - Changed: card_type: str
+          - To: card_type: str = "normal"
+          - Added comment: "Default to 'normal' job card (can be 'normal' or 'template')"
+          
+          IMPACT:
+          - Job cards can now be created without explicitly providing card_type
+          - Defaults to "normal" type which is the standard job card
+          - Template job cards still work by explicitly setting card_type="template"
+          - Backward compatible with existing code
+          
+          BACKEND STATUS:
+          ✅ Backend restarted successfully (PID 670)
+          ✅ No errors in logs
+          ✅ Database initialization complete
+  
+  - task: "Invoice Worker Integration Verification"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ VERIFIED - Invoice Worker Integration Already Working
+          
+          CODE REVIEW RESULTS:
+          - Reviewed convert_jobcard_to_invoice endpoint (lines 3492-3657)
+          - Lines 3627-3628 clearly show worker data is being carried forward:
+            • "worker_id": jobcard.get("worker_id")
+            • "worker_name": jobcard.get("worker_name")
+          - Worker fields are properly extracted from job card and included in invoice
+          
+          IMPLEMENTATION DETAILS:
+          - Worker data flows: Job Card → Invoice
+          - worker_id: Copied from jobcard.get("worker_id")
+          - worker_name: Copied from jobcard.get("worker_name")
+          - Fields are optional (None if not assigned)
+          - Invoice model already has worker_id and worker_name fields (Optional[str])
+          
+          VERIFICATION STATUS:
+          ✅ Code implementation is correct
+          ✅ Worker integration already working as designed
+          ✅ No code changes needed
+          ✅ Ready for end-to-end testing to verify data flow
+
+frontend:
+  - task: "No frontend changes needed"
+    implemented: true
+    working: "NA"
+    file: "NA"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Backend fixes only. Frontend already handles these scenarios correctly."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Job Card Model - Add card_type Default Value"
+    - "Invoice Worker Integration Verification"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ✅ WORKER MANAGEMENT - REMAINING ISSUES RESOLVED
+      
+      ISSUE 1: JOB CARD CREATION - FIXED ✅
+      ================================================================================
+      
+      Problem:
+      - card_type field in JobCard model had no default value
+      - Job card creation could fail with validation error if card_type not provided
+      
+      Fix Applied:
+      - Added default value: card_type: str = "normal"
+      - Job cards now default to "normal" type if not specified
+      - Template job cards still work by explicitly setting card_type="template"
+      
+      File Modified: backend/server.py (line 678)
+      
+      ISSUE 2: INVOICE WORKER INTEGRATION - VERIFIED WORKING ✅
+      ================================================================================
+      
+      Review Results:
+      - Reviewed convert_jobcard_to_invoice endpoint
+      - Worker data IS being carried forward correctly:
+        • Line 3627: "worker_id": jobcard.get("worker_id")
+        • Line 3628: "worker_name": jobcard.get("worker_name")
+      
+      Implementation:
+      - Worker fields extracted from job card
+      - Worker data included in invoice creation
+      - Fields are optional (None if worker not assigned)
+      - Invoice model supports worker_id and worker_name fields
+      
+      Status: Already implemented and working correctly
+      
+      SERVICES STATUS:
+      ================================================================================
+      ✅ Backend: RUNNING (PID 670)
+      ✅ Frontend: RUNNING (PID 672) - Compiled successfully
+      ✅ MongoDB: RUNNING (PID 673)
+      ✅ All services healthy
+      
+      TESTING RECOMMENDATIONS:
+      ================================================================================
+      
+      1. Job Card Creation Tests:
+         a. Create job card WITHOUT card_type field
+            - Expected: Success with card_type defaulting to "normal"
+         b. Create job card WITH card_type="normal"
+            - Expected: Success with explicit normal type
+         c. Create job card WITH card_type="template"
+            - Expected: Success with template type
+      
+      2. Worker Integration Tests:
+         a. Create job card without worker → Convert to invoice
+            - Expected: Invoice created with worker_id=null, worker_name=null
+         b. Create job card with worker → Convert to invoice
+            - Expected: Invoice created with correct worker_id and worker_name
+         c. Update job card to assign worker → Convert to invoice
+            - Expected: Invoice has updated worker information
+         d. Verify invoice displays worker information in frontend
+      
+      3. End-to-End Workflow:
+         a. Create worker (e.g., "John Smith")
+         b. Create job card and assign worker
+         c. Complete job card (requires worker assignment)
+         d. Convert to invoice
+         e. Verify invoice shows worker name
+         f. Check invoice data in database has worker_id and worker_name
+      
+      SUMMARY:
+      ================================================================================
+      ✅ Job card creation issue FIXED - card_type now has default
+      ✅ Invoice worker integration VERIFIED - already working correctly
+      ✅ All services running without errors
+      ✅ Ready for comprehensive backend testing
+      
+      Both issues from the continuation request have been addressed:
+      • Job Card Creation: Fixed (missing default added)
+      • Invoice Worker Integration: Verified working (code review confirmed)
+
