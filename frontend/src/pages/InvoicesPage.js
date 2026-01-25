@@ -204,8 +204,8 @@ export default function InvoicesPage() {
       }
 
       try {
-        const response = await axios.post(
-          `${API}/invoices/${selectedInvoice.id}/add-payment`,
+        const response = await API.post(
+          `/invoices/${selectedInvoice.id}/add-payment`,
           {
             payment_mode: 'GOLD_EXCHANGE',
             gold_weight_grams: parseFloat(paymentData.gold_weight_grams),
@@ -240,8 +240,8 @@ export default function InvoicesPage() {
     }
 
     try {
-      const response = await axios.post(
-        `${API}/invoices/${selectedInvoice.id}/add-payment`,
+      const response = await API.post(
+        `/invoices/${selectedInvoice.id}/add-payment`,
         {
           amount: parseFloat(paymentData.amount),
           payment_mode: paymentData.payment_mode,
