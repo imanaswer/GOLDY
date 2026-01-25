@@ -205,7 +205,7 @@ export default function InvoicesPage() {
 
       try {
         const response = await API.post(
-          `/invoices/${selectedInvoice.id}/add-payment`,
+          `/api/invoices/${selectedInvoice.id}/add-payment`,
           {
             payment_mode: 'GOLD_EXCHANGE',
             gold_weight_grams: parseFloat(paymentData.gold_weight_grams),
