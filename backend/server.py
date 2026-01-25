@@ -3296,8 +3296,18 @@ async def get_jobcard_impact(jobcard_id: str, current_user: User = Depends(requi
     # Calculate totals from items
     items = jobcard.get("items", [])
     total_items = len(items)
-    total_weight = sum(item.get("weight", 0) for item in items)
-    total_making_charges = sum(item.get("making_value", 0) for item in items)
+    total_weight = sum(item.get("weight_in", 0) for item in items)
+
+    # Calculate total making charges based on making_charge_type and making_charge_value
+    total_making_charges = 0
+    for item in items:
+        if item.get('making_charge_value') is not None:
+            making_charge_value = float(item.get('making_charge_value', 0))
+            if item.get('making_charge_type') == 'per_gram':
+                weight = float(item.get('weight_in', 0))
+                total_making_charges += making_charge_value * weight
+            else:  # 'flat'
+                total_making_charges += making_charge_value
     
     # Check if linked to invoice
     linked_invoice = await db.invoices.find_one(
@@ -6921,7 +6931,16 @@ async def get_jobcard_complete_impact(jobcard_id: str, current_user: User = Depe
     
     items = jobcard.get("items", [])
     total_weight = sum(item.get("weight_in", 0) for item in items)
-    total_making = sum(item.get("making_charges", 0) for item in items)
+    # Calculate total making charges based on making_charge_type and making_charge_value
+    total_making = 0
+    for item in items:
+        if item.get('making_charge_value') is not None:
+            making_charge_value = float(item.get('making_charge_value', 0))
+            if item.get('making_charge_type') == 'per_gram':
+                weight = float(item.get('weight_in', 0))
+                total_making += making_charge_value * weight
+            else:  # 'flat'
+                total_making += making_charge_value
     
     return {
         "action": "Complete Job Card",
