@@ -345,7 +345,13 @@ export default function JobCardsPage() {
     }
   };
 
-  const handleConvertToInvoice = async (jobcard) => {
+   const handleConvertToInvoice = async (jobcard) => {
+    // CRITICAL: Client-side validation to prevent duplicate conversions
+    if (jobcard.is_invoiced) {
+      alert(`This job card has already been converted to an invoice (Invoice ID: ${jobcard.invoice_id || 'N/A'}). Please use the "View Invoice" button instead.`);
+      return;
+    }
+    
     // Open dialog to select customer type - pre-populate based on job card
     setConvertingJobCard(jobcard);
     
@@ -741,8 +747,8 @@ export default function JobCardsPage() {
                           </Button>
                         )}
                         
-                        {/* Convert to Invoice button - only for completed job cards */}
-                        {jc.status === 'completed' && (
+                     {/* Convert to Invoice button - only for completed job cards that haven't been invoiced */}
+                        {jc.status === 'completed' && !jc.is_invoiced && (
                           <Button
                             data-testid={`convert-${jc.job_card_number}`}
                             size="sm"
@@ -750,6 +756,18 @@ export default function JobCardsPage() {
                             onClick={() => handleConvertToInvoice(jc)}
                           >
                             <FileText className="w-4 h-4 mr-1" /> Convert to Invoice
+                          </Button>
+                        )}
+                        
+                        {/* View Invoice button - for job cards that have been converted to invoice */}
+                        {jc.is_invoiced && jc.invoice_id && (
+                          <Button
+                            data-testid={`view-invoice-${jc.job_card_number}`}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.location.href = `/invoices?highlight=${jc.invoice_id}`}
+                          >
+                            <Eye className="w-4 h-4 mr-1" /> View Invoice
                           </Button>
                         )}
                         

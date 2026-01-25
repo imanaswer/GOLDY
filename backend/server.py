@@ -681,6 +681,8 @@ class JobCard(BaseModel):
     locked: bool = False  # True when linked invoice is finalized
     locked_at: Optional[datetime] = None
     locked_by: Optional[str] = None
+    is_invoiced: bool = False  # True when job card has been converted to invoice
+    invoice_id: Optional[str] = None  # ID of the invoice created from this job card
     created_by: str
     is_deleted: bool = False
     # Template-specific fields
@@ -3325,6 +3327,13 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
     if not jobcard:
         raise HTTPException(status_code=404, detail="Job card not found")
     
+    # CRITICAL: Prevent duplicate invoice conversion
+    if jobcard.get('is_invoiced', False):
+        raise HTTPException(
+            status_code=400, 
+            detail=f"This job card has already been converted to invoice. Invoice ID: {jobcard.get('invoice_id', 'N/A')}"
+        )
+    
     # Use customer type from job card (or allow override from invoice_data)
     customer_type = invoice_data.get('customer_type', jobcard.get('customer_type', 'saved'))
     
@@ -3463,6 +3472,19 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
     
     await db.invoices.insert_one(invoice.model_dump())
     await create_audit_log(current_user.id, current_user.full_name, "invoice", invoice.id, "create_from_jobcard")
+    
+    # CRITICAL: Update job card to mark as invoiced and prevent duplicate conversions
+    await db.jobcards.update_one(
+        {"id": jobcard_id},
+        {
+            "$set": {
+                "is_invoiced": True,
+                "invoice_id": invoice.id
+            }
+        }
+    )
+    await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "converted_to_invoice", {"invoice_id": invoice.id})
+    
     return invoice
 
 # ============================================================================
