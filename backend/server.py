@@ -505,6 +505,95 @@ def validate_status_transition(entity_type: str, current_status: str, new_status
     
     return False, error_msg
 
+# ===================================
+# TIMESTAMP VALIDATION FUNCTIONS
+# ===================================
+# Enforce absolute correctness for audit safety
+
+def validate_jobcard_timestamps(status: str, completed_at: Optional[datetime], delivered_at: Optional[datetime]) -> tuple[bool, str]:
+    """
+    Validate Job Card timestamps based on status
+    
+    Rules:
+    - completed_at must exist when status is 'completed' or 'delivered'
+    - delivered_at must exist when status is 'delivered'
+    - Status rollback must NOT delete timestamps (audit safety)
+    
+    Args:
+        status: Current status of job card
+        completed_at: Completion timestamp
+        delivered_at: Delivery timestamp
+    
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Normalize status
+    status_normalized = status.lower().replace(" ", "_")
+    
+    # Check completed_at for completed status
+    if status_normalized in ['completed', 'delivered']:
+        if not completed_at:
+            return False, f"Job card with status '{status}' must have completed_at timestamp"
+    
+    # Check delivered_at for delivered status
+    if status_normalized == 'delivered':
+        if not delivered_at:
+            return False, f"Job card with status '{status}' must have delivered_at timestamp"
+    
+    return True, ""
+
+def validate_invoice_timestamps(status: str, finalized_at: Optional[datetime], payment_status: str, paid_at: Optional[datetime]) -> tuple[bool, str]:
+    """
+    Validate Invoice timestamps based on status
+    
+    Rules:
+    - finalized_at must exist when status is 'finalized'
+    - paid_at must exist when payment_status is 'paid'
+    - Status rollback must NOT delete timestamps (audit safety)
+    
+    Args:
+        status: Current status of invoice
+        finalized_at: Finalization timestamp
+        payment_status: Payment status of invoice
+        paid_at: Full payment timestamp
+    
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Check finalized_at for finalized status
+    if status == 'finalized':
+        if not finalized_at:
+            return False, f"Invoice with status 'finalized' must have finalized_at timestamp"
+    
+    # Check paid_at for paid payment status
+    if payment_status == 'paid':
+        if not paid_at:
+            return False, f"Invoice with payment_status 'paid' must have paid_at timestamp"
+    
+    return True, ""
+
+def validate_purchase_timestamps(status: str, finalized_at: Optional[datetime]) -> tuple[bool, str]:
+    """
+    Validate Purchase timestamps based on status
+    
+    Rules:
+    - finalized_at must exist when status is 'finalized'
+    - Status rollback must NOT delete timestamps (audit safety)
+    
+    Args:
+        status: Current status of purchase
+        finalized_at: Finalization timestamp
+    
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    # Check finalized_at for finalized status
+    if status == 'finalized':
+        if not finalized_at:
+            return False, f"Purchase with status 'finalized' must have finalized_at timestamp"
+    
+    return True, ""
+
 class PaginationMetadata(BaseModel):
     total_count: int
     page: int
