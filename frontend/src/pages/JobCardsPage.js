@@ -408,8 +408,8 @@ export default function JobCardsPage() {
         payload.walk_in_phone = convertData.walk_in_phone;
       }
 
-      const response = await axios.post(
-        `${API}/jobcards/${convertingJobCard.id}/convert-to-invoice`, 
+      const response = await API.post(
+        `/jobcards/${convertingJobCard.id}/convert-to-invoice`, 
         payload
       );
       
