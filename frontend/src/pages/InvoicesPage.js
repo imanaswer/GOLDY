@@ -241,7 +241,7 @@ export default function InvoicesPage() {
 
     try {
       const response = await API.post(
-        `/invoices/${selectedInvoice.id}/add-payment`,
+        `/api/invoices/${selectedInvoice.id}/add-payment`,
         {
           amount: parseFloat(paymentData.amount),
           payment_mode: paymentData.payment_mode,
