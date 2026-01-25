@@ -8,7 +8,7 @@ import requests
 import json
 import sys
 
-BASE_URL = "https://worker-class-error.preview.emergentagent.com/api"
+BASE_URL = "https://worker-crud-api.preview.emergentagent.com/api"
 ADMIN_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 def setup_test_data():

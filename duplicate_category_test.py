@@ -27,7 +27,7 @@ import uuid
 import time
 
 # Configuration
-BASE_URL = "https://worker-class-error.preview.emergentagent.com/api"
+BASE_URL = "https://worker-crud-api.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 

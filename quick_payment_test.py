@@ -7,7 +7,7 @@ Tests ONLY the critical bug fix: Account balance updates when payments are added
 import requests
 import json
 
-BASE_URL = "https://worker-class-error.preview.emergentagent.com/api"
+BASE_URL = "https://worker-crud-api.preview.emergentagent.com/api"
 ADMIN_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 def authenticate():
