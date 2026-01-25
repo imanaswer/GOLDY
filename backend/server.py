@@ -727,6 +727,8 @@ class Invoice(BaseModel):
     customer_gstin: Optional[str] = None  # Customer GSTIN (from party)
     walk_in_name: Optional[str] = None  # For walk-in customers only
     walk_in_phone: Optional[str] = None  # For walk-in customers only
+    worker_id: Optional[str] = None  # Worker assigned to the job (from job card)
+    worker_name: Optional[str] = None  # Worker name (from job card)
     invoice_type: str = "sale"
     payment_status: str = "unpaid"
     status: str = "draft"  # "draft" or "finalized" - controls when stock is deducted
