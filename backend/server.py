@@ -676,8 +676,12 @@ class JobCard(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     job_card_number: str
     card_type: str = "normal"  # Default to "normal" job card (can be "normal" or "template")
-    date_created: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    delivery_date: Optional[datetime] = None
+    date_created: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # Alias for created_at
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # ISO 8601 UTC timestamp
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))  # Updated on every modification
+    completed_at: Optional[datetime] = None  # Set when status changes to "completed"
+    delivered_at: Optional[datetime] = None  # Set when status changes to "delivered"
+    delivery_date: Optional[str] = None  # Date-only field (YYYY-MM-DD) for expected delivery
     status: str = "created"
     customer_type: str = "saved"  # "saved" or "walk_in"
     customer_id: Optional[str] = None  # For saved customers only
