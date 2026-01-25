@@ -93,23 +93,26 @@ export default function JobCardsPage() {
 
   const loadData = async () => {
     try {
-      const [jobcardsRes, partiesRes, headersRes] = await Promise.all([
+      const [jobcardsRes, partiesRes, headersRes, workersRes] = await Promise.all([
         axios.get(`${API}/jobcards`, {
           params: { page: currentPage, page_size: 10 }
         }),
         axios.get(`${API}/parties?party_type=customer`),
-        axios.get(`${API}/inventory/headers`)
+        axios.get(`${API}/inventory/headers`),
+        axios.get(`${API}/workers?active=true`)
       ]);
       setJobcards(jobcardsRes.data.items || []);
       setPagination(jobcardsRes.data.pagination);
       setParties(partiesRes.data.items || []);
       setInventoryHeaders(headersRes.data?.items || []);
+      setWorkers(workersRes.data.items || []);
     } catch (error) {
       toast.error('Failed to load data');
       // Ensure arrays are set even on error
       setJobcards([]);
       setParties([]);
       setInventoryHeaders([]);
+      setWorkers([]);
     }
   };
 
