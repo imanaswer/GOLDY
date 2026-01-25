@@ -3323,6 +3323,16 @@ async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User 
         is_valid, error_msg = validate_status_transition("jobcard", current_status, new_status)
         if not is_valid:
             raise HTTPException(status_code=400, detail=error_msg)
+        
+        # WORKER VALIDATION: Block completion without worker assignment
+        if new_status == "completed":
+            # Get worker_id from update_data or existing job card
+            worker_id = update_data.get("worker_id") or existing.get("worker_id")
+            if not worker_id:
+                raise HTTPException(
+                    status_code=422, 
+                    detail="Please assign a worker before completing the job card"
+                )
     
     # Check if job card is locked (linked to finalized invoice)
     if existing.get("locked", False):
