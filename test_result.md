@@ -1198,6 +1198,33 @@ test_plan:
 user_problem_statement: "Fix login 404 error - services were stopped and need to be restarted to restore authentication functionality."
 
 backend:
+  - task: "Returns Finalization - Remove MongoDB Transactions"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ CRITICAL ISSUE - Backend stopped. Transaction/session code with incorrect indentation causing syntax/execution errors in finalize_return function."
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED - Removed MongoDB transaction wrappers and all session=session parameters. Restored backend to use status lock + rollback pattern. Backend boots successfully, all endpoints operational. Health check passing, authentication working."
+  
+  - task: "Returns Finalization - Decimal128 Precision"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ VERIFIED - Decimal128 already fully implemented for all return fields: refund_money_amount (2 decimals), refund_gold_grams (3 decimals), weight_grams (3 decimals), amounts (2 decimals). convert_return_to_decimal() and decimal_to_float() functions handle all conversions properly."
+
   - task: "Authentication Service Restoration"
     implemented: true
     working: true
