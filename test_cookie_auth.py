@@ -7,7 +7,7 @@ Tests Phase 1 of Security Hardening
 import requests
 import sys
 
-BACKEND_URL = "https://auth-problem-5.preview.emergentagent.com"
+BACKEND_URL = "https://auth-error-404-2.preview.emergentagent.com"
 API_BASE = f"{BACKEND_URL}/api"
 
 def test_cookie_auth():

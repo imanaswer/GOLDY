@@ -19,7 +19,7 @@ import sys
 from datetime import datetime, timezone, timedelta
 
 # Backend URL from frontend/.env
-BACKEND_URL = "https://auth-problem-5.preview.emergentagent.com/api"
+BACKEND_URL = "https://auth-error-404-2.preview.emergentagent.com/api"
 
 # Test credentials
 USERNAME = "admin"

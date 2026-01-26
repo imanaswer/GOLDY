@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import time
 
 # Configuration
-BASE_URL = "https://auth-problem-5.preview.emergentagent.com/api"
+BASE_URL = "https://auth-error-404-2.preview.emergentagent.com/api"
 
 # Test credentials from review request
 TEST_CREDENTIALS = [
