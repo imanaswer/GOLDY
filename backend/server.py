@@ -8959,45 +8959,47 @@ async def finalize_return(
                 stock_movement_ids = []
                 transaction_id = None
                 gold_ledger_id = None
-        created_transaction = None
-        created_gold_ledger = None
-        updated_reference = None
-        updated_party = None
-        
-        # ========================================================================
-        # SALES RETURN WORKFLOW
-        # ========================================================================
-        if return_type == 'sale_return':
-            # 1. Create stock movements (Stock IN - returned goods back to inventory)
-            for item in return_doc.get('items', []):
-                if item.get('weight_grams', 0) > 0:
-                    movement_id = str(uuid.uuid4())
-                    stock_movement = StockMovement(
-                        id=movement_id,
-                        type="IN",
-                        category=item.get('description'),  # Using description as category
-                        weight=round(item.get('weight_grams'), 3),
-                        purity=item.get('purity'),
-                        date=datetime.now(timezone.utc),
-                        purpose=f"Sales Return - {return_doc.get('return_number')}",
-                        reference_type="return",
-                        reference_id=return_id,
-                        notes=return_doc.get('reason'),
-                        created_by=current_user.id
-                    )
-                    await db.stock_movements.insert_one(stock_movement.model_dump())
-                    stock_movement_ids.append(movement_id)
-                    
-                    # Update inventory header stock
-                    await db.inventory_headers.update_one(
-                        {"name": item.get('description')},
-                        {
-                            "$inc": {
-                                "current_qty": item.get('qty', 0),
-                                "current_weight": round(item.get('weight_grams'), 3)
-                            }
-                        }
-                    )
+                
+                # ========================================================================
+                # SALES RETURN WORKFLOW
+                # ========================================================================
+                if return_type == 'sale_return':
+                    # 1. Create stock movements (Stock IN - returned goods back to inventory)
+                    for item in return_doc.get('items', []):
+                        weight_grams = item.get('weight_grams', 0)
+                        # Handle Decimal128
+                        if isinstance(weight_grams, Decimal128):
+                            weight_grams = float(weight_grams.to_decimal())
+                        
+                        if weight_grams > 0:
+                            movement_id = str(uuid.uuid4())
+                            stock_movement = StockMovement(
+                                id=movement_id,
+                                type="IN",
+                                category=item.get('description'),
+                                weight=round(weight_grams, 3),
+                                purity=item.get('purity'),
+                                date=datetime.now(timezone.utc),
+                                purpose=f"Sales Return - {return_doc.get('return_number')}",
+                                reference_type="return",
+                                reference_id=return_id,
+                                notes=return_doc.get('reason'),
+                                created_by=current_user.id
+                            )
+                            await db.stock_movements.insert_one(stock_movement.model_dump(), session=session)
+                            stock_movement_ids.append(movement_id)
+                            
+                            # Update inventory header stock
+                            await db.inventory_headers.update_one(
+                                {"name": item.get('description')},
+                                {
+                                    "$inc": {
+                                        "current_qty": item.get('qty', 0),
+                                        "current_weight": round(weight_grams, 3)
+                                    }
+                                },
+                                session=session
+                            )
             
             # 2. Create money refund (Transaction - Debit)
             if refund_mode in ['money', 'mixed'] and refund_money_amount > 0:
