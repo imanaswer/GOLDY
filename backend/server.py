@@ -5675,12 +5675,31 @@ async def get_account(account_id: str, current_user: User = Depends(require_perm
         raise HTTPException(status_code=404, detail="Account not found")
     return account
 
-@api_router.post("/accounts", response_model=Account)
+@api_router.post("/accounts", status_code=201)
 async def create_account(account_data: dict, current_user: User = Depends(require_permission('finance.create'))):
-    account = Account(**account_data, created_by=current_user.id)
-    await db.accounts.insert_one(account.model_dump())
-    await create_audit_log(current_user.id, current_user.full_name, "account", account.id, "create")
-    return account
+    """
+    Create a new account with strict type validation.
+    
+    Valid account types: asset, income, expense, liability, equity
+    """
+    # Validate account type
+    account_type = account_data.get('account_type', '').lower()
+    if not validate_account_type(account_type):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid account_type '{account_type}'. Must be one of: {', '.join(VALID_ACCOUNT_TYPES)}"
+        )
+    
+    # Ensure account_type is lowercase
+    account_data['account_type'] = account_type
+    
+    try:
+        account = Account(**account_data, created_by=current_user.id)
+        await db.accounts.insert_one(account.model_dump())
+        await create_audit_log(current_user.id, current_user.full_name, "account", account.id, "create")
+        return account
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @api_router.patch("/accounts/{account_id}")
 async def update_account(account_id: str, update_data: dict, current_user: User = Depends(require_permission('finance.create'))):
