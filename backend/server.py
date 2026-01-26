@@ -2498,13 +2498,27 @@ async def get_reports_list(current_user: User = Depends(require_permission('repo
             "supports_filters": True,
             "supports_export": True,
             "export_formats": ["excel"]
+        },
+        {
+            "id": "returns",
+            "name": "Returns Report",
+            "description": "Sales and purchase returns with financial impact analysis",
+            "category": "returns",
+            "endpoints": {
+                "view": "/api/reports/returns-summary",
+                "export_excel": "/api/reports/returns-export",
+                "export_pdf": "/api/reports/returns-pdf"
+            },
+            "supports_filters": True,
+            "supports_export": True,
+            "export_formats": ["excel", "pdf"]
         }
     ]
     
     return {
         "reports": reports,
         "total_count": len(reports),
-        "categories": ["financial", "inventory", "parties", "sales", "purchases"],
+        "categories": ["financial", "inventory", "parties", "sales", "purchases", "returns"],
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
@@ -7084,11 +7098,23 @@ async def get_financial_summary(
     
     # Calculate Total Sales from INCOME ACCOUNTS (credits increase income)
     # Sum of all credits to Income-type accounts
-    total_sales = sum(
+    # Subtract sales returns (debits to income accounts)
+    total_sales_credits = sum(
         txn.get('amount', 0) for txn in transactions
         if txn.get('transaction_type') == 'credit' and
         account_type_map.get(txn.get('account_id'), '') == 'income'
     )
+    
+    # Sales returns reduce total sales (debits or category="sales_return")
+    total_sales_returns = sum(
+        txn.get('amount', 0) for txn in transactions
+        if (txn.get('category') == 'sales_return' or 
+            (txn.get('transaction_type') == 'debit' and
+             account_type_map.get(txn.get('account_id'), '') == 'income'))
+    )
+    
+    # Net Sales = Gross Sales - Returns
+    total_sales = total_sales_credits - total_sales_returns
     
     # Calculate Total Income and Expenses for Net Profit
     total_income = sum(
@@ -7147,17 +7173,39 @@ async def get_financial_summary(
         actual = closing.get('actual_closing', 0)
         daily_closing_difference += (actual - expected)
     
+    # Get returns metrics for the period
+    returns_query = {"is_deleted": False, "status": "finalized"}
+    if start_date:
+        returns_query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in returns_query:
+            returns_query['date']['$lte'] = end_dt
+        else:
+            returns_query['date'] = {"$lte": end_dt}
+    
+    returns_docs = await db.returns.find(returns_query, {"_id": 0}).to_list(1000)
+    
+    total_sales_returns_count = len([r for r in returns_docs if r.get('return_type') == 'sale_return'])
+    total_purchase_returns_count = len([r for r in returns_docs if r.get('return_type') == 'purchase_return'])
+    
     return {
-        "total_sales": total_sales,  # LEDGER-BASED: Income account credits
+        "total_sales": total_sales,  # LEDGER-BASED: Net Sales (Credits - Returns)
+        "total_sales_returns": total_sales_returns,  # Total sales returns amount
         "total_credit": total_credit,  # LEDGER-BASED: All credits
         "total_debit": total_debit,  # LEDGER-BASED: All debits
         "net_flow": net_flow,  # LEDGER-BASED: Credit - Debit
         "cash_balance": cash_balance,  # LEDGER-BASED: Cash account balance
         "bank_balance": bank_balance,  # LEDGER-BASED: Bank account balance
-        "net_profit": net_profit,  # LEDGER-BASED: Income - Expenses
+        "net_profit": net_profit,  # LEDGER-BASED: Income - Expenses (includes returns impact)
         "total_account_balance": total_account_balance,  # Sum of all accounts
         "total_outstanding": total_outstanding,  # Invoice-based (informational)
-        "daily_closing_difference": daily_closing_difference  # Reconciliation
+        "daily_closing_difference": daily_closing_difference,  # Reconciliation
+        "returns_summary": {
+            "sales_returns_count": total_sales_returns_count,
+            "purchase_returns_count": total_purchase_returns_count,
+            "total_returns_count": len(returns_docs)
+        }
     }
 
 
@@ -9613,14 +9661,14 @@ async def finalize_return(
                         }
                     )
             
-            # 2. Create money refund (Transaction - Debit)
+            # 2. Create money refund transactions
             if refund_mode in ['money', 'mixed'] and refund_money_amount > 0:
                 account_id = return_doc.get('account_id')
                 account = await db.accounts.find_one({"id": account_id})
                 if not account:
                     raise HTTPException(status_code=400, detail="Account not found for money refund")
             
-            # Generate transaction number
+            # 2a. Transaction 1: Debit Cash/Bank account (money going out)
             transactions_count = await db.transactions.count_documents({})
             transaction_number = f"TXN-{transactions_count + 1:05d}"
             
@@ -9644,11 +9692,53 @@ async def finalize_return(
             )
             await db.transactions.insert_one(transaction.model_dump())
             
-            # Update account balance (debit = decrease balance)
+            # Update Cash/Bank account balance (debit = decrease balance for asset accounts)
             await db.accounts.update_one(
                 {"id": account_id},
                 {"$inc": {"current_balance": -round(refund_money_amount, 2)}}
             )
+            
+            # 2b. Transaction 2: Debit Sales Income account (reduce revenue)
+            # Find Sales Income account
+            sales_income_account = await db.accounts.find_one({
+                "is_deleted": False,
+                "account_type": "income",
+                "$or": [
+                    {"name": {"$regex": "sales income", "$options": "i"}},
+                    {"name": {"$regex": "^sales$", "$options": "i"}}
+                ]
+            })
+            
+            if sales_income_account:
+                transactions_count = await db.transactions.count_documents({})
+                income_transaction_number = f"TXN-{transactions_count + 1:05d}"
+                income_transaction_id = str(uuid.uuid4())
+                
+                income_transaction = Transaction(
+                    id=income_transaction_id,
+                    transaction_number=income_transaction_number,
+                    date=datetime.now(timezone.utc),
+                    transaction_type="debit",  # Debit income = reduce revenue
+                    mode="adjustment",
+                    account_id=sales_income_account.get('id'),
+                    account_name=sales_income_account.get('name'),
+                    party_id=party_id,
+                    party_name=return_doc.get('party_name'),
+                    amount=round(refund_money_amount, 2),
+                    category="sales_return",
+                    notes=f"Sales Return Revenue Adjustment - {return_doc.get('return_number')}",
+                    reference_type="return",
+                    reference_id=return_id,
+                    created_by=current_user.id
+                )
+                await db.transactions.insert_one(income_transaction.model_dump())
+                
+                # Update Sales Income account balance (debit income = decrease balance)
+                # For income accounts: credits increase (+), debits decrease (-)
+                await db.accounts.update_one(
+                    {"id": sales_income_account.get('id')},
+                    {"$inc": {"current_balance": -round(refund_money_amount, 2)}}
+                )
         
         # 3. Create gold refund (GoldLedgerEntry - OUT)
         if refund_mode in ['gold', 'mixed'] and refund_gold_grams > 0:

@@ -589,6 +589,9 @@ const ReturnsPage = () => {
                       ))
                     )}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    ℹ️ Only finalized {formData.return_type === 'sale_return' ? 'invoices' : 'purchases'} are shown. Draft items cannot be returned.
+                  </p>
                 </div>
               </div>
               
@@ -676,41 +679,73 @@ const ReturnsPage = () => {
               </div>
               
               {/* Refund Details */}
-              <div className="border-t pt-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Refund Details</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Refund Mode *</label>
-                    <select
-                      value={formData.refund_mode}
-                      onChange={(e) => handleFormChange('refund_mode', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="money">Money Only</option>
-                      <option value="gold">Gold Only</option>
-                      <option value="mixed">Mixed (Money + Gold)</option>
-                    </select>
-                  </div>
-                  
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Refund Mode *</label>
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <button
+                    type="button"
+                    data-testid="refund-mode-money-btn"
+                    onClick={() => handleFormChange('refund_mode', 'money')}
+                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                      formData.refund_mode === 'money'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Money Only
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="refund-mode-gold-btn"
+                    onClick={() => handleFormChange('refund_mode', 'gold')}
+                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                      formData.refund_mode === 'gold'
+                        ? 'bg-yellow-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Gold Only
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="refund-mode-mixed-btn"
+                    onClick={() => handleFormChange('refund_mode', 'mixed')}
+                    className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                      formData.refund_mode === 'mixed'
+                        ? 'bg-orange-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Mixed (Both)
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
                   {(formData.refund_mode === 'money' || formData.refund_mode === 'mixed') && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Money Amount (OMR) *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Money Amount (OMR) *
+                        </label>
                         <input
+                          data-testid="refund-money-amount-input"
                           type="number"
                           step="0.01"
                           value={formData.refund_money_amount}
                           onChange={(e) => handleFormChange('refund_money_amount', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           min="0"
+                          required={formData.refund_mode === 'money' || formData.refund_mode === 'mixed'}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Account *</label>
                         <select
+                          data-testid="refund-account-select"
                           value={formData.account_id}
                           onChange={(e) => handleFormChange('account_id', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          required={formData.refund_mode === 'money' || formData.refund_mode === 'mixed'}
                         >
                           <option value="">-- Select Account --</option>
                           {accounts.map(acc => (
@@ -726,19 +761,24 @@ const ReturnsPage = () => {
                   {(formData.refund_mode === 'gold' || formData.refund_mode === 'mixed') && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Gold Weight (g) *</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Gold Weight (g) *
+                        </label>
                         <input
+                          data-testid="refund-gold-weight-input"
                           type="number"
                           step="0.001"
                           value={formData.refund_gold_grams}
                           onChange={(e) => handleFormChange('refund_gold_grams', parseFloat(e.target.value) || 0)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                           min="0"
+                          required={formData.refund_mode === 'gold' || formData.refund_mode === 'mixed'}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Gold Purity</label>
                         <input
+                          data-testid="refund-gold-purity-input"
                           type="number"
                           value={formData.refund_gold_purity}
                           onChange={(e) => handleFormChange('refund_gold_purity', parseInt(e.target.value) || 916)}
@@ -750,10 +790,19 @@ const ReturnsPage = () => {
                   )}
                 </div>
                 
+                {formData.refund_mode === 'mixed' && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <p className="text-sm text-blue-800">
+                      💡 <strong>Mixed Refund:</strong> Both money and gold amounts are required. Total refund value must match return amount.
+                    </p>
+                  </div>
+                )}
+                
                 {(formData.refund_mode === 'money' || formData.refund_mode === 'mixed') && (
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Payment Mode</label>
                     <select
+                      data-testid="refund-payment-mode-select"
                       value={formData.payment_mode}
                       onChange={(e) => handleFormChange('payment_mode', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
