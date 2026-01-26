@@ -8601,13 +8601,19 @@ async def delete_transaction(
     amount = transaction.get('amount', 0)
     transaction_type = transaction.get('transaction_type', 'debit')
     
-    # Calculate balance reversal
-    # If original was debit (increased asset), reverse decreases it
-    # If original was credit (increased income/liability), reverse decreases it
-    if transaction_type == "debit":
-        balance_delta = -amount  # Reverse: decrease balance
-    else:  # credit
-        balance_delta = -amount  # Reverse: decrease balance
+    # Calculate balance reversal using CORRECT accounting rules
+    # Must fetch account to get its type, then reverse using opposite transaction type
+    balance_delta = 0
+    if account_id:
+        account = await db.accounts.find_one({"id": account_id, "is_deleted": False})
+        if account:
+            account_type = account.get('account_type', 'asset')
+            
+            # To reverse a transaction, apply opposite transaction type
+            # If original was DEBIT, reverse with CREDIT calculation
+            # If original was CREDIT, reverse with DEBIT calculation
+            reverse_type = 'credit' if transaction_type == 'debit' else 'debit'
+            balance_delta = calculate_balance_delta(account_type, reverse_type, amount)
     
     # Soft delete transaction
     await db.transactions.update_one(
@@ -8622,7 +8628,7 @@ async def delete_transaction(
     )
     
     # Reverse account balance
-    if account_id:
+    if account_id and balance_delta != 0:
         await db.accounts.update_one(
             {"id": account_id},
             {"$inc": {"current_balance": balance_delta}}
