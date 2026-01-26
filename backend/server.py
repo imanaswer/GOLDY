@@ -9000,13 +9000,13 @@ async def finalize_return(
                                 },
                                 session=session
                             )
-            
-            # 2. Create money refund (Transaction - Debit)
-            if refund_mode in ['money', 'mixed'] and refund_money_amount > 0:
-                account_id = return_doc.get('account_id')
-                account = await db.accounts.find_one({"id": account_id})
-                if not account:
-                    raise HTTPException(status_code=400, detail="Account not found for money refund")
+                    
+                    # 2. Create money refund (Transaction - Debit)
+                    if refund_mode in ['money', 'mixed'] and refund_money_amount > 0:
+                        account_id = return_doc.get('account_id')
+                        account = await db.accounts.find_one({"id": account_id}, session=session)
+                        if not account:
+                            raise HTTPException(status_code=400, detail="Account not found for money refund")
                 
                 # Generate transaction number
                 transactions_count = await db.transactions.count_documents({})
