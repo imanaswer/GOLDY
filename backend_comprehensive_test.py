@@ -28,7 +28,7 @@ import uuid
 import traceback
 
 # Configuration
-BASE_URL = "https://returns-tester.preview.emergentagent.com/api"
+BASE_URL = "https://atomic-returns.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
