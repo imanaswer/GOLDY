@@ -5275,7 +5275,6 @@ async def add_payment_to_invoice(
                             )
                             
                             # Create stock movement for audit trail
-                            from datetime import datetime, timezone
                             movement = StockMovement(
                                 movement_type="Stock OUT",
                                 header_id=header['id'],
