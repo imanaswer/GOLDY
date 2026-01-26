@@ -6634,6 +6634,45 @@ test_plan:
   test_priority: "high_first"
 
 agent_communication:
+  - agent: "user"
+    message: |
+      ❌ REFUND/RETURN VALIDATION AND ATOMICITY IMPROVEMENTS REQUIRED
+      
+      1. Validation must work for weight + qty, not only amount
+         - Returns must not exceed original based on total qty returned, total weight returned, total money returned
+         - Especially important for gold items
+      
+      2. "Finalize" must be atomic/safe
+         - If Mongo transactions aren't used, ensure finalize cannot partially complete
+         - Example: stock updated but refund transaction failed → inconsistent
+         - At minimum, add status='processing' lock, rollback on error, or Motor session transaction (if replica set)
+  
+  - agent: "main"
+    message: |
+      ✅ VALIDATION AND ATOMICITY IMPROVEMENTS ANALYSIS COMPLETE
+      
+      VALIDATION STATUS (Requirement 1):
+      ✅ ALREADY IMPLEMENTED - Multi-dimensional validation is working!
+      - Lines 1181-1283: validate_return_against_original() function
+      - Lines 1248-1258: ✅ Validates QUANTITY - prevents qty exceeding original
+      - Lines 1260-1270: ✅ Validates WEIGHT - prevents weight exceeding original (with 0.1% tolerance for rounding)
+      - Lines 1272-1282: ✅ Validates AMOUNT - prevents amount exceeding original (with 1% tolerance for rounding)
+      - Validation is called in both create_return (line 8552) and update_return (line 8732) endpoints
+      
+      ATOMICITY STATUS (Requirement 2):
+      ⚠️ PARTIAL - Has processing lock but lacks rollback mechanism
+      - Lines 8817-8823: ✅ Processing lock implemented (atomic status check-and-set)
+      - Line 8814: ✅ Blocks concurrent finalization (status='processing' check)
+      - Line 8810: ✅ Blocks re-finalization (status='finalized' check)
+      - ❌ NO ROLLBACK: If error occurs mid-finalization, changes are not reverted
+      - ❌ MongoDB not in replica set mode - cannot use multi-document transactions
+      
+      IMPROVEMENTS NEEDED:
+      1. Add comprehensive rollback logic in exception handler
+      2. Implement manual rollback for: stock movements, transactions, gold ledger, inventory updates, account updates, party updates
+      3. Reset status to 'draft' on failure
+      4. Log rollback actions in audit trail
+  
   - agent: "main"
     message: |
       🎉 RETURNS MANAGEMENT FEATURE IMPLEMENTATION COMPLETE
