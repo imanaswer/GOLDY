@@ -6050,10 +6050,16 @@ async def get_transactions_summary(
                 bank_credit += breakdown['credit']
                 bank_debit += breakdown['debit']
         
+        # FIX: Net Flow should represent actual cash flow (Cash + Bank movements only)
+        # This gives meaningful business insight: "How much money moved in/out?"
+        cash_net = cash_credit - cash_debit
+        bank_net = bank_credit - bank_debit
+        net_flow = cash_net + bank_net
+        
         return {
             "total_credit": round(total_credit, 3),
             "total_debit": round(total_debit, 3),
-            "net_flow": round(total_credit - total_debit, 3),
+            "net_flow": round(net_flow, 3),
             "transaction_count": len(transactions),
             "cash_summary": {
                 "credit": round(cash_credit, 3),
