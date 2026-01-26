@@ -28,12 +28,13 @@ from dotenv import load_dotenv
 from datetime import datetime, timezone
 import uuid
 
-# Load environment
-load_dotenv()
+# Load environment from backend/.env
+load_dotenv('/app/backend/.env')
 
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+db_name = os.environ.get('DB_NAME', 'gold_shop_erp')
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ.get('DB_NAME', 'gold_shop_erp')]
+db = client[db_name]
 
 def calculate_balance_delta(account_type: str, transaction_type: str, amount: float) -> float:
     """
