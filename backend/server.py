@@ -7019,18 +7019,21 @@ async def get_financial_summary(
     end_date: Optional[str] = None,
     current_user: User = Depends(require_permission('reports.view'))
 ):
-    """Get financial summary with optional date filtering"""
-    # Build query for invoices
-    invoice_query = {"is_deleted": False}
-    if start_date:
-        invoice_query['date'] = {"$gte": datetime.fromisoformat(start_date)}
-    if end_date:
-        end_dt = datetime.fromisoformat(end_date)
-        if 'date' in invoice_query:
-            invoice_query['date']['$lte'] = end_dt
-        else:
-            invoice_query['date'] = {"$lte": end_dt}
+    """
+    Get financial summary with LEDGER-ACCURATE calculations
     
+    CRITICAL: All calculations derived from Accounts + Transactions ONLY
+    Invoices are informational - NOT authoritative for balances
+    
+    Accounting Rules:
+    - Total Sales = SUM of credits to Income accounts
+    - Cash Balance = Current balance of Cash Asset accounts
+    - Bank Balance = Current balance of Bank Asset accounts
+    - Total Credit = SUM of all Credit transactions
+    - Total Debit = SUM of all Debit transactions
+    - Net Flow = Total Credit - Total Debit
+    - Net Profit = Total Income - Total Expenses
+    """
     # Build query for transactions
     txn_query = {"is_deleted": False}
     if start_date:
@@ -7042,54 +7045,99 @@ async def get_financial_summary(
         else:
             txn_query['date'] = {"$lte": end_dt}
     
-    # Get totals for financial summary
-    invoices = await db.invoices.find(invoice_query, {"_id": 0}).to_list(10000)
+    # Build query for invoices (only for outstanding calculation)
+    invoice_query = {"is_deleted": False, "status": "finalized"}
+    if start_date:
+        invoice_query['date'] = {"$gte": datetime.fromisoformat(start_date)}
+    if end_date:
+        end_dt = datetime.fromisoformat(end_date)
+        if 'date' in invoice_query:
+            invoice_query['date']['$lte'] = end_dt
+        else:
+            invoice_query['date'] = {"$lte": end_dt}
+    
+    # Get data from database
     transactions = await db.transactions.find(txn_query, {"_id": 0}).to_list(10000)
     accounts = await db.accounts.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
+    invoices = await db.invoices.find(invoice_query, {"_id": 0}).to_list(10000)
     
-    total_sales = sum(inv.get('grand_total', 0) for inv in invoices if inv.get('invoice_type') == 'sale')
-    total_purchases = sum(inv.get('grand_total', 0) for inv in invoices if inv.get('invoice_type') == 'purchase')
+    # ============================================================================
+    # LEDGER-BASED CALCULATIONS (Authoritative Source)
+    # ============================================================================
+    
+    # Build account maps for efficient lookups
+    account_type_map = {acc.get('id'): acc.get('account_type', '').lower() for acc in accounts if 'id' in acc}
+    account_name_map = {acc.get('id'): acc.get('name', '') for acc in accounts if 'id' in acc}
+    
+    # Calculate balances from ACCOUNTS table (current state)
+    cash_balance = sum(
+        acc.get('current_balance', 0) for acc in accounts 
+        if acc.get('account_type', '').lower() == 'asset' and 
+        'cash' in acc.get('name', '').lower()
+    )
+    
+    bank_balance = sum(
+        acc.get('current_balance', 0) for acc in accounts 
+        if acc.get('account_type', '').lower() == 'asset' and 
+        'bank' in acc.get('name', '').lower()
+    )
+    
+    # Calculate Total Sales from INCOME ACCOUNTS (credits increase income)
+    # Sum of all credits to Income-type accounts
+    total_sales = sum(
+        txn.get('amount', 0) for txn in transactions
+        if txn.get('transaction_type') == 'credit' and
+        account_type_map.get(txn.get('account_id'), '') == 'income'
+    )
+    
+    # Calculate Total Income and Expenses for Net Profit
+    total_income = sum(
+        acc.get('current_balance', 0) for acc in accounts
+        if acc.get('account_type', '').lower() == 'income'
+    )
+    
+    total_expenses = sum(
+        acc.get('current_balance', 0) for acc in accounts
+        if acc.get('account_type', '').lower() == 'expense'
+    )
+    
+    # Net Profit = Income - Expenses (ledger balances)
+    # Note: Expense accounts have positive balances representing costs incurred
+    net_profit = total_income - total_expenses
+    
+    # Calculate Total Credit and Debit from TRANSACTIONS
+    total_credit = sum(
+        txn.get('amount', 0) for txn in transactions 
+        if txn.get('transaction_type') == 'credit'
+    )
+    
+    total_debit = sum(
+        txn.get('amount', 0) for txn in transactions 
+        if txn.get('transaction_type') == 'debit'
+    )
+    
+    # Net Flow = Total Credits - Total Debits
+    net_flow = total_credit - total_debit
+    
+    # ============================================================================
+    # INVOICE-BASED CALCULATIONS (Informational Only)
+    # ============================================================================
+    
+    # Outstanding is still calculated from invoices (customer/vendor balances)
     total_outstanding = sum(inv.get('balance_due', 0) for inv in invoices)
     
-    total_credit = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'credit')
-    total_debit = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'debit')
-    
+    # Total account balance (sum of all account balances)
     total_account_balance = sum(acc.get('current_balance', 0) for acc in accounts)
     
-    # NEW: Calculate cash and bank balances separately
-    cash_balance = sum(acc.get('current_balance', 0) for acc in accounts 
-                      if 'cash' in acc.get('account_type', '').lower())
-    bank_balance = sum(acc.get('current_balance', 0) for acc in accounts 
-                      if 'bank' in acc.get('account_type', '').lower())
-    
-    # FIX: Calculate net flow from Cash/Bank transactions only (actual cash flow)
-    # Build account type map for filtering
-    account_type_map = {acc.get('id'): acc.get('account_type', '').lower() for acc in accounts if 'id' in acc}
-    
-    # Calculate cash/bank credits and debits only
-    cash_bank_credit = sum(
-        txn.get('amount', 0) for txn in transactions 
-        if txn.get('transaction_type') == 'credit' and 
-        account_type_map.get(txn.get('account_id'), '') in ['cash', 'petty', 'bank']
-    )
-    cash_bank_debit = sum(
-        txn.get('amount', 0) for txn in transactions 
-        if txn.get('transaction_type') == 'debit' and 
-        account_type_map.get(txn.get('account_id'), '') in ['cash', 'petty', 'bank']
-    )
-    net_flow = cash_bank_credit - cash_bank_debit
-    
-    # NEW: Get daily closing difference for today (or selected date range)
+    # Daily closing difference (for reconciliation)
     daily_closing_difference = 0
     closing_query = {"is_deleted": False}
     if start_date and end_date:
-        # If date range provided, get all closings in range
         closing_query['date'] = {
             "$gte": datetime.fromisoformat(start_date),
             "$lte": datetime.fromisoformat(end_date)
         }
     else:
-        # Default to today
         today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         closing_query['date'] = {"$gte": today}
     
@@ -7100,17 +7148,16 @@ async def get_financial_summary(
         daily_closing_difference += (actual - expected)
     
     return {
-        "total_sales": total_sales,
-        "total_purchases": total_purchases,
-        "total_outstanding": total_outstanding,
-        "total_credit": total_credit,
-        "total_debit": total_debit,
-        "total_account_balance": total_account_balance,
-        "cash_balance": cash_balance,
-        "bank_balance": bank_balance,
-        "net_flow": net_flow,
-        "daily_closing_difference": daily_closing_difference,
-        "net_profit": total_sales - total_purchases
+        "total_sales": total_sales,  # LEDGER-BASED: Income account credits
+        "total_credit": total_credit,  # LEDGER-BASED: All credits
+        "total_debit": total_debit,  # LEDGER-BASED: All debits
+        "net_flow": net_flow,  # LEDGER-BASED: Credit - Debit
+        "cash_balance": cash_balance,  # LEDGER-BASED: Cash account balance
+        "bank_balance": bank_balance,  # LEDGER-BASED: Bank account balance
+        "net_profit": net_profit,  # LEDGER-BASED: Income - Expenses
+        "total_account_balance": total_account_balance,  # Sum of all accounts
+        "total_outstanding": total_outstanding,  # Invoice-based (informational)
+        "daily_closing_difference": daily_closing_difference  # Reconciliation
     }
 
 
