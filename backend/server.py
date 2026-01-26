@@ -1230,6 +1230,7 @@ async def validate_return_against_original(
 ) -> None:
     """
     Validate that return qty, weight, and amount don't exceed original invoice/purchase totals.
+    Uses Decimal for precise arithmetic to avoid floating point errors.
     
     Args:
         db: MongoDB database instance
@@ -1242,24 +1243,67 @@ async def validate_return_against_original(
     Raises:
         HTTPException: If return exceeds original qty, weight, or amount
     """
-    # Calculate current return totals
+    # Calculate current return totals using Decimal for precision
     current_total_qty = sum(item.get('qty', 0) for item in return_items)
-    current_total_weight = sum(item.get('weight_grams', 0) for item in return_items)
-    current_total_amount = sum(item.get('amount', 0) for item in return_items)
+    
+    # Convert to Decimal for precise arithmetic
+    current_total_weight = Decimal('0')
+    current_total_amount = Decimal('0')
+    
+    for item in return_items:
+        weight = item.get('weight_grams', 0)
+        amount = item.get('amount', 0)
+        
+        # Handle both Decimal128 (from DB) and float (from API input)
+        if isinstance(weight, Decimal128):
+            current_total_weight += weight.to_decimal()
+        else:
+            current_total_weight += Decimal(str(weight))
+            
+        if isinstance(amount, Decimal128):
+            current_total_amount += amount.to_decimal()
+        else:
+            current_total_amount += Decimal(str(amount))
     
     # Get original totals
     if reference_type == 'invoice':
         # For invoices, calculate from items
         invoice_items = reference_doc.get('items', [])
         original_total_qty = sum(item.get('qty', 0) for item in invoice_items)
-        original_total_weight = sum(item.get('net_gold_weight', 0) or item.get('weight', 0) for item in invoice_items)
-        original_total_amount = reference_doc.get('grand_total', 0)
+        
+        # Calculate original weight
+        original_total_weight = Decimal('0')
+        for item in invoice_items:
+            weight = item.get('net_gold_weight', 0) or item.get('weight', 0)
+            if isinstance(weight, Decimal128):
+                original_total_weight += weight.to_decimal()
+            else:
+                original_total_weight += Decimal(str(weight))
+        
+        # Get original amount
+        grand_total = reference_doc.get('grand_total', 0)
+        if isinstance(grand_total, Decimal128):
+            original_total_amount = grand_total.to_decimal()
+        else:
+            original_total_amount = Decimal(str(grand_total))
+        
         entity_name = f"Invoice {reference_doc.get('invoice_number')}"
     else:  # purchase
         # For purchases, single item structure
         original_total_qty = 1  # Purchases are typically single transaction
-        original_total_weight = reference_doc.get('weight_grams', 0)
-        original_total_amount = reference_doc.get('amount_total', 0)
+        
+        weight = reference_doc.get('weight_grams', 0)
+        if isinstance(weight, Decimal128):
+            original_total_weight = weight.to_decimal()
+        else:
+            original_total_weight = Decimal(str(weight))
+        
+        amount = reference_doc.get('amount_total', 0)
+        if isinstance(amount, Decimal128):
+            original_total_amount = amount.to_decimal()
+        else:
+            original_total_amount = Decimal(str(amount))
+        
         entity_name = f"Purchase {reference_id[:8]}..."
     
     # Calculate totals already returned (finalized returns only)
@@ -1276,16 +1320,29 @@ async def validate_return_against_original(
     
     existing_returns = await db.returns.find(query).to_list(length=None)
     
-    # Sum up already returned quantities, weights, and amounts
+    # Sum up already returned quantities, weights, and amounts using Decimal
     already_returned_qty = 0
-    already_returned_weight = 0
-    already_returned_amount = 0
+    already_returned_weight = Decimal('0')
+    already_returned_amount = Decimal('0')
     
     for ret in existing_returns:
         ret_items = ret.get('items', [])
         already_returned_qty += sum(item.get('qty', 0) for item in ret_items)
-        already_returned_weight += sum(item.get('weight_grams', 0) for item in ret_items)
-        already_returned_amount += ret.get('total_amount', 0)
+        
+        # Sum weights using Decimal
+        for item in ret_items:
+            weight = item.get('weight_grams', 0)
+            if isinstance(weight, Decimal128):
+                already_returned_weight += weight.to_decimal()
+            else:
+                already_returned_weight += Decimal(str(weight))
+        
+        # Sum amounts using Decimal
+        total_amt = ret.get('total_amount', 0)
+        if isinstance(total_amt, Decimal128):
+            already_returned_amount += total_amt.to_decimal()
+        else:
+            already_returned_amount += Decimal(str(total_amt))
     
     # Validate quantity
     total_qty_with_new = already_returned_qty + current_total_qty
@@ -1299,28 +1356,32 @@ async def validate_return_against_original(
                    f"Total would be: {total_qty_with_new}"
         )
     
-    # Validate weight
+    # Validate weight using Decimal for precision
     total_weight_with_new = already_returned_weight + current_total_weight
-    if total_weight_with_new > original_total_weight * 1.001:  # Allow 0.1% tolerance for rounding
+    # Allow 0.1% tolerance for rounding
+    tolerance = original_total_weight * Decimal('0.001')
+    if total_weight_with_new > (original_total_weight + tolerance):
         raise HTTPException(
             status_code=400,
             detail=f"Cannot return more weight than original {entity_name}. "
-                   f"Original weight: {original_total_weight:.3f}g, "
-                   f"Already returned: {already_returned_weight:.3f}g, "
-                   f"Current return: {current_total_weight:.3f}g, "
-                   f"Total would be: {total_weight_with_new:.3f}g"
+                   f"Original weight: {float(original_total_weight):.3f}g, "
+                   f"Already returned: {float(already_returned_weight):.3f}g, "
+                   f"Current return: {float(current_total_weight):.3f}g, "
+                   f"Total would be: {float(total_weight_with_new):.3f}g"
         )
     
-    # Validate amount
+    # Validate amount using Decimal for precision
     total_amount_with_new = already_returned_amount + current_total_amount
-    if total_amount_with_new > original_total_amount * 1.01:  # Allow 1% tolerance for rounding
+    # Allow 1% tolerance for rounding
+    amount_tolerance = original_total_amount * Decimal('0.01')
+    if total_amount_with_new > (original_total_amount + amount_tolerance):
         raise HTTPException(
             status_code=400,
             detail=f"Cannot return more amount than original {entity_name}. "
-                   f"Original: {original_total_amount:.2f} OMR, "
-                   f"Already returned: {already_returned_amount:.2f} OMR, "
-                   f"Current return: {current_total_amount:.2f} OMR, "
-                   f"Total would be: {total_amount_with_new:.2f} OMR"
+                   f"Original: {float(original_total_amount):.2f} OMR, "
+                   f"Already returned: {float(already_returned_amount):.2f} OMR, "
+                   f"Current return: {float(current_total_amount):.2f} OMR, "
+                   f"Total would be: {float(total_amount_with_new):.2f} OMR"
         )
 
 # ============================================================================
