@@ -5098,37 +5098,78 @@ async def add_payment_to_invoice(
             party_id = None
             party_name = f"{invoice.walk_in_name or 'Walk-in Customer'} (Walk-in)"
         
-        # Generate transaction number
+        # Generate transaction numbers for double-entry
         year = datetime.now(timezone.utc).year
         count = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{year}"}})
-        transaction_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
+        debit_txn_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
+        credit_txn_number = f"TXN-{year}-{str(count + 2).zfill(4)}"
         
-        # Create transaction record with invoice reference
-        transaction = Transaction(
-            transaction_number=transaction_number,
-            transaction_type="credit",  # Money coming in
+        # DOUBLE-ENTRY BOOKKEEPING:
+        # Transaction 1: DEBIT Cash/Bank (ASSET) - Money increases in Cash/Bank
+        debit_transaction = Transaction(
+            transaction_number=debit_txn_number,
+            transaction_type="debit",  # Debit increases asset
             mode=payment_data['payment_mode'],
             account_id=payment_data['account_id'],
             account_name=account['name'],
             party_id=party_id,
             party_name=party_name,
             amount=payment_amount,
-            category="Invoice Payment",
+            category="Invoice Payment - Cash/Bank (Debit)",
             notes=f"Payment for {invoice.invoice_number}. {payment_data.get('notes', '')}".strip(),
-            reference_type="invoice",  # Link to invoice
-            reference_id=invoice_id,  # Invoice UUID
+            reference_type="invoice",
+            reference_id=invoice_id,
             created_by=current_user.id
         )
         
-        # Insert transaction
-        await db.transactions.insert_one(transaction.model_dump())
+        # Insert debit transaction
+        await db.transactions.insert_one(debit_transaction.model_dump())
         
-        # CRITICAL: Update account balance when payment is received
-        # Credit transaction means money coming in, so increase account balance
-        delta = transaction.amount if transaction.transaction_type == "credit" else -transaction.amount
+        # Update Cash/Bank account balance (increase for debit on asset)
         await db.accounts.update_one(
             {"id": payment_data['account_id']},
-            {"$inc": {"current_balance": delta}}
+            {"$inc": {"current_balance": payment_amount}}
+        )
+        
+        # Transaction 2: CREDIT Sales Income (INCOME) - Revenue recognized
+        # Get or create Sales Income account
+        sales_account = await db.accounts.find_one({"name": "Sales Income", "is_deleted": False})
+        if not sales_account:
+            sales_account = {
+                "id": str(uuid.uuid4()),
+                "name": "Sales Income",
+                "account_type": "income",
+                "opening_balance": 0,
+                "current_balance": 0,
+                "created_at": datetime.now(timezone.utc),
+                "created_by": current_user.id,
+                "is_deleted": False
+            }
+            await db.accounts.insert_one(sales_account)
+        
+        credit_transaction = Transaction(
+            transaction_number=credit_txn_number,
+            transaction_type="credit",  # Credit increases income
+            mode=payment_data['payment_mode'],
+            account_id=sales_account['id'],
+            account_name=sales_account['name'],
+            party_id=party_id,
+            party_name=party_name,
+            amount=payment_amount,
+            category="Invoice Payment - Sales Income (Credit)",
+            notes=f"Revenue for {invoice.invoice_number}. {payment_data.get('notes', '')}".strip(),
+            reference_type="invoice",
+            reference_id=invoice_id,
+            created_by=current_user.id
+        )
+        
+        # Insert credit transaction
+        await db.transactions.insert_one(credit_transaction.model_dump())
+        
+        # Update Sales Income account balance (increase for credit on income)
+        await db.accounts.update_one(
+            {"id": sales_account['id']},
+            {"$inc": {"current_balance": payment_amount}}
         )
         
         # Update invoice payment details
