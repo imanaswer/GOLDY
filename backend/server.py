@@ -4569,22 +4569,9 @@ async def finalize_invoice(invoice_id: str, current_user: User = Depends(require
         count = await db.transactions.count_documents({"transaction_number": {"$regex": f"^TXN-{year}"}})
         transaction_number = f"TXN-{year}-{str(count + 1).zfill(4)}"
         
-        # Get or create a default sales account
-        sales_account = await db.accounts.find_one({"name": "Sales"})
-        if not sales_account:
-            # Create default sales account if it doesn't exist
-            default_account = {
-                "id": str(uuid.uuid4()),
-                "name": "Sales",
-                "account_type": "asset",
-                "opening_balance": 0,
-                "current_balance": 0,
-                "created_by": current_user.id,
-                "created_at": finalized_at,
-                "is_deleted": False
-            }
-            await db.accounts.insert_one(default_account)
-            sales_account = default_account
+        # REMOVED: Invoice finalization should NOT create finance transactions
+        # Transactions are only created when PAYMENT is received
+        # This section has been removed to fix accounting model
         
         # Determine transaction type based on invoice type
         # For sales and service invoices, customer owes money (debit to customer account)
