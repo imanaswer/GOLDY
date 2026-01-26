@@ -80,7 +80,10 @@ export default function InvoicesPage() {
   const handlePrintInvoice = async (invoice) => {
     try {
       toast.info('Generating professional invoice PDF...');
-      const result = await downloadProfessionalInvoicePDF(invoice.id, API, axios);
+      // Construct API URL (BACKEND_URL + /api)
+      const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://127.0.0.1:5000';
+      const API_URL = `${BACKEND_URL}/api`;
+      const result = await downloadProfessionalInvoicePDF(invoice.id, API_URL, API);
       if (result.success) {
         toast.success('Professional invoice PDF generated successfully!');
       } else {
