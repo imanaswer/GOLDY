@@ -21,7 +21,7 @@ from typing import Dict, Any, List, Optional
 import sys
 
 # Configuration
-BACKEND_URL = "https://auth-error-404-2.preview.emergentagent.com"
+BACKEND_URL = "https://returns-tester.preview.emergentagent.com"
 USERNAME = "admin"
 PASSWORD = "admin123"
 

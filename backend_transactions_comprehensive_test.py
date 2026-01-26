@@ -20,7 +20,7 @@ import uuid
 from decimal import Decimal
 
 # Configuration
-BASE_URL = "https://auth-error-404-2.preview.emergentagent.com/api"
+BASE_URL = "https://returns-tester.preview.emergentagent.com/api"
 USERNAME = "admin"
 PASSWORD = "admin123"
 

@@ -28,8 +28,8 @@ import uuid
 import time
 
 # Configuration
-BASE_URL = "https://auth-error-404-2.preview.emergentagent.com/api"
-FRONTEND_URL = "https://auth-error-404-2.preview.emergentagent.com"
+BASE_URL = "https://returns-tester.preview.emergentagent.com/api"
+FRONTEND_URL = "https://returns-tester.preview.emergentagent.com"
 USERNAME = "admin"
 PASSWORD = "admin123"
 
