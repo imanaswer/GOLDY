@@ -871,7 +871,7 @@ export default function JobCardsPage() {
         {pagination && <Pagination pagination={pagination} onPageChange={setPage} />}
       </Card>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <Dialog open={showDialog} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
@@ -1436,9 +1436,23 @@ export default function JobCardsPage() {
               </div>
             )}
 
-            <Button data-testid="save-jobcard-button" onClick={handleCreateJobCard} className="w-full">
-              {editingTemplate ? 'Update Template' : saveAsTemplate ? 'Save Template' : editingJobCard ? 'Update Job Card' : 'Create Job Card'}
-            </Button>
+                       <div className="flex gap-3">
+              <Button 
+                type="button"
+                variant="outline" 
+                onClick={handleCloseDialog} 
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button 
+                data-testid="save-jobcard-button" 
+                onClick={handleCreateJobCard} 
+                className="flex-1"
+              >
+                {editingTemplate ? 'Update Template' : saveAsTemplate ? 'Save Template' : editingJobCard ? 'Update Job Card' : 'Create Job Card'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
