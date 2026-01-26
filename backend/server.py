@@ -8922,16 +8922,13 @@ async def finalize_return(
     if current_status == 'processing':
         raise HTTPException(status_code=409, detail="Return is currently being processed. Please try again in a moment.")
     
-    # MongoDB Transaction: All operations are atomic
-    async with await client.start_session() as session:
-        async with session.start_transaction():
-            try:
-                # Step 1: Atomic lock - Set status to 'processing'
-                lock_result = await db.returns.update_one(
-                    {"id": return_id, "status": "draft", "is_deleted": False},
-                    {"$set": {"status": "processing", "processing_started_at": datetime.now(timezone.utc)}},
-                    session=session
-                )
+    # Use status lock + rollback for safety (MongoDB transactions require replica set)
+    try:
+        # Step 1: Atomic lock - Set status to 'processing'
+        lock_result = await db.returns.update_one(
+            {"id": return_id, "status": "draft", "is_deleted": False},
+            {"$set": {"status": "processing", "processing_started_at": datetime.now(timezone.utc)}}
+        )
                 
                 if lock_result.modified_count == 0:
                     raise HTTPException(status_code=409, detail="Return is already being processed or was modified.")
