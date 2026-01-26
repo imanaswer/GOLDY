@@ -8797,16 +8797,32 @@ async def finalize_return(
     """
     Finalize a return (apply stock movements, refunds, and update balances).
     This is the core business logic for processing returns.
+    Uses status='processing' lock to prevent concurrent finalization and ensure atomicity.
     """
     try:
-        # Fetch return
+        # Step 1: Fetch and lock return (atomic check-and-set)
         return_doc = await db.returns.find_one({"id": return_id, "is_deleted": False})
         if not return_doc:
             raise HTTPException(status_code=404, detail="Return not found")
         
-        if return_doc.get('status') == 'finalized':
+        current_status = return_doc.get('status')
+        
+        if current_status == 'finalized':
             raise HTTPException(status_code=400, detail="Return is already finalized")
         
+        if current_status == 'processing':
+            raise HTTPException(status_code=409, detail="Return is currently being processed. Please try again in a moment.")
+        
+        # Atomic lock: Set status to 'processing'
+        lock_result = await db.returns.update_one(
+            {"id": return_id, "status": "draft", "is_deleted": False},
+            {"$set": {"status": "processing", "processing_started_at": datetime.now(timezone.utc)}}
+        )
+        
+        if lock_result.modified_count == 0:
+            raise HTTPException(status_code=409, detail="Return is already being processed or was modified. Please refresh and try again.")
+        
+        # Now we have exclusive lock - proceed with finalization
         return_type = return_doc.get('return_type')
         reference_type = return_doc.get('reference_type')
         reference_id = return_doc.get('reference_id')
@@ -8818,6 +8834,14 @@ async def finalize_return(
         stock_movement_ids = []
         transaction_id = None
         gold_ledger_id = None
+        
+        # Track all operations for rollback if needed
+        created_stock_movements = []
+        updated_inventory_headers = []
+        created_transaction = None
+        created_gold_ledger = None
+        updated_reference = None
+        updated_party = None
         
         # ========================================================================
         # SALES RETURN WORKFLOW
