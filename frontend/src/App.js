@@ -167,6 +167,18 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/returns"
+            element={
+              <ProtectedRoute>
+                <PermissionProtectedRoute permission="returns.view">
+                  <DashboardLayout>
+                    <ReturnsPage />
+                  </DashboardLayout>
+                </PermissionProtectedRoute>
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
