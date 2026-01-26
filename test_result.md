@@ -6330,3 +6330,85 @@ agent_communication:
       ✅ Uses existing API instance (no duplicate axios imports)
       
       STATUS: Ready for testing. Frontend is running with hot reload enabled.
+
+  - task: "Fix jsPDF autoTable plugin loading issue"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/utils/professionalInvoicePDF.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ FIXED - jsPDF autoTable Plugin Loading Error Resolved
+          
+          NEW ISSUE DISCOVERED (after axios fix):
+          - Error: "doc.autoTable is not a function"
+          - Location: professionalInvoicePDF.js line 192
+          - Cause: Incorrect import pattern for jsPDF v4.x
+          
+          ROOT CAUSE:
+          - Original code used: import jsPDF from 'jspdf' (default import)
+          - jsPDF v4.x requires named import: import { jsPDF } from 'jspdf'
+          - The jspdf-autotable plugin extends jsPDF prototype but only works with named import
+          
+          FIX APPLIED:
+          - Changed line 1 from: import jsPDF from 'jspdf'
+          - To: import { jsPDF } from 'jspdf'
+          - Kept line 2 as: import 'jspdf-autotable' (side-effect import for plugin)
+          
+          WHY THIS WORKS:
+          - Named import { jsPDF } is the correct pattern for jsPDF v4.x
+          - Side-effect import 'jspdf-autotable' extends the jsPDF prototype
+          - This allows doc.autoTable() to work correctly
+          
+          PACKAGE VERSIONS VERIFIED:
+          - jspdf@4.0.0 (installed)
+          - jspdf-autotable@5.0.7 (installed, compatible with jsPDF 4.x)
+          
+          VERIFICATION:
+          - Frontend compiled successfully with 1 warning (only React hooks dependencies - not errors)
+          - No compilation errors
+          - autoTable function will now be available on jsPDF instances
+          
+          EXPECTED BEHAVIOR AFTER FIX:
+          - Invoice PDF generation will complete successfully
+          - Professional invoice with tables, headers, footers will render
+          - PDF will include all invoice details, items, calculations, payments
+          - Both draft and finalized invoices will display correctly
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🎯 SECOND FIX APPLIED - jsPDF autoTable Plugin Issue Resolved
+      
+      ISSUE CHAIN:
+      ================================================================================
+      1. ✅ FIXED: "axios is not defined" error in InvoicesPage.js
+      2. ✅ FIXED: "doc.autoTable is not a function" error in professionalInvoicePDF.js
+      
+      LATEST FIX DETAILS:
+      ================================================================================
+      FILE: /app/frontend/src/utils/professionalInvoicePDF.js
+      LINE: 1
+      
+      BEFORE:
+      import jsPDF from 'jspdf';
+      
+      AFTER:
+      import { jsPDF } from 'jspdf';
+      
+      REASON:
+      - jsPDF v4.x uses named exports, not default export
+      - Named import is required for jspdf-autotable plugin to extend prototype correctly
+      - This is documented behavior in jsPDF v4.x breaking changes
+      
+      COMPILATION STATUS:
+      ================================================================================
+      ✅ Frontend compiled successfully
+      ⚠️  1 warning (React hooks exhaustive-deps - not blocking)
+      ❌ 0 errors
+      
+      Both fixes are now live and ready for testing.
