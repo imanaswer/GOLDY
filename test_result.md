@@ -6691,6 +6691,65 @@ agent_communication:
   
   - agent: "main"
     message: |
+      🎉 ATOMICITY ENHANCEMENT COMPLETE - READY FOR COMPREHENSIVE TESTING
+      
+      ✅ IMPLEMENTATION COMPLETE:
+      ================================================================================
+      
+      1. ✅ VALIDATION VERIFIED - Already Checks All 3 Dimensions:
+         - Quantity validation: ✅ (lines 1248-1258)
+         - Weight validation: ✅ (lines 1260-1270, 0.1% tolerance for gold)
+         - Amount validation: ✅ (lines 1272-1282, 1% tolerance for rounding)
+      
+      2. ✅ ATOMICITY IMPLEMENTED - Comprehensive Rollback on Failure:
+         - Processing lock: ✅ (prevents concurrent finalization)
+         - Rollback mechanism: ✅ (lines 9127-9225)
+         - Reverts: Stock movements, transactions, gold ledger, inventory, accounts
+         - Audit trail: ✅ (logs both success and rollback)
+      
+      🔧 BACKEND CHANGES:
+      ================================================================================
+      File: backend/server.py
+      - Lines 9127-9135: HTTPException handler with status reset to draft
+      - Lines 9136-9225: Comprehensive rollback on generic exceptions
+        • Resets return status to 'draft'
+        • Deletes stock movements
+        • Deletes transaction + reverts account balance
+        • Deletes gold ledger entry
+        • Reverts inventory qty/weight changes (handles both sale/purchase)
+        • Creates rollback audit log
+        • Returns clear error message indicating rollback
+      
+      🚀 DEPLOYMENT STATUS:
+      ================================================================================
+      ✅ Backend: Restarted successfully, running on port 8001 (pid 874)
+      ✅ No startup errors detected
+      ✅ All services operational
+      
+      🎯 READY FOR TESTING:
+      ================================================================================
+      
+      CRITICAL TEST SCENARIOS:
+      1. Multiple partial returns (qty/weight/amount tracking)
+      2. Mixed refund mode (money + gold)
+      3. Returns exceeding original qty (should fail with validation error)
+      4. Returns exceeding original weight (should fail with validation error)  
+      5. Returns exceeding original amount (should fail with validation error)
+      6. Re-finalize blocked (status check)
+      7. Finalized edit/delete blocked (immutability check)
+      8. Stock movement directions correct (IN for sale returns, OUT for purchase returns)
+      9. Transaction directions correct (Debit for sale returns, Credit for purchase returns)
+      10. Rollback on failure (simulate error mid-finalization)
+      11. Concurrent finalization blocked (processing lock)
+      12. Gold items with weight precision (3 decimals)
+      
+      💡 RECOMMENDATION:
+      ================================================================================
+      Ready for comprehensive backend testing using deep_testing_backend_v2 agent.
+      Focus on validation edge cases, rollback scenarios, and atomicity guarantees.
+  
+  - agent: "main"
+    message: |
       🎉 RETURNS MANAGEMENT FEATURE IMPLEMENTATION COMPLETE
       
       IMPLEMENTATION STATUS: BACKEND AND FRONTEND FULLY IMPLEMENTED WITH CRITICAL VALIDATION ADDED
