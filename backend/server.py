@@ -409,6 +409,7 @@ ROLE_PERMISSIONS = {
         'jobcards.view', 'jobcards.create', 'jobcards.update', 'jobcards.delete',
         'reports.view',
         'audit.view',
+        'returns.view', 'returns.create', 'returns.finalize', 'returns.delete',
     ],
     'manager': [
         # Manager has most permissions except user deletion and audit logs
@@ -420,6 +421,7 @@ ROLE_PERMISSIONS = {
         'inventory.view', 'inventory.adjust',
         'jobcards.view', 'jobcards.create', 'jobcards.update', 'jobcards.delete',
         'reports.view',
+        'returns.view', 'returns.create', 'returns.finalize',
     ],
     'staff': [
         # Staff has limited permissions - mostly view and create
@@ -430,6 +432,7 @@ ROLE_PERMISSIONS = {
         'inventory.view',
         'jobcards.view', 'jobcards.create', 'jobcards.update',
         'reports.view',
+        'returns.view', 'returns.create',
     ],
 }
 
