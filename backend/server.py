@@ -2144,7 +2144,7 @@ async def create_stock_movement(movement_data: dict, current_user: User = Depend
       * GST compliance (tax collected)
       
     WORKFLOW CONTROL:
-    - confirmation_reason is NOT REQUIRED for all manual adjustments
+    - confirmation_reason is REQUIRED for all manual adjustments
     """
     header = await db.inventory_headers.find_one({"id": movement_data['header_id']}, {"_id": 0})
     if not header:
@@ -2155,6 +2155,13 @@ async def create_stock_movement(movement_data: dict, current_user: User = Depend
     qty_delta = movement_data.get('qty_delta', 0)
     weight_delta = movement_data.get('weight_delta', 0)
     
+    # WORKFLOW CONTROL: Require confirmation_reason for manual adjustments
+    confirmation_reason = movement_data.get('confirmation_reason', '').strip()
+    if not confirmation_reason:
+        raise HTTPException(
+            status_code=400,
+            detail="confirmation_reason is required for all manual inventory adjustments. Please provide a reason for this stock movement."
+        )
     
     # Block Stock OUT movement type entirely
     if movement_type == "Stock OUT":
@@ -2188,6 +2195,7 @@ async def create_stock_movement(movement_data: dict, current_user: User = Depend
         weight_delta=weight_delta,
         purity=movement_data['purity'],
         notes=movement_data.get('notes'),
+        confirmation_reason=confirmation_reason,
         created_by=current_user.id
     )
     
@@ -2206,6 +2214,7 @@ async def create_stock_movement(movement_data: dict, current_user: User = Depend
             "header_name": header['name'],
             "qty_delta": qty_delta,
             "weight_delta": weight_delta,
+            "confirmation_reason": confirmation_reason
         }
     )
     
@@ -3910,117 +3919,198 @@ async def get_jobcards(
 @api_router.post("/jobcards")
 async def create_jobcard(jobcard_data: dict, current_user: User = Depends(require_permission('jobcards.create'))):
     """Create a new job card"""
-    # Validate based on customer type
-    customer_type = jobcard_data.get('customer_type', 'saved')
+    # Generate job card number
+    count = await db.jobcards.count_documents({"card_type": {"$ne": "template"}})
+    jobcard_data["job_card_number"] = f"JC{count + 1:04d}"
     
-    if customer_type == 'saved':
-        if not jobcard_data.get('customer_id'):
+    # Set metadata
+    jobcard_data["created_by"] = current_user.username
+    jobcard_data["created_at"] = datetime.now(timezone.utc)
+    jobcard_data["updated_at"] = datetime.now(timezone.utc)
+    jobcard_data["is_deleted"] = False
+    jobcard_data["locked"] = False
+    jobcard_data["is_invoiced"] = False
+    
+    # Set default card_type if not provided
+    if "card_type" not in jobcard_data:
+        jobcard_data["card_type"] = "individual"
+    
+    # Validate customer type and set customer details
+    if jobcard_data.get("customer_type") == "saved":
+        if not jobcard_data.get("customer_id"):
             raise HTTPException(status_code=400, detail="customer_id is required for saved customers")
-        # Fetch customer name from parties collection
-        customer = await db.parties.find_one({"id": jobcard_data['customer_id'], "is_deleted": False}, {"_id": 0})
+        
+        # Fetch customer details
+        customer = await db.parties.find_one({"id": jobcard_data["customer_id"], "is_deleted": False})
         if not customer:
             raise HTTPException(status_code=404, detail="Customer not found")
-        jobcard_data['customer_name'] = customer.get('name', '')
-    elif customer_type == 'walk_in':
-        if not jobcard_data.get('walk_in_name') or not jobcard_data['walk_in_name'].strip():
+        
+        jobcard_data["customer_name"] = customer.get("name")
+        jobcard_data["walk_in_name"] = None
+        jobcard_data["walk_in_phone"] = None
+    elif jobcard_data.get("customer_type") == "walk_in":
+        if not jobcard_data.get("walk_in_name"):
             raise HTTPException(status_code=400, detail="walk_in_name is required for walk-in customers")
+        
+        jobcard_data["customer_id"] = None
+        jobcard_data["customer_name"] = None
+    else:
+        raise HTTPException(status_code=400, detail="customer_type must be either 'saved' or 'walk_in'")
     
-    # Validate worker assignment for completed status
-    status = jobcard_data.get('status', 'created')
-    if status == 'completed' and not jobcard_data.get('worker_id'):
-        raise HTTPException(status_code=400, detail="Worker assignment is required to mark job card as completed")
+    # Validate worker if provided
+    if jobcard_data.get("worker_id"):
+        worker = await db.workers.find_one({"id": jobcard_data["worker_id"], "is_deleted": False})
+        if not worker:
+            raise HTTPException(status_code=404, detail="Worker not found")
+        jobcard_data["worker_name"] = worker.get("name")
+    else:
+        jobcard_data["worker_name"] = None
     
-    # Get worker name if worker_id is provided
-    if jobcard_data.get('worker_id'):
-        worker = await db.workers.find_one({"id": jobcard_data['worker_id'], "is_deleted": False}, {"_id": 0})
-        if worker:
-            jobcard_data['worker_name'] = worker.get('name', '')
+    # Validate status
+    valid_statuses = ["created", "pending", "in_progress", "completed", "delivered"]
+    if jobcard_data.get("status") and jobcard_data["status"] not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
     
-    # Generate job card number
-    year = datetime.now(timezone.utc).year
-    count = await db.jobcards.count_documents({"job_card_number": {"$regex": f"^JC-{year}"}})
-    jobcard_data['job_card_number'] = f"JC-{year}-{str(count + 1).zfill(4)}"
+    # Set default status if not provided
+    if "status" not in jobcard_data or not jobcard_data["status"]:
+        jobcard_data["status"] = "created"
     
-    # Ensure card_type is set (default to 'individual' if not provided)
-    if 'card_type' not in jobcard_data:
-        jobcard_data['card_type'] = 'individual'
+    # Validate timestamps based on status
+    status = jobcard_data.get("status", "created")
+    completed_at = jobcard_data.get("completed_at")
+    delivered_at = jobcard_data.get("delivered_at")
+    
+    is_valid, error_msg = validate_jobcard_timestamps(status, completed_at, delivered_at)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=error_msg)
     
     # Set timestamps based on status
-    now = datetime.now(timezone.utc)
-    if status == 'completed':
-        jobcard_data['completed_at'] = now
-    elif status == 'delivered':
-        jobcard_data['completed_at'] = now
-        jobcard_data['delivered_at'] = now
+    if status == "completed" and not completed_at:
+        jobcard_data["completed_at"] = datetime.now(timezone.utc)
+    if status == "delivered" and not delivered_at:
+        jobcard_data["delivered_at"] = datetime.now(timezone.utc)
     
-    # Create the job card
-    jobcard = JobCard(**jobcard_data, created_by=current_user.id)
+    # Validate items
+    if not jobcard_data.get("items") or len(jobcard_data["items"]) == 0:
+        raise HTTPException(status_code=400, detail="At least one item is required")
+    
+    # Generate IDs for items if not provided
+    for item in jobcard_data["items"]:
+        if "id" not in item:
+            item["id"] = str(uuid.uuid4())
+    
+    # Create JobCard model instance
+    jobcard = JobCard(**jobcard_data)
+    
+    # Insert into database
     await db.jobcards.insert_one(jobcard.model_dump())
-    await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard.id, "create")
     
-    return jobcard
+    # Create audit log
+    await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard.id, "create", {"job_card_number": jobcard.job_card_number})
+    
+    return {"message": "Job card created successfully", "id": jobcard.id, "job_card_number": jobcard.job_card_number}
 
 @api_router.patch("/jobcards/{jobcard_id}")
 async def update_jobcard(jobcard_id: str, update_data: dict, current_user: User = Depends(require_permission('jobcards.update'))):
     """Update an existing job card"""
-    # Verify the job card exists
+    # Check if job card exists
     existing = await db.jobcards.find_one({"id": jobcard_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Job card not found")
     
-    # Check if job card is locked
+    # Check if job card is locked (linked to finalized invoice)
     if existing.get("locked", False):
-        if current_user.role != 'admin':
-            raise HTTPException(
-                status_code=403, 
-                detail="Cannot edit locked job card. This job card is linked to a finalized invoice. Only admins can override."
-            )
+        raise HTTPException(
+            status_code=403,
+            detail="Cannot update locked job card. This job card is linked to a finalized invoice."
+        )
     
-    # Validate worker assignment for completed status
-    new_status = update_data.get('status', existing.get('status', 'created'))
-    worker_id = update_data.get('worker_id', existing.get('worker_id'))
+    # Prevent changing certain fields
+    protected_fields = ["id", "job_card_number", "created_by", "created_at", "is_deleted", "locked", "locked_at", "locked_by"]
+    for field in protected_fields:
+        if field in update_data:
+            del update_data[field]
     
-    if new_status == 'completed' and not worker_id:
-        raise HTTPException(status_code=400, detail="Worker assignment is required to mark job card as completed")
+    # Set updated timestamp
+    update_data["updated_at"] = datetime.now(timezone.utc)
     
-    # Get worker name if worker_id is being updated
-    if 'worker_id' in update_data and update_data['worker_id']:
-        worker = await db.workers.find_one({"id": update_data['worker_id'], "is_deleted": False}, {"_id": 0})
-        if worker:
-            update_data['worker_name'] = worker.get('name', '')
+    # Validate customer type and update customer details if changed
+    if "customer_type" in update_data:
+        if update_data["customer_type"] == "saved":
+            if not update_data.get("customer_id"):
+                raise HTTPException(status_code=400, detail="customer_id is required for saved customers")
+            
+            # Fetch customer details
+            customer = await db.parties.find_one({"id": update_data["customer_id"], "is_deleted": False})
+            if not customer:
+                raise HTTPException(status_code=404, detail="Customer not found")
+            
+            update_data["customer_name"] = customer.get("name")
+            update_data["walk_in_name"] = None
+            update_data["walk_in_phone"] = None
+        elif update_data["customer_type"] == "walk_in":
+            if not update_data.get("walk_in_name"):
+                raise HTTPException(status_code=400, detail="walk_in_name is required for walk-in customers")
+            
+            update_data["customer_id"] = None
+            update_data["customer_name"] = None
+        else:
+            raise HTTPException(status_code=400, detail="customer_type must be either 'saved' or 'walk_in'")
     
-    # If customer_id is being updated, fetch customer name
-    if 'customer_id' in update_data and update_data['customer_id']:
-        customer = await db.parties.find_one({"id": update_data['customer_id'], "is_deleted": False}, {"_id": 0})
-        if customer:
-            update_data['customer_name'] = customer.get('name', '')
+    # Validate worker if being updated
+    if "worker_id" in update_data:
+        if update_data["worker_id"]:
+            worker = await db.workers.find_one({"id": update_data["worker_id"], "is_deleted": False})
+            if not worker:
+                raise HTTPException(status_code=404, detail="Worker not found")
+            update_data["worker_name"] = worker.get("name")
+        else:
+            update_data["worker_name"] = None
     
-    # Handle status transitions - set timestamps
-    old_status = existing.get('status', 'created')
-    if 'status' in update_data:
-        new_status = update_data['status']
-        now = datetime.now(timezone.utc)
+    # Validate status if being updated
+    if "status" in update_data:
+        valid_statuses = ["created", "pending", "in_progress", "completed", "delivered"]
+        if update_data["status"] not in valid_statuses:
+            raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {', '.join(valid_statuses)}")
         
-        # Completed status
-        if new_status == 'completed' and old_status != 'completed':
-            update_data['completed_at'] = now
+        # Set timestamps based on status changes FIRST (before validation)
+        old_status = existing.get("status", "created")
+        status = update_data["status"]
         
-        # Delivered status
-        if new_status == 'delivered' and old_status != 'delivered':
-            update_data['delivered_at'] = now
-            # Ensure completed_at is also set if not already
-            if not existing.get('completed_at'):
-                update_data['completed_at'] = now
+        if status == "completed" and old_status != "completed":
+            if not update_data.get("completed_at") and not existing.get("completed_at"):
+                update_data["completed_at"] = datetime.now(timezone.utc)
+        
+        if status == "delivered" and old_status != "delivered":
+            if not update_data.get("delivered_at") and not existing.get("delivered_at"):
+                update_data["delivered_at"] = datetime.now(timezone.utc)
+        
+        # Now merge and validate timestamps
+        merged_data = {**existing, **update_data}
+        completed_at = merged_data.get("completed_at")
+        delivered_at = merged_data.get("delivered_at")
+        
+        is_valid, error_msg = validate_jobcard_timestamps(status, completed_at, delivered_at)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail=error_msg)
     
-    # Update timestamp
-    update_data['updated_at'] = datetime.now(timezone.utc)
+    # Validate items if being updated
+    if "items" in update_data:
+        if not update_data["items"] or len(update_data["items"]) == 0:
+            raise HTTPException(status_code=400, detail="At least one item is required")
+        
+        # Generate IDs for items if not provided
+        for item in update_data["items"]:
+            if "id" not in item:
+                item["id"] = str(uuid.uuid4())
     
     # Update the job card
     await db.jobcards.update_one({"id": jobcard_id}, {"$set": update_data})
+    
+    # Create audit log
     await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "update", update_data)
-
+    
     return {"message": "Job card updated successfully"}
-
 
 @api_router.delete("/jobcards/{jobcard_id}")
 async def delete_jobcard(jobcard_id: str, current_user: User = Depends(require_permission('jobcards.delete'))):
@@ -4075,7 +4165,7 @@ async def delete_jobcard(jobcard_id: str, current_user: User = Depends(require_p
     await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "delete")
     return {"message": "Job card deleted successfully"}
 
-@api_router.post("/jobcards/{jobcard_id}/impact")
+@api_router.get("/jobcards/{jobcard_id}/impact")
 async def get_jobcard_impact(jobcard_id: str, current_user: User = Depends(require_permission('jobcards.view'))):
     """
     Get impact summary for job card actions (status changes or deletion).
