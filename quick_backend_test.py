@@ -10,7 +10,11 @@ from datetime import datetime
 import uuid
 
 # Configuration
+<<<<<<< HEAD
 BASE_URL = "https://balancesync-1.preview.emergentagent.com/api"
+=======
+BASE_URL = "https://decimal-precision.preview.emergentagent.com/api"
+>>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
 USERNAME = "admin"
 PASSWORD = "admin123"
 

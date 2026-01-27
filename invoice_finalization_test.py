@@ -4,7 +4,11 @@ import json
 from datetime import datetime
 
 class InvoiceFinalizationTester:
+<<<<<<< HEAD
     def __init__(self, base_url="https://balancesync-1.preview.emergentagent.com"):
+=======
+    def __init__(self, base_url="https://decimal-precision.preview.emergentagent.com"):
+>>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
         self.base_url = base_url
         self.token = None
         self.tests_run = 0

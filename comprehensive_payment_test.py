@@ -7,7 +7,11 @@ Verifies all critical scenarios for the bug fix
 import requests
 import json
 
+<<<<<<< HEAD
 BASE_URL = "https://balancesync-1.preview.emergentagent.com/api"
+=======
+BASE_URL = "https://decimal-precision.preview.emergentagent.com/api"
+>>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
 ADMIN_CREDENTIALS = {"username": "admin", "password": "admin123"}
 
 def authenticate():

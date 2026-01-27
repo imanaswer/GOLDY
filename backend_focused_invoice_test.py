@@ -19,7 +19,11 @@ import sys
 from datetime import datetime, timezone, timedelta
 
 # Backend URL from frontend/.env
+<<<<<<< HEAD
 BACKEND_URL = "https://balancesync-1.preview.emergentagent.com/api"
+=======
+BACKEND_URL = "https://decimal-precision.preview.emergentagent.com/api"
+>>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
 
 # Test credentials
 USERNAME = "admin"
