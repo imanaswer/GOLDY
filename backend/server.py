@@ -3903,30 +3903,18 @@ async def get_jobcards(
     current_user: User = Depends(require_permission('jobcards.view'))
 ):
     """Get job cards with pagination support"""
+    query = {"is_deleted": False, "card_type": {"$ne": "template"}}
     
-    # Normal update for unlocked job cards
-    await db.jobcards.update_one({"id": jobcard_id}, {"$set": update_data})
+    # Calculate skip value
+    skip = (page - 1) * page_size
     
-    # VALIDATION: Verify timestamp consistency after update (audit safety)
-    updated_jobcard = await db.jobcards.find_one({"id": jobcard_id})
-    is_valid, error_msg = validate_jobcard_timestamps(
-        updated_jobcard.get("status", "created"),
-        updated_jobcard.get("completed_at"),
-        updated_jobcard.get("delivered_at")
-    )
-    if not is_valid:
-        # This should never happen if logic is correct, but safety check
-        await create_audit_log(
-            current_user.id, 
-            current_user.full_name, 
-            "jobcard", 
-            jobcard_id, 
-            "validation_error", 
-            {"error": error_msg}
-        )
+    # Get total count for pagination
+    total_count = await db.jobcards.count_documents(query)
     
-    await create_audit_log(current_user.id, current_user.full_name, "jobcard", jobcard_id, "update", update_data)
-    return {"message": "Updated successfully"}
+    # Get paginated results, sorted by creation date (newest first)
+    jobcards = await db.jobcards.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(page_size).to_list(page_size)
+    
+    return create_pagination_response(jobcards, total_count, page, page_size)
 
 @api_router.delete("/jobcards/{jobcard_id}")
 async def delete_jobcard(jobcard_id: str, current_user: User = Depends(require_permission('jobcards.delete'))):
