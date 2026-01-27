@@ -4449,7 +4449,7 @@ async def get_returnable_invoices(
     Only returns invoices that:
     - Are finalized (not draft)
     - Are not deleted
-    - Have a balance due > 0 (not fully returned/paid)
+    - Returns allowed regardless of balance_due (even if fully paid)
     
     Args:
         type: "sales" or "purchase" to filter invoice type
@@ -4463,13 +4463,14 @@ async def get_returnable_invoices(
     # Build query filter
     query = {
         "is_deleted": False,
-        "status": "finalized",
-        "balance_due": {"$gt": 0}
+        "status": "finalized"
+        # Note: Removed balance_due filter to allow returns on fully paid invoices
     }
     
     # Filter by invoice type
     if type.lower() == "sales":
-        query["invoice_type"] = "sale"
+        # Support both sale and service invoices
+        query["invoice_type"] = {"$in": ["sale", "service"]}
     elif type.lower() == "purchase":
         query["invoice_type"] = "purchase"
 

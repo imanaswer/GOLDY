@@ -68,7 +68,7 @@ const ReturnsPage = () => {
         if (params[key] === '') delete params[key];
       });
       
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/returns`, { params });
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/returns`, { params });
       
       setReturns(response.data.items || []);
       setTotalCount(response.data.pagination?.total_count || 0);
@@ -90,19 +90,19 @@ const ReturnsPage = () => {
     try {
       // Load returnable invoices based on return type
       if (returnType === 'sale_return') {
-        const invoicesRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/invoices/returnable`, {
+        const invoicesRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/invoices/returnable`, {
           params: { type: 'sales' }
         });
         setInvoices(invoicesRes.data || []);
       } else if (returnType === 'purchase_return') {
-        const purchasesRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/purchases`, {
+        const purchasesRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/purchases`, {
           params: { page: 1, page_size: 100, status: 'finalized' }
         });
         setPurchases(purchasesRes.data.items || []);
       }
       
       // Load accounts
-      const accountsRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/accounts`);
+      const accountsRes = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/accounts`);
       setAccounts(accountsRes.data.items || accountsRes.data || []);
     } catch (err) {
       console.error('Error loading reference data:', err);
@@ -229,7 +229,7 @@ const ReturnsPage = () => {
       }
       
       // Create return
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/returns`, formData);
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/returns`, formData);
       
       setSuccess('Return created successfully');
       closeCreateDialog();
@@ -245,7 +245,7 @@ const ReturnsPage = () => {
   // View return
   const viewReturn = async (returnId) => {
     try {
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/returns/${returnId}`);
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/returns/${returnId}`);
       setSelectedReturn(response.data);
       setShowViewDialog(true);
     } catch (err) {
@@ -258,7 +258,7 @@ const ReturnsPage = () => {
   const openFinalizeDialog = async (returnObj) => {
     try {
       // Fetch finalize impact
-      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/returns/${returnObj.id}/finalize-impact`);
+      const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/returns/${returnObj.id}/finalize-impact`);
       setFinalizeImpact(response.data);
       setSelectedReturn(returnObj);
       setShowFinalizeDialog(true);
@@ -277,7 +277,7 @@ const ReturnsPage = () => {
     setSuccess('');
     
     try {
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/returns/${selectedReturn.id}/finalize`);
+      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/returns/${selectedReturn.id}/finalize`);
       setSuccess('Return finalized successfully');
       setShowFinalizeDialog(false);
       setSelectedReturn(null);
@@ -302,7 +302,7 @@ const ReturnsPage = () => {
     setSuccess('');
     
     try {
-      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/returns/${returnId}`);
+      await axios.delete(`${process.env.REACT_APP_BACKEND_URL}/api/returns/${returnId}`);
       setSuccess('Return deleted successfully');
       loadReturns();
     } catch (err) {
