@@ -2480,11 +2480,12 @@ async def get_reports_list(current_user: User = Depends(require_permission('repo
             "category": "sales",
             "endpoints": {
                 "view": "/api/reports/sales-history",
-                "export_excel": "/api/reports/sales-history-export"
+                "export_excel": "/api/reports/sales-history-export",
+                "export_pdf": "/api/reports/sales-history-pdf"
             },
             "supports_filters": True,
             "supports_export": True,
-            "export_formats": ["excel"]
+            "export_formats": ["excel", "pdf"]
         },
         {
             "id": "purchase-history",
@@ -2493,11 +2494,12 @@ async def get_reports_list(current_user: User = Depends(require_permission('repo
             "category": "purchases",
             "endpoints": {
                 "view": "/api/reports/purchase-history",
-                "export_excel": "/api/reports/purchase-history-export"
+                "export_excel": "/api/reports/purchase-history-export",
+                "export_pdf": "/api/reports/purchase-history-pdf"
             },
             "supports_filters": True,
             "supports_export": True,
-            "export_formats": ["excel"]
+            "export_formats": ["excel", "pdf"]
         },
         {
             "id": "returns",
@@ -8151,6 +8153,109 @@ async def export_sales_history(
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+
+@api_router.get("/reports/sales-history-pdf")
+async def export_sales_history_pdf(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    party_id: Optional[str] = None,
+    search: Optional[str] = None,
+    current_user: User = Depends(require_permission('reports.view'))
+):
+    """Export sales history report as PDF"""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch
+    from reportlab.pdfgen import canvas
+    from reportlab.lib import colors
+    from reportlab.platypus import Table, TableStyle
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    # Get data using the main report function
+    data = await get_sales_history_report(
+        date_from=date_from,
+        date_to=date_to,
+        party_id=party_id,
+        search=search,
+        current_user=current_user
+    )
+    
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(inch, height - inch, "Sales History Report")
+    
+    c.setFont("Helvetica", 10)
+    date_str = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    if date_from or date_to:
+        date_str += f" | Period: {date_from or 'Start'} to {date_to or 'End'}"
+    c.drawString(inch, height - inch - 0.3*inch, date_str)
+    
+    # Summary section
+    y_position = height - inch - 0.8*inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(inch, y_position, "Summary")
+    y_position -= 0.3*inch
+    
+    c.setFont("Helvetica", 10)
+    summary = data['summary']
+    c.drawString(inch, y_position, f"Total Invoices: {summary['total_invoices']}")
+    c.drawString(inch + 2.5*inch, y_position, f"Total Weight: {summary['total_weight']:.3f} g")
+    y_position -= 0.2*inch
+    c.drawString(inch, y_position, f"Total Sales: {summary['total_sales']:.2f} OMR")
+    y_position -= 0.5*inch
+    
+    # Table header
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(inch, y_position, "Sales Records")
+    y_position -= 0.3*inch
+    
+    # Create table data
+    table_data = [['Invoice #', 'Customer', 'Phone', 'Date', 'Weight (g)', 'Purity', 'Total (OMR)']]
+    
+    # Add sales records (limit to 30 records per page for now)
+    for record in data['sales_records'][:30]:
+        table_data.append([
+            record.get('invoice_id', '')[:15],
+            record.get('customer_name', '')[:20],
+            record.get('customer_phone', '')[:12],
+            record.get('date', '')[:10],
+            f"{record.get('total_weight_grams', 0):.2f}",
+            record.get('purity_summary', ''),
+            f"{record.get('grand_total', 0):.2f}"
+        ])
+    
+    # Create and style table
+    table = Table(table_data, colWidths=[1.0*inch, 1.3*inch, 0.9*inch, 0.8*inch, 0.8*inch, 0.7*inch, 0.9*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
+    ]))
+    
+    # Draw table
+    table.wrapOn(c, width, height)
+    table.drawOn(c, inch, y_position - len(table_data) * 0.25*inch)
+    
+    c.save()
+    buffer.seek(0)
+    
+    filename = f"sales_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
 @api_router.get("/reports/purchase-history")
 async def get_purchase_history_report(
     date_from: Optional[str] = None,
@@ -8349,6 +8454,108 @@ async def export_purchase_history(
     return StreamingResponse(
         buffer,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+
+@api_router.get("/reports/purchase-history-pdf")
+async def export_purchase_history_pdf(
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+    vendor_party_id: Optional[str] = None,
+    search: Optional[str] = None,
+    current_user: User = Depends(require_permission('reports.view'))
+):
+    """Export purchase history report as PDF"""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch
+    from reportlab.pdfgen import canvas
+    from reportlab.lib import colors
+    from reportlab.platypus import Table, TableStyle
+    from io import BytesIO
+    from fastapi.responses import StreamingResponse
+    
+    # Get data using the main report function
+    data = await get_purchase_history_report(
+        date_from=date_from,
+        date_to=date_to,
+        vendor_party_id=vendor_party_id,
+        search=search,
+        current_user=current_user
+    )
+    
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    
+    # Header
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(inch, height - inch, "Purchase History Report")
+    
+    c.setFont("Helvetica", 10)
+    date_str = f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    if date_from or date_to:
+        date_str += f" | Period: {date_from or 'Start'} to {date_to or 'End'}"
+    c.drawString(inch, height - inch - 0.3*inch, date_str)
+    
+    # Summary section
+    y_position = height - inch - 0.8*inch
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(inch, y_position, "Summary")
+    y_position -= 0.3*inch
+    
+    c.setFont("Helvetica", 10)
+    summary = data['summary']
+    c.drawString(inch, y_position, f"Total Purchases: {summary['total_purchases']}")
+    c.drawString(inch + 2.5*inch, y_position, f"Total Weight: {summary['total_weight']:.3f} g")
+    y_position -= 0.2*inch
+    c.drawString(inch, y_position, f"Total Amount: {summary['total_amount']:.2f} OMR")
+    y_position -= 0.5*inch
+    
+    # Table header
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(inch, y_position, "Purchase Records")
+    y_position -= 0.3*inch
+    
+    # Create table data
+    table_data = [['Vendor', 'Phone', 'Date', 'Weight (g)', 'Purity', 'Amount (OMR)']]
+    
+    # Add purchase records (limit to 30 records per page for now)
+    for record in data['purchase_records'][:30]:
+        table_data.append([
+            record.get('vendor_name', '')[:20],
+            record.get('vendor_phone', '')[:12],
+            record.get('date', '')[:10],
+            f"{record.get('weight_grams', 0):.2f}",
+            f"{record.get('entered_purity', '')}K",
+            f"{record.get('amount_total', 0):.2f}"
+        ])
+    
+    # Create and style table
+    table = Table(table_data, colWidths=[1.5*inch, 1.0*inch, 0.9*inch, 0.9*inch, 0.8*inch, 1.0*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
+    ]))
+    
+    # Draw table
+    table.wrapOn(c, width, height)
+    table.drawOn(c, inch, y_position - len(table_data) * 0.25*inch)
+    
+    c.save()
+    buffer.seek(0)
+    
+    filename = f"purchase_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 

@@ -365,6 +365,21 @@ export default function ReportsPageEnhanced() {
       if (category && category !== 'all') params.category = category;
       if (transactionType && transactionType !== 'all') params.transaction_type = transactionType;
       
+      // Special handling for sales history
+      if (reportType === 'sales-history') {
+        if (startDate) params.date_from = startDate;
+        if (endDate) params.date_to = endDate;
+        if (searchQuery) params.search = searchQuery;
+      }
+      
+      // Special handling for purchase history
+      if (reportType === 'purchase-history') {
+        if (startDate) params.date_from = startDate;
+        if (endDate) params.date_to = endDate;
+        if (selectedPartyId && selectedPartyId !== 'all') params.vendor_party_id = selectedPartyId;
+        if (purchaseSearchQuery) params.search = purchaseSearchQuery;
+      }
+      
       // Special handling for returns
       if (reportType === 'returns') {
         if (returnsFilters.date_from) params.date_from = returnsFilters.date_from;
@@ -419,7 +434,7 @@ export default function ReportsPageEnhanced() {
       if (reportType === 'purchase-history') {
         if (startDate) params.date_from = startDate;
         if (endDate) params.date_to = endDate;
-        if (selectedPartyId && selectedPartyId !== 'all') params.vendor_id = selectedPartyId;
+        if (selectedPartyId && selectedPartyId !== 'all') params.vendor_party_id = selectedPartyId;
         if (purchaseSearchQuery) params.search = purchaseSearchQuery;
       }
       
