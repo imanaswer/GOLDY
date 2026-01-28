@@ -383,6 +383,54 @@ export default function PurchasesPage() {
     setShowViewDialog(true);
   };
 
+  const handleOpenPaymentDialog = (purchase) => {
+    setSelectedPurchase(purchase);
+    setPaymentData({
+      payment_amount: purchase.balance_due_money.toFixed(2), // Default to full balance
+      payment_mode: 'Cash',
+      account_id: '',
+      notes: ''
+    });
+    setShowPaymentDialog(true);
+  };
+
+  const handleAddPayment = async () => {
+    // Validate payment amount
+    if (!paymentData.payment_amount || parseFloat(paymentData.payment_amount) <= 0) {
+      toast.error('Please enter a valid payment amount');
+      return;
+    }
+
+    if (!paymentData.account_id) {
+      toast.error('Please select an account');
+      return;
+    }
+
+    try {
+      const response = await API.post(
+        `/api/purchases/${selectedPurchase.id}/add-payment`,
+        {
+          payment_amount: parseFloat(paymentData.payment_amount),
+          payment_mode: paymentData.payment_mode,
+          account_id: paymentData.account_id,
+          notes: paymentData.notes
+        }
+      );
+
+      toast.success(`Payment added successfully! Transaction #${response.data.transaction_number}`);
+      if (response.data.locked) {
+        toast.info('Purchase is now fully paid and locked.');
+      }
+
+      setShowPaymentDialog(false);
+      loadPurchases(); // Reload to show updated payment status
+    } catch (error) {
+      console.error('Error adding payment:', error);
+      const errorMsg = error.response?.data?.detail || 'Failed to add payment';
+      toast.error(errorMsg);
+    }
+  };
+
   const getVendorName = (vendorId) => {
     const vendor = vendors.find(v => v.id === vendorId);
     return vendor ? vendor.name : 'Unknown Vendor';
