@@ -6326,12 +6326,12 @@ async def get_transactions_summary(
             "cash_summary": {
                 "credit": round(cash_credit, 3),
                 "debit": round(cash_debit, 3),
-                "net": round(cash_credit - cash_debit, 3)
+                "net": round(cash_debit - cash_credit, 3)  # For asset: debit (IN) - credit (OUT)
             },
             "bank_summary": {
                 "credit": round(bank_credit, 3),
                 "debit": round(bank_debit, 3),
-                "net": round(bank_credit - bank_debit, 3)
+                "net": round(bank_debit - bank_credit, 3)  # For asset: debit (IN) - credit (OUT)
             },
             "account_breakdown": list(account_breakdown.values())
         }
