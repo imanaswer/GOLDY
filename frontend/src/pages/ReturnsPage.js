@@ -775,6 +775,7 @@ const ReturnsPage = () => {
                 ))}
               </tbody>
             </table>
+            </div>
             
             {/* Pagination */}
             {pagination && (
