@@ -119,9 +119,9 @@ class PurchasePaymentFlowTester:
                 self.log_result("Setup - Vendor Party", False, "", f"Failed to create vendor: {response.status_code} - {response.text}")
                 return False
 
-            # Create cash account for payments
+            # Create cash account for payments with unique name
             account_data = {
-                "name": "Test Cash Account",
+                "name": f"Test Cash Account {timestamp}",
                 "account_type": "asset",
                 "opening_balance": 50000.0
             }
