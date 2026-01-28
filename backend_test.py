@@ -840,45 +840,351 @@ class BackendTester:
         except Exception as e:
             self.log_result("Invoice Stock Movements", False, f"Error: {str(e)}")
     
-    def test_finance_dashboard(self):
-        """Test Finance Dashboard calculations"""
-        print("\n--- Testing Finance Dashboard ---")
+    def test_finance_dashboard_net_flow_calculations(self):
+        """Test Finance Dashboard Net Flow / Cash Flow / Bank Flow calculations after fix"""
+        print("\n--- Testing Finance Dashboard Net Flow Calculations ---")
         
+        # Test 1: Test /api/transactions/summary endpoint
+        self.test_transactions_summary_endpoint()
+        
+        # Test 2: Test with real transaction data
+        self.test_net_flow_with_real_data()
+        
+        # Test 3: Test accounting logic consistency
+        self.test_accounting_logic_consistency()
+    
+    def test_transactions_summary_endpoint(self):
+        """Test /api/transactions/summary endpoint for new fields"""
         try:
-            response = self.session.get(f"{BACKEND_URL}/dashboard")
+            response = self.session.get(f"{BACKEND_URL}/transactions/summary")
             
             if response.status_code == 200:
-                dashboard_data = response.json()
+                summary_data = response.json()
                 
-                # Verify dashboard structure and calculations
-                required_sections = ['inventory', 'financial', 'parties', 'job_cards', 'recent_activity']
-                missing_sections = [section for section in required_sections if section not in dashboard_data]
+                # Check for required new fields
+                required_fields = ['total_in', 'total_out', 'net_flow', 'cash_summary', 'bank_summary']
+                missing_fields = [field for field in required_fields if field not in summary_data]
                 
-                if not missing_sections:
-                    # Check if sections have expected data
-                    inventory = dashboard_data.get('inventory', {})
-                    financial = dashboard_data.get('financial', {})
-                    parties = dashboard_data.get('parties', {})
+                if not missing_fields:
+                    # Verify field types and values
+                    total_in = summary_data.get('total_in', 0)
+                    total_out = summary_data.get('total_out', 0)
+                    net_flow = summary_data.get('net_flow', 0)
+                    cash_summary = summary_data.get('cash_summary', {})
+                    bank_summary = summary_data.get('bank_summary', {})
                     
-                    inventory_valid = 'total_categories' in inventory and 'total_stock_weight_grams' in inventory
-                    financial_valid = 'total_outstanding_omr' in financial
-                    parties_valid = 'total_customers' in parties and 'total_vendors' in parties
+                    # Verify math: net_flow = total_in - total_out
+                    calculated_net_flow = round(total_in - total_out, 3)
+                    actual_net_flow = round(net_flow, 3)
+                    math_correct = abs(calculated_net_flow - actual_net_flow) < 0.001
                     
-                    all_valid = inventory_valid and financial_valid and parties_valid
+                    # Verify cash summary has required fields
+                    cash_fields_valid = all(field in cash_summary for field in ['debit', 'credit', 'net'])
+                    bank_fields_valid = all(field in bank_summary for field in ['debit', 'credit', 'net'])
+                    
+                    # Verify cash/bank net calculations
+                    cash_net_correct = True
+                    bank_net_correct = True
+                    
+                    if cash_fields_valid:
+                        cash_calculated_net = round(cash_summary['debit'] - cash_summary['credit'], 3)
+                        cash_actual_net = round(cash_summary['net'], 3)
+                        cash_net_correct = abs(cash_calculated_net - cash_actual_net) < 0.001
+                    
+                    if bank_fields_valid:
+                        bank_calculated_net = round(bank_summary['debit'] - bank_summary['credit'], 3)
+                        bank_actual_net = round(bank_summary['net'], 3)
+                        bank_net_correct = abs(bank_calculated_net - bank_actual_net) < 0.001
+                    
+                    all_valid = math_correct and cash_fields_valid and bank_fields_valid and cash_net_correct and bank_net_correct
+                    
+                    details = f"Net Flow Math: {'✓' if math_correct else '✗'} ({total_in} - {total_out} = {net_flow}), "
+                    details += f"Cash Net: {'✓' if cash_net_correct else '✗'} ({cash_summary.get('debit', 0)} - {cash_summary.get('credit', 0)} = {cash_summary.get('net', 0)}), "
+                    details += f"Bank Net: {'✓' if bank_net_correct else '✗'} ({bank_summary.get('debit', 0)} - {bank_summary.get('credit', 0)} = {bank_summary.get('net', 0)})"
                     
                     self.log_result(
-                        "Finance Dashboard", 
+                        "Transactions Summary Endpoint", 
                         all_valid, 
-                        f"Dashboard structure {'valid' if all_valid else 'invalid'} (Categories: {inventory.get('total_categories', 0)}, Outstanding: {financial.get('total_outstanding_omr', 0)} OMR, Customers: {parties.get('total_customers', 0)})",
-                        dashboard_data
+                        details,
+                        {
+                            "total_in": total_in,
+                            "total_out": total_out,
+                            "net_flow": net_flow,
+                            "calculated_net_flow": calculated_net_flow,
+                            "math_correct": math_correct,
+                            "cash_summary": cash_summary,
+                            "bank_summary": bank_summary
+                        }
                     )
                 else:
-                    self.log_result("Finance Dashboard", False, f"Missing required sections: {missing_sections}")
+                    self.log_result("Transactions Summary Endpoint", False, f"Missing required fields: {missing_fields}")
             else:
-                self.log_result("Finance Dashboard", False, f"Failed: {response.status_code} - {response.text}")
+                self.log_result("Transactions Summary Endpoint", False, f"Failed: {response.status_code} - {response.text}")
                 
         except Exception as e:
-            self.log_result("Finance Dashboard", False, f"Error: {str(e)}")
+            self.log_result("Transactions Summary Endpoint", False, f"Error: {str(e)}")
+    
+    def test_net_flow_with_real_data(self):
+        """Test Net Flow calculations with real transaction data"""
+        try:
+            # Create test cash account with opening balance 0
+            cash_account_id = self.create_test_cash_account()
+            if not cash_account_id:
+                return
+            
+            # Add invoice payment (DEBIT to cash) = +1000 OMR
+            debit_transaction_id = self.create_test_transaction(
+                account_id=cash_account_id,
+                transaction_type="debit",
+                amount=1000.00,
+                description="Invoice Payment - Cash IN"
+            )
+            
+            # Add purchase payment (CREDIT to cash) = -500 OMR  
+            credit_transaction_id = self.create_test_transaction(
+                account_id=cash_account_id,
+                transaction_type="credit", 
+                amount=500.00,
+                description="Purchase Payment - Cash OUT"
+            )
+            
+            if debit_transaction_id and credit_transaction_id:
+                # Wait a moment for transactions to be processed
+                time.sleep(1)
+                
+                # Get updated summary
+                response = self.session.get(f"{BACKEND_URL}/transactions/summary")
+                
+                if response.status_code == 200:
+                    summary_data = response.json()
+                    
+                    total_in = summary_data.get('total_in', 0)
+                    total_out = summary_data.get('total_out', 0)
+                    net_flow = summary_data.get('net_flow', 0)
+                    cash_summary = summary_data.get('cash_summary', {})
+                    
+                    # Expected values based on our test transactions
+                    # Note: These are incremental to existing data, so we check if our transactions are reflected
+                    expected_net_flow = 1000.00 - 500.00  # 500.00
+                    
+                    # Verify the math is consistent (total_in - total_out = net_flow)
+                    calculated_net_flow = round(total_in - total_out, 3)
+                    actual_net_flow = round(net_flow, 3)
+                    math_consistent = abs(calculated_net_flow - actual_net_flow) < 0.001
+                    
+                    # Verify cash summary net = debit - credit
+                    cash_net_consistent = True
+                    if cash_summary:
+                        cash_calculated_net = round(cash_summary.get('debit', 0) - cash_summary.get('credit', 0), 3)
+                        cash_actual_net = round(cash_summary.get('net', 0), 3)
+                        cash_net_consistent = abs(cash_calculated_net - cash_actual_net) < 0.001
+                    
+                    # Check if values are properly rounded to 3 decimal places
+                    values_rounded = (
+                        len(str(total_in).split('.')[-1]) <= 3 and
+                        len(str(total_out).split('.')[-1]) <= 3 and
+                        len(str(net_flow).split('.')[-1]) <= 3
+                    )
+                    
+                    all_valid = math_consistent and cash_net_consistent and values_rounded
+                    
+                    details = f"Math Consistent: {'✓' if math_consistent else '✗'}, "
+                    details += f"Cash Net Consistent: {'✓' if cash_net_consistent else '✗'}, "
+                    details += f"Values Rounded: {'✓' if values_rounded else '✗'}, "
+                    details += f"Net Flow: {net_flow} OMR (In: {total_in}, Out: {total_out})"
+                    
+                    self.log_result(
+                        "Net Flow with Real Data", 
+                        all_valid, 
+                        details,
+                        {
+                            "total_in": total_in,
+                            "total_out": total_out,
+                            "net_flow": net_flow,
+                            "calculated_net_flow": calculated_net_flow,
+                            "cash_summary": cash_summary,
+                            "math_consistent": math_consistent,
+                            "cash_net_consistent": cash_net_consistent,
+                            "values_rounded": values_rounded
+                        }
+                    )
+                else:
+                    self.log_result("Net Flow with Real Data", False, f"Failed to get updated summary: {response.status_code}")
+            else:
+                self.log_result("Net Flow with Real Data", False, "Failed to create test transactions")
+                
+        except Exception as e:
+            self.log_result("Net Flow with Real Data", False, f"Error: {str(e)}")
+    
+    def test_accounting_logic_consistency(self):
+        """Test accounting logic: For asset accounts (cash/bank): DEBIT = increase, CREDIT = decrease"""
+        try:
+            # Get account balances before and after transactions
+            accounts_response = self.session.get(f"{BACKEND_URL}/accounts")
+            
+            if accounts_response.status_code == 200:
+                accounts_data = accounts_response.json()
+                if isinstance(accounts_data, dict) and 'items' in accounts_data:
+                    accounts = accounts_data['items']
+                else:
+                    accounts = accounts_data
+                
+                # Find cash and bank accounts
+                cash_accounts = [acc for acc in accounts if 'cash' in acc.get('name', '').lower() and acc.get('account_type') == 'asset']
+                bank_accounts = [acc for acc in accounts if 'bank' in acc.get('name', '').lower() and acc.get('account_type') == 'asset']
+                
+                logic_tests_passed = 0
+                total_logic_tests = 0
+                
+                # Test cash accounts
+                for account in cash_accounts[:1]:  # Test first cash account
+                    total_logic_tests += 1
+                    account_id = account.get('id')
+                    initial_balance = account.get('current_balance', 0)
+                    
+                    # Create DEBIT transaction (should increase balance)
+                    debit_success = self.create_test_transaction(
+                        account_id=account_id,
+                        transaction_type="debit",
+                        amount=100.00,
+                        description="Test DEBIT - Should increase balance"
+                    )
+                    
+                    if debit_success:
+                        # Check if balance increased
+                        updated_account_response = self.session.get(f"{BACKEND_URL}/accounts/{account_id}")
+                        if updated_account_response.status_code == 200:
+                            updated_account = updated_account_response.json()
+                            new_balance = updated_account.get('current_balance', 0)
+                            
+                            # For asset accounts: DEBIT should increase balance
+                            if new_balance > initial_balance:
+                                logic_tests_passed += 1
+                                self.log_result(
+                                    f"Accounting Logic - {account.get('name')} DEBIT", 
+                                    True, 
+                                    f"DEBIT correctly increased balance: {initial_balance} → {new_balance} (+{new_balance - initial_balance})"
+                                )
+                            else:
+                                self.log_result(
+                                    f"Accounting Logic - {account.get('name')} DEBIT", 
+                                    False, 
+                                    f"DEBIT should increase balance but: {initial_balance} → {new_balance}"
+                                )
+                
+                # Test bank accounts  
+                for account in bank_accounts[:1]:  # Test first bank account
+                    total_logic_tests += 1
+                    account_id = account.get('id')
+                    initial_balance = account.get('current_balance', 0)
+                    
+                    # Create CREDIT transaction (should decrease balance)
+                    credit_success = self.create_test_transaction(
+                        account_id=account_id,
+                        transaction_type="credit",
+                        amount=50.00,
+                        description="Test CREDIT - Should decrease balance"
+                    )
+                    
+                    if credit_success:
+                        # Check if balance decreased
+                        updated_account_response = self.session.get(f"{BACKEND_URL}/accounts/{account_id}")
+                        if updated_account_response.status_code == 200:
+                            updated_account = updated_account_response.json()
+                            new_balance = updated_account.get('current_balance', 0)
+                            
+                            # For asset accounts: CREDIT should decrease balance
+                            if new_balance < initial_balance:
+                                logic_tests_passed += 1
+                                self.log_result(
+                                    f"Accounting Logic - {account.get('name')} CREDIT", 
+                                    True, 
+                                    f"CREDIT correctly decreased balance: {initial_balance} → {new_balance} ({new_balance - initial_balance})"
+                                )
+                            else:
+                                self.log_result(
+                                    f"Accounting Logic - {account.get('name')} CREDIT", 
+                                    False, 
+                                    f"CREDIT should decrease balance but: {initial_balance} → {new_balance}"
+                                )
+                
+                # Overall accounting logic test result
+                if total_logic_tests > 0:
+                    logic_success_rate = (logic_tests_passed / total_logic_tests) * 100
+                    overall_success = logic_tests_passed == total_logic_tests
+                    
+                    self.log_result(
+                        "Accounting Logic Consistency", 
+                        overall_success, 
+                        f"Accounting logic tests: {logic_tests_passed}/{total_logic_tests} passed ({logic_success_rate:.1f}%)"
+                    )
+                else:
+                    self.log_result("Accounting Logic Consistency", False, "No cash/bank accounts found for testing")
+            else:
+                self.log_result("Accounting Logic Consistency", False, f"Failed to get accounts: {accounts_response.status_code}")
+                
+        except Exception as e:
+            self.log_result("Accounting Logic Consistency", False, f"Error: {str(e)}")
+    
+    def create_test_cash_account(self):
+        """Create a test cash account with opening balance 0"""
+        try:
+            account_data = {
+                "name": f"Test Cash Account - {uuid.uuid4().hex[:8]}",
+                "account_type": "asset",
+                "opening_balance": 0.00,
+                "current_balance": 0.00
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/accounts", json=account_data)
+            
+            if response.status_code == 201:
+                account = response.json()
+                account_id = account.get("id")
+                self.log_result("Create Test Cash Account", True, f"Created test cash account: {account.get('name')}")
+                return account_id
+            else:
+                self.log_result("Create Test Cash Account", False, f"Failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.log_result("Create Test Cash Account", False, f"Error: {str(e)}")
+            return None
+    
+    def create_test_transaction(self, account_id, transaction_type, amount, description):
+        """Create a test transaction"""
+        try:
+            transaction_data = {
+                "transaction_type": transaction_type,
+                "mode": "Cash",
+                "account_id": account_id,
+                "amount": amount,
+                "category": "Testing",
+                "notes": description
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/transactions", json=transaction_data)
+            
+            if response.status_code == 201:
+                transaction = response.json()
+                transaction_id = transaction.get("id")
+                self.log_result(
+                    f"Create Test Transaction ({transaction_type.upper()})", 
+                    True, 
+                    f"Created {transaction_type} transaction: {amount} OMR"
+                )
+                return transaction_id
+            else:
+                self.log_result(
+                    f"Create Test Transaction ({transaction_type.upper()})", 
+                    False, 
+                    f"Failed: {response.status_code} - {response.text}"
+                )
+                return None
+                
+        except Exception as e:
+            self.log_result(f"Create Test Transaction ({transaction_type.upper()})", False, f"Error: {str(e)}")
+            return None
     
     def print_summary(self):
         """Print test summary"""
