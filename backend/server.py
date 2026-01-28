@@ -2633,22 +2633,45 @@ async def get_inventory(
 async def get_parties(
     request: Request,
     party_type: Optional[str] = None,
+    search: Optional[str] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
     page: int = 1,
     page_size: int = 10,
     current_user: User = Depends(require_permission('parties.view'))
 ):
-    """Get parties with pagination support"""
+    """Get parties with server-side filtering and pagination support"""
     query = {"is_deleted": False}
-    if party_type:
+    
+    # Filter by party type
+    if party_type and party_type != 'all':
         query['party_type'] = party_type
+    
+    # Server-side search filter (name or phone)
+    if search and search.strip():
+        search_pattern = {"$regex": search.strip(), "$options": "i"}  # case-insensitive
+        query['$or'] = [
+            {"name": search_pattern},
+            {"phone": search_pattern}
+        ]
+    
+    # Date range filter (filter by created date)
+    if date_from or date_to:
+        date_query = {}
+        if date_from:
+            date_query['$gte'] = date_from
+        if date_to:
+            date_query['$lte'] = date_to
+        if date_query:
+            query['created_at'] = date_query
     
     # Calculate skip value
     skip = (page - 1) * page_size
     
-    # Get total count for pagination
+    # Get total count for pagination (with filters applied)
     total_count = await db.parties.count_documents(query)
     
-    # Get paginated results
+    # Get paginated results (with filters applied)
     parties = await db.parties.find(query, {"_id": 0}).skip(skip).limit(page_size).to_list(page_size)
     
     return create_pagination_response(parties, total_count, page, page_size)
