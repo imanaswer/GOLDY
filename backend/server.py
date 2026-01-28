@@ -10207,6 +10207,8 @@ async def create_return(
     Supports both sales returns and purchase returns.
     """
     try:
+        # ========== STEP 1: VALIDATE BASIC REQUIREMENTS ==========
+        
         # Validate return_type
         return_type = return_data.get('return_type')
         if return_type not in ['sale_return', 'purchase_return']:
@@ -10247,47 +10249,16 @@ async def create_return(
         else:
             raise HTTPException(status_code=400, detail="Invalid reference_type. Must be 'invoice' or 'purchase'")
         
-        # Validate refund_mode
-        refund_mode = return_data.get('refund_mode', 'money')
-        if refund_mode not in ['money', 'gold', 'mixed']:
-            raise HTTPException(status_code=400, detail="Invalid refund_mode. Must be 'money', 'gold', or 'mixed'")
-        
-        # Validate refund amounts
-        refund_money_amount = float(return_data.get('refund_money_amount', 0))
-        refund_gold_grams = float(return_data.get('refund_gold_grams', 0))
-        
-        if refund_mode == 'money' and refund_money_amount <= 0:
-            raise HTTPException(status_code=400, detail="refund_money_amount must be greater than 0 for money refund")
-        if refund_mode == 'gold' and refund_gold_grams <= 0:
-            raise HTTPException(status_code=400, detail="refund_gold_grams must be greater than 0 for gold refund")
-        if refund_mode == 'mixed' and (refund_money_amount <= 0 or refund_gold_grams <= 0):
-            raise HTTPException(status_code=400, detail="Both refund_money_amount and refund_gold_grams must be greater than 0 for mixed refund")
-        
-        # Validate account if money refund
-        account_id = return_data.get('account_id')
-        if refund_mode in ['money', 'mixed']:
-            if not account_id:
-                raise HTTPException(status_code=400, detail="account_id is required for money refund")
-            account = await db.accounts.find_one({"id": account_id, "is_deleted": False})
-            if not account:
-                raise HTTPException(status_code=404, detail="Account not found")
-            account_name = account.get('name')
-        else:
-            account_name = None
-        
-        # Generate return number
-        returns_count = await db.returns.count_documents({})
-        return_number = f"RET-{returns_count + 1:05d}"
-        
-        # Calculate total weight and amount from items
+        # Validate items
         items = return_data.get('items', [])
         if not items:
             raise HTTPException(status_code=400, detail="At least one item is required")
         
+        # Calculate totals from items
         total_weight_grams = sum(float(item.get('weight_grams', 0)) for item in items)
         total_amount = sum(float(item.get('amount', 0)) for item in items)
         
-        # Validate return amount doesn't exceed original invoice/purchase total
+        # Validate against original amounts (prevent exceeding original)
         await validate_return_against_original(
             db=db,
             reference_type=reference_type,
@@ -10297,10 +10268,19 @@ async def create_return(
             current_return_id=None  # New return, no existing ID to exclude
         )
         
-        # ========== CRITICAL: AUTO-FINALIZE (NO DRAFT STATE) ==========
-        finalize_time = datetime.now(timezone.utc)
+        # ========== STEP 2: GENERATE RETURN NUMBER ==========
+        returns_count = await db.returns.count_documents({})
+        return_number = f"RET-{returns_count + 1:05d}"
         
-        # Create return object with FINALIZED status
+        # ========== STEP 3: CREATE DRAFT RETURN (NO FINALIZATION) ==========
+        
+        # Get optional refund details (NOT validated at draft stage)
+        refund_mode = return_data.get('refund_mode')  # Can be None for draft
+        refund_money_amount = float(return_data.get('refund_money_amount', 0))
+        refund_gold_grams = float(return_data.get('refund_gold_grams', 0))
+        account_id = return_data.get('account_id')  # Can be None for draft
+        
+        # Create return object with DRAFT status (no finalization logic)
         return_obj = Return(
             return_number=return_number,
             return_type=return_type,
@@ -10314,9 +10294,10 @@ async def create_return(
             total_weight_grams=round(total_weight_grams, 3),
             total_amount=round(total_amount, 2),
             reason=return_data.get('reason'),
+            # Refund details - optional at draft stage
             refund_mode=refund_mode,
-            refund_money_amount=round(refund_money_amount, 2),
-            refund_gold_grams=round(refund_gold_grams, 3),
+            refund_money_amount=round(refund_money_amount, 2) if refund_money_amount else 0.0,
+            refund_gold_grams=round(refund_gold_grams, 3) if refund_gold_grams else 0.0,
             refund_gold_purity=return_data.get('refund_gold_purity'),
             payment_mode=return_data.get('payment_mode'),
             account_id=account_id,
