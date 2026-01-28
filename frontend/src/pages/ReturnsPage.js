@@ -51,6 +51,10 @@ const ReturnsPage = () => {
   const [purchases, setPurchases] = useState([]);
   const [accounts, setAccounts] = useState([]);
   
+  // Invoice returnable items (auto-loaded when invoice is selected)
+  const [returnableItems, setReturnableItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  
   // Load returns data
   const loadReturns = useCallback(async () => {
     setLoading(true);
