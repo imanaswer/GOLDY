@@ -10672,23 +10672,26 @@ async def finalize_return(
             # 1. Create stock movements (Stock IN - returned goods back to inventory)
             for item in return_doc.get('items', []):
                 weight_grams = item.get('weight_grams', 0)
+                qty = item.get('qty', 0)
                 # Handle Decimal128
                 if isinstance(weight_grams, Decimal128):
                     weight_grams = float(weight_grams.to_decimal())
+                if isinstance(qty, Decimal128):
+                    qty = float(qty.to_decimal())
                 
                 if weight_grams > 0:
                     movement_id = str(uuid.uuid4())
                     stock_movement = StockMovement(
                         id=movement_id,
-                        type="IN",
-                        category=item.get('description'),
-                        weight=round(weight_grams, 3),
+                        movement_type="IN",  # FIXED: Use correct field name
+                        header_name=item.get('description'),  # FIXED: Use correct field name
+                        qty_delta=round(qty, 0),  # FIXED: Use correct field name
+                        weight_delta=round(weight_grams, 3),  # FIXED: Use correct field name
                         purity=item.get('purity'),
                         date=datetime.now(timezone.utc),
-                        purpose=f"Sales Return - {return_doc.get('return_number')}",
                         reference_type="return",
                         reference_id=return_id,
-                        notes=return_doc.get('reason'),
+                        notes=f"Sales Return - {return_doc.get('return_number')} - {return_doc.get('reason', '')}",
                         created_by=current_user.id
                     )
                     await db.stock_movements.insert_one(stock_movement.model_dump())
@@ -10699,7 +10702,7 @@ async def finalize_return(
                         {"name": item.get('description')},
                         {
                             "$inc": {
-                                "current_qty": item.get('qty', 0),
+                                "current_qty": qty,
                                 "current_weight": round(weight_grams, 3)
                             }
                         }
