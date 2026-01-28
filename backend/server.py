@@ -10567,6 +10567,61 @@ async def finalize_return(
     if current_status == 'processing':
         raise HTTPException(status_code=409, detail="Return is currently being processed. Please try again in a moment.")
     
+    # ========== VALIDATE REFUND DETAILS (REQUIRED AT FINALIZATION) ==========
+    refund_mode = return_doc.get('refund_mode')
+    if not refund_mode or refund_mode not in ['money', 'gold', 'mixed']:
+        raise HTTPException(
+            status_code=400, 
+            detail="Refund mode is required for finalization. Must be 'money', 'gold', or 'mixed'. Please update the return first."
+        )
+    
+    # Convert Decimal128 to float for validation
+    refund_money_amount = return_doc.get('refund_money_amount', 0)
+    if isinstance(refund_money_amount, Decimal128):
+        refund_money_amount = float(refund_money_amount.to_decimal())
+    else:
+        refund_money_amount = float(refund_money_amount or 0)
+    
+    refund_gold_grams = return_doc.get('refund_gold_grams', 0)
+    if isinstance(refund_gold_grams, Decimal128):
+        refund_gold_grams = float(refund_gold_grams.to_decimal())
+    else:
+        refund_gold_grams = float(refund_gold_grams or 0)
+    
+    # Validate refund amounts based on mode
+    if refund_mode == 'money' and refund_money_amount <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="refund_money_amount must be greater than 0 for money refund mode. Please update the return first."
+        )
+    
+    if refund_mode == 'gold' and refund_gold_grams <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="refund_gold_grams must be greater than 0 for gold refund mode. Please update the return first."
+        )
+    
+    if refund_mode == 'mixed':
+        if refund_money_amount <= 0 or refund_gold_grams <= 0:
+            raise HTTPException(
+                status_code=400,
+                detail="Both refund_money_amount and refund_gold_grams must be greater than 0 for mixed refund mode. Please update the return first."
+            )
+    
+    # Validate account for money refund
+    account_id = return_doc.get('account_id')
+    if refund_mode in ['money', 'mixed']:
+        if not account_id:
+            raise HTTPException(
+                status_code=400,
+                detail="account_id is required for money refund. Please update the return with account details first."
+            )
+        account = await db.accounts.find_one({"id": account_id, "is_deleted": False})
+        if not account:
+            raise HTTPException(status_code=404, detail="Account not found. Please update the return with a valid account.")
+    
+    # ==========================================================================
+    
     # Use status lock + rollback for safety (MongoDB transactions require replica set)
     try:
         # Step 1: Atomic lock - Set status to 'processing'
