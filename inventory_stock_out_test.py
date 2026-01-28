@@ -179,7 +179,7 @@ class InventoryStockOutTester:
                 self.log_result("Step 2 - Create Purchase", True, 
                               f"Created purchase: {purchase['weight_grams']}g at {purchase['rate_per_gram']} OMR/g")
             else:
-                self.log_result("Step 2 - Create Purchase", False, "", f"Failed to create purchase: {response.text}")
+                self.log_result("Step 2 - Create Purchase", False, "", f"Failed to create purchase: {response.status_code} - {response.text}")
                 return False
 
             # Step 3: Finalize purchase (should create Stock IN movement)
