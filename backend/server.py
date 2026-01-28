@@ -6541,6 +6541,11 @@ async def get_transactions_summary(
         bank_net = bank_debit - bank_credit
         net_flow = cash_net + bank_net
         
+        # Calculate total IN/OUT for asset accounts only (for UI display consistency)
+        # These represent actual money movement through cash/bank accounts
+        total_in = cash_debit + bank_debit  # Money IN to assets
+        total_out = cash_credit + bank_credit  # Money OUT from assets
+        
         return {
             "total_credit": round(total_credit, 3),
             "total_debit": round(total_debit, 3),
