@@ -273,6 +273,91 @@ backend:
       - working: "needs_testing"
         agent: "main"
         comment: "✅ FIXED - Modified create_purchase endpoint (line 3385) to support Draft status. Removed safety assertion that prevented draft purchases. Changed locking logic: purchases are locked ONLY when balance_due == 0. Updated Purchase lifecycle to match Invoice: Draft → Partially Paid → Paid → Finalized (Locked)."
+  
+  - task: "Add Payment to Purchase Endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added new endpoint POST /api/purchases/{purchase_id}/add-payment (after line 3673). Accepts payment_amount, payment_mode, account_id, notes. Creates CREDIT transaction (money OUT from cash/bank). Updates paid_amount_money and balance_due_money. Automatically updates status based on payment. Locks purchase when balance_due reaches 0."
+  
+  - task: "Purchase Locking Rules - Balance-Based"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED - Updated create_purchase locking logic: locked = True ONLY when balance_due_money == 0, otherwise locked = False. This allows editing and adding payments until purchase is fully paid."
+  
+  - task: "Purchase Edit Rules - Lock-Based"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED - Updated update_purchase endpoint (line 3897) to check locked status instead of finalized status. Now allows editing when locked = False, blocks editing when locked = True."
+
+frontend:
+  - task: "Add Payment Button in Purchases Table"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added 'Add Payment' button in purchases table. Button shows when balance_due_money > 0 and !locked. Includes DollarSign icon."
+  
+  - task: "Payment Dialog for Purchases"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added payment dialog matching Invoice payment design. Shows purchase summary, payment form with mode, amount, account, notes fields. Validates inputs."
+  
+  - task: "Add Payment Handler Function"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added handleAddPayment function that calls POST /api/purchases/{purchase_id}/add-payment. Shows success toast with transaction number and lock notification."
+  
+  - task: "Edit Button Logic - Lock-Based"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED - Updated Edit/Delete buttons to show when !purchase.locked instead of status-based logic. Matches Invoice behavior."
       
       IMPLEMENTATION STATUS: BACKEND FIXES + FRONTEND CRITICAL PAGES UPDATED
       
