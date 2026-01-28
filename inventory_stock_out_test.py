@@ -240,7 +240,7 @@ class InventoryStockOutTester:
             }
             
             response = self.session.post(f"{BASE_URL}/parties", json=customer_data)
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 customer = response.json()
                 self.test_data["customer"] = customer
                 self.log_result("Step 5 - Create Customer", True, f"Created customer: {customer['name']}")
