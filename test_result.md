@@ -8619,3 +8619,182 @@ agent_communication:
       
       NEXT: Run comprehensive testing with deep_testing_backend_v2 agent
 
+
+user_problem_statement: |
+  Fix missing Delete option in Returns Management
+  
+  Problem:
+  - Delete action is not visible consistently for Draft returns
+  - Finalized returns correctly hide Delete (do not change this)
+  
+  Tasks:
+  - Ensure Delete button is shown ONLY when: return.status === "draft" AND user has returns.delete permission
+  - Do NOT base delete visibility on: refund_mode, amount, invoice linkage
+  - Normalize status values (use "draft" consistently)
+  - Add tooltip or note: "Completed returns cannot be deleted for audit reasons."
+  
+  Acceptance:
+  - Draft return → Edit + Delete visible (with permission check)
+  - Finalized return → View only
+  - Delete performs soft delete + audit log
+
+backend:
+  - task: "Returns Delete Endpoint - Verification"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ VERIFIED - DELETE /api/returns/{return_id} endpoint (line 11119) already properly implemented: (1) Requires 'returns.delete' permission, (2) Only allows deletion when status === 'draft' (lowercase), (3) Blocks finalized returns with error 'Cannot delete finalized return. Finalized returns are immutable.', (4) Performs soft delete with audit logging. Backend implementation is correct and complete."
+  
+  - task: "Returns Status Normalization"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ VERIFIED - Return model (line 1117) uses lowercase status values: 'draft' or 'finalized'. All return endpoints (create, finalize, delete) use lowercase status consistently. No normalization needed - status values are already correct."
+
+frontend:
+  - task: "Returns Delete Button - Permission Check"
+    implemented: true
+    working: "needs_testing"
+    file: "frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added permission check for returns.delete: (1) Imported usePermission hook from /hooks/usePermission.js, (2) Added canDeleteReturn = usePermission('returns.delete'), (3) Delete button now conditionally renders: {canDeleteReturn && <button...Delete</button>}. Button only shows when user has permission AND status === 'draft' (line 695-702)."
+  
+  - task: "Returns Delete Button - Status Check"
+    implemented: true
+    working: "needs_testing"
+    file: "frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ VERIFIED - Delete button already checks returnObj.status === 'draft' (lowercase) at line 683. Combined with permission check, button now shows ONLY when: (1) return.status === 'draft' (lowercase), AND (2) user has returns.delete permission. Does NOT check refund_mode, amount, or invoice linkage as required."
+  
+  - task: "Returns Audit Safety Note"
+    implemented: true
+    working: "needs_testing"
+    file: "frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added audit safety UI elements: (1) Blue info box below header (line 535-549): 'Note: Completed returns cannot be deleted for audit reasons. Only draft returns can be modified or deleted.', (2) 'View Only' label with tooltip for finalized returns in Actions column (line 704-708): title='Completed returns cannot be deleted for audit reasons', (3) Delete button tooltip: title='Delete draft return' (line 699)."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Returns Delete Button - Permission Check"
+    - "Returns Delete Button - Status Check"
+    - "Returns Audit Safety Note"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ✅ RETURNS MANAGEMENT DELETE BUTTON FIX COMPLETE
+      
+      IMPLEMENTATION SUMMARY:
+      ================================================================================
+      
+      🔧 FRONTEND CHANGES - /app/frontend/src/pages/ReturnsPage.js:
+      
+      1. ✅ Added Permission Check (Lines 1, 11)
+         - Imported usePermission hook from '../hooks/usePermission'
+         - Added canDeleteReturn = usePermission('returns.delete')
+         - Delete button now checks both status AND permission
+      
+      2. ✅ Updated Actions Column (Lines 676-710)
+         Before: Delete button shown for all draft returns (no permission check)
+         After:  Delete button shown ONLY when:
+                 • return.status === 'draft' (lowercase)
+                 • AND user has returns.delete permission
+                 • Delete button has tooltip: "Delete draft return"
+         
+         Finalized returns now show:
+                 • "View Only" label with tooltip explaining audit policy
+      
+      3. ✅ Added Audit Safety Note (Lines 535-549)
+         - Prominent blue info box below page header
+         - Message: "Completed returns cannot be deleted for audit reasons. 
+                    Only draft returns can be modified or deleted."
+         - Visible to all users on Returns page
+      
+      🔍 BACKEND VERIFICATION - /app/backend/server.py:
+      
+      1. ✅ DELETE /api/returns/{return_id} (Line 11119)
+         - Already requires 'returns.delete' permission
+         - Already blocks finalized returns (status === 'finalized')
+         - Performs soft delete with audit logging
+         - Error message: "Cannot delete finalized return. Finalized returns are immutable."
+      
+      2. ✅ Return Model Status Values (Line 1117)
+         - Uses lowercase: 'draft' or 'finalized' consistently
+         - No status normalization needed
+      
+      📊 REQUIREMENTS COMPLIANCE:
+      ================================================================================
+      
+      ✅ Delete Button Visibility Rules:
+         • Shown ONLY when: return.status === "draft" AND user has returns.delete
+         • NOT based on: refund_mode, amount, invoice linkage
+      
+      ✅ Status Normalization:
+         • Backend uses lowercase "draft" and "finalized" consistently
+         • Frontend checks for lowercase "draft"
+         • No normalization issues exist
+      
+      ✅ Audit Safety Communication:
+         • Info box: "Completed returns cannot be deleted for audit reasons"
+         • Tooltip on finalized returns: "View Only"
+         • Clear user guidance throughout UI
+      
+      ✅ Acceptance Criteria Met:
+         • Draft return → Edit + Finalize + Delete visible (with permission)
+         • Finalized return → View only + "View Only" label
+         • Delete performs soft delete + audit log (backend verified)
+      
+      🚀 DEPLOYMENT STATUS:
+      ================================================================================
+      ✅ Frontend: Restarted successfully, compiled with no errors
+      ✅ Backend: Running (no changes needed)
+      ✅ Services: All services operational
+      
+      🎯 TESTING RECOMMENDATIONS:
+      ================================================================================
+      1. Test draft return visibility for user WITH returns.delete permission
+      2. Test draft return visibility for user WITHOUT returns.delete permission
+      3. Verify finalized returns show "View Only" label
+      4. Verify Delete button has tooltip "Delete draft return"
+      5. Verify info box is visible and readable
+      6. Test delete functionality works for draft returns
+      7. Verify finalized returns cannot be deleted (backend blocks)
+      8. Check audit logs are created on deletion
+      
+      Implementation complete and ready for testing.
