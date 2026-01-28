@@ -717,42 +717,58 @@ const ReturnsPage = () => {
                       {formatDate(returnObj.date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => viewReturn(returnObj.id)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
-                      >
-                        View
-                      </button>
-                      {returnObj.status === 'draft' && (
-                        <>
-                          <button
-                            onClick={() => openEditDialog(returnObj)}
-                            className="text-indigo-600 hover:text-indigo-900 mr-3"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => openFinalizeDialog(returnObj)}
-                            className="text-green-600 hover:text-green-900 mr-3"
-                          >
-                            Finalize
-                          </button>
-                          {canDeleteReturn && (
-                            <button
-                              onClick={() => handleDeleteReturn(returnObj.id)}
-                              className="text-red-600 hover:text-red-900"
-                              title="Delete draft return"
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </>
-                      )}
-                      {returnObj.status === 'finalized' && (
-                        <span className="text-gray-400 text-xs italic" title="Completed returns cannot be deleted for audit reasons">
-                          View Only
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => viewReturn(returnObj.id)}
+                          className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                          title="View return details"
+                        >
+                          <Eye size={16} />
+                          <span>View</span>
+                        </button>
+                        {returnObj.status === 'draft' && (
+                          <>
+                            {canCreateReturn && (
+                              <button
+                                onClick={() => openEditDialog(returnObj)}
+                                className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
+                                title="Edit draft return"
+                              >
+                                <Edit2 size={16} />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                            {canFinalizeReturn && (
+                              <button
+                                onClick={() => openFinalizeDialog(returnObj)}
+                                className="text-green-600 hover:text-green-900 flex items-center gap-1"
+                                title="Finalize and process return"
+                              >
+                                <CheckCircle size={16} />
+                                <span>Finalize</span>
+                              </button>
+                            )}
+                            {canDeleteReturn && (
+                              <button
+                                onClick={() => openDeleteDialog(returnObj)}
+                                className="text-red-600 hover:text-red-900 flex items-center gap-1"
+                                title="Delete draft return"
+                              >
+                                <Trash2 size={16} />
+                                <span>Delete</span>
+                              </button>
+                            )}
+                          </>
+                        )}
+                        {returnObj.status === 'finalized' && (
+                          <span className="text-gray-400 text-xs italic flex items-center gap-1" title="Completed returns cannot be deleted for audit reasons">
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                            </svg>
+                            View Only
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
