@@ -243,7 +243,7 @@ class InventoryStockOutTester:
                 self.test_data["customer"] = customer
                 self.log_result("Step 5 - Create Customer", True, f"Created customer: {customer['name']}")
             else:
-                self.log_result("Step 5 - Create Customer", False, "", f"Failed to create customer: {response.text}")
+                self.log_result("Step 5 - Create Customer", False, "", f"Failed to create customer: {response.status_code} - {response.text}")
                 return False
 
             # Step 6: Create an invoice with Gold Ring category
