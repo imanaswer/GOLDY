@@ -44,10 +44,10 @@ export default function FinancePageEnhanced() {
   
   // Filter states
   const [filters, setFilters] = useState({
-    account_id: '',
-    account_type: '',
-    transaction_type: '',
-    reference_type: '',
+    account_id: 'all',
+    account_type: 'all',
+    transaction_type: 'all',
+    reference_type: 'all',
     start_date: '',
     end_date: ''
   });
