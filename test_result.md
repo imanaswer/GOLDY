@@ -1331,6 +1331,26 @@ test_plan:
   test_priority: "high_first"
 
 user_problem_statement: |
+  BUG REPORT & FIX: PURCHASE PAYMENT + STATUS FLOW IS BROKEN
+  ❌ CURRENT PROBLEMS (CONFIRMED FROM UI):
+  1. Partially paid purchases cannot be paid fully - No "Add Payment / Pay Remaining" option
+  2. Purchases are shown as Locked even when balance > 0 - blocks settlement and editing
+  3. No way to create an UNPAID draft purchase - system forces payment or auto-locks
+  4. Edit option missing for unpaid / partially paid purchases
+  5. Purchase flow is inconsistent with Invoice flow (should be identical)
+  
+  ✅ REQUIRED CORRECT BEHAVIOR (NON-NEGOTIABLE):
+  - Purchase lifecycle MUST be: DRAFT → PARTIALLY_PAID → PAID → FINALIZED (LOCKED)
+  - Locking is allowed ONLY AFTER FULL PAYMENT (balance_due == 0)
+  
+  🛠️ REQUIRED FIXES (BACKEND + FRONTEND):
+  1. Draft Purchase Creation: Allow creating Purchase with paid_amount = 0, balance_due = total_amount, status = draft
+  2. Partial Payments: Add endpoint POST /api/purchases/{purchase_id}/add-payment
+  3. "Pay Remaining" UI: For purchases where balance_due > 0, UI must show Add Payment button
+  4. Locking / Finalization Rules: Purchase must NOT be locked when balance_due > 0
+  5. Editing Rules: Allow Edit when status = draft or partially_paid, Block when locked = true
+
+user_problem_statement: |
   CASH FLOW / FINANCE DASHBOARD – CRITICAL CALCULATION FIX
   ❌ Current Problems:
   - Net Flow shows 0.00 when it should reflect actual money movement
