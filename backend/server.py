@@ -716,7 +716,7 @@ def calculate_purchase_status(paid_amount: float, total_amount: float) -> str:
     total_amount = round(float(total_amount), 2)
     
     if paid_amount == 0:
-        return "Finalized (Unpaid)"
+        return "Draft"
     elif paid_amount < total_amount:
         return "Partially Paid"
     else:  # paid_amount >= total_amount
