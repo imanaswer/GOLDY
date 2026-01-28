@@ -129,7 +129,7 @@ class PurchasePaymentFlowTester:
                 self.test_data["account"] = response.json()
                 self.log_result("Setup - Cash Account", True, f"Created account: {self.test_data['account']['name']}")
             else:
-                self.log_result("Setup - Cash Account", False, "", f"Failed to create account: {response.text}")
+                self.log_result("Setup - Cash Account", False, "", f"Failed to create account: {response.status_code} - {response.text}")
                 return False
 
             return True
