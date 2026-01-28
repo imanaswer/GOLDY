@@ -10633,25 +10633,12 @@ async def finalize_return(
         if lock_result.modified_count == 0:
             raise HTTPException(status_code=409, detail="Return is already being processed or was modified.")
         
-        # Get return data with Decimal handling
+        # Get return data
         return_type = return_doc.get('return_type')
         reference_type = return_doc.get('reference_type')
         reference_id = return_doc.get('reference_id')
         party_id = return_doc.get('party_id')
-        refund_mode = return_doc.get('refund_mode')
-        
-        # Convert Decimal128 to Decimal for arithmetic
-        refund_money_amount = return_doc.get('refund_money_amount', 0)
-        if isinstance(refund_money_amount, Decimal128):
-            refund_money_amount = float(refund_money_amount.to_decimal())
-        else:
-            refund_money_amount = float(refund_money_amount)
-        
-        refund_gold_grams = return_doc.get('refund_gold_grams', 0)
-        if isinstance(refund_gold_grams, Decimal128):
-            refund_gold_grams = float(refund_gold_grams.to_decimal())
-        else:
-            refund_gold_grams = float(refund_gold_grams)
+        # refund_mode, refund_money_amount, refund_gold_grams, account_id already validated above
         
         stock_movement_ids = []
         transaction_id = None
