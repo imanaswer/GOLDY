@@ -29,11 +29,11 @@ import time
 
 # Configuration
 <<<<<<< HEAD
-BASE_URL = "https://payment-flow-repair-5.preview.emergentagent.com/api"
-FRONTEND_URL = "https://payment-flow-repair-5.preview.emergentagent.com"
+BASE_URL = "https://payflow-fix-14.preview.emergentagent.com/api"
+FRONTEND_URL = "https://payflow-fix-14.preview.emergentagent.com"
 =======
-BASE_URL = "https://payment-flow-repair-5.preview.emergentagent.com/api"
-FRONTEND_URL = "https://payment-flow-repair-5.preview.emergentagent.com"
+BASE_URL = "https://payflow-fix-14.preview.emergentagent.com/api"
+FRONTEND_URL = "https://payflow-fix-14.preview.emergentagent.com"
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
 USERNAME = "admin"
 PASSWORD = "admin123"

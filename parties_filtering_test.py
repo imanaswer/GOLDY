@@ -30,7 +30,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 # Configuration
-BASE_URL = "https://payment-flow-repair-5.preview.emergentagent.com/api"
+BASE_URL = "https://payflow-fix-14.preview.emergentagent.com/api"
 HEADERS = {"Content-Type": "application/json"}
 
 class PartiesFilteringTester:
