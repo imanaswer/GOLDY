@@ -3,27 +3,27 @@
     "test": "Authentication",
     "success": true,
     "details": "Successfully authenticated as testadmin",
-    "timestamp": "2026-01-28T12:37:23.343793",
+    "timestamp": "2026-01-28T12:40:03.340054",
     "response_data": null
   },
   {
     "test": "Get Returnable Invoices",
     "success": true,
-    "details": "Retrieved 9 returnable invoices",
-    "timestamp": "2026-01-28T12:37:24.372036",
+    "details": "Retrieved 11 returnable invoices",
+    "timestamp": "2026-01-28T12:40:03.895206",
     "response_data": {
-      "count": 9,
+      "count": 11,
       "sample": [
         {
-          "id": "773691ae-a0a6-4241-893f-ac14960bcdf6",
-          "invoice_no": "INV-2026-0012",
-          "date": "2026-01-28T12:36:16.980000",
+          "id": "b0444704-b64c-43ec-969d-876e07cc5cbb",
+          "invoice_no": "INV-2026-0014",
+          "date": "2026-01-28T12:37:42.085000",
           "party_name": "Unknown",
           "total_amount": 902.21,
           "balance_amount": 902.21,
           "items": [
             {
-              "id": "c9148624-8c9e-41a2-be49-74482ebcdf93",
+              "id": "a6d8e31f-4126-4149-a773-a6645a7821e2",
               "category": "Rings",
               "description": "Gold Ring 18K - Stock Test",
               "qty": 1,
@@ -46,15 +46,15 @@
           ]
         },
         {
-          "id": "e9fb66f5-5583-4b23-9798-4910be21f637",
-          "invoice_no": "INV-2026-0011",
-          "date": "2026-01-28T12:36:07.302000",
+          "id": "e4108263-071a-4e8b-a1d3-d90a7f9d4b61",
+          "invoice_no": "INV-2026-0013",
+          "date": "2026-01-28T12:37:25.488000",
           "party_name": "Unknown",
           "total_amount": 1207.85,
           "balance_amount": 1207.85,
           "items": [
             {
-              "id": "8b0d06ed-4823-4a69-8470-b3a4bd841dcc",
+              "id": "a2938b89-ff62-4487-85ab-4c07f34cbf1f",
               "category": null,
               "description": "Gold Ring 22K",
               "qty": 1,
@@ -83,29 +83,29 @@
     "test": "Get Test Customer",
     "success": true,
     "details": "Using existing customer: Perf Test Party 1 20260125073346",
-    "timestamp": "2026-01-28T12:37:25.046353",
+    "timestamp": "2026-01-28T12:40:04.675158",
     "response_data": null
   },
   {
     "test": "Create Test Invoice for Returns",
     "success": true,
-    "details": "Created and finalized test invoice: INV-2026-0013",
-    "timestamp": "2026-01-28T12:37:27.084237",
+    "details": "Created and finalized test invoice: INV-2026-0015",
+    "timestamp": "2026-01-28T12:40:06.592563",
     "response_data": {
-      "invoice_id": "e4108263-071a-4e8b-a1d3-d90a7f9d4b61",
-      "invoice_number": "INV-2026-0013"
+      "invoice_id": "f8a0f7a0-77db-4d1c-90bf-2f47f09a1344",
+      "invoice_number": "INV-2026-0015"
     }
   },
   {
     "test": "Get Returnable Items",
     "success": true,
     "details": "Retrieved 1 returnable items from invoice",
-    "timestamp": "2026-01-28T12:37:27.866598",
+    "timestamp": "2026-01-28T12:40:07.261712",
     "response_data": {
       "items_count": 1,
       "sample": [
         {
-          "item_id": "a2938b89-ff62-4487-85ab-4c07f34cbf1f",
+          "item_id": "b8d96c3a-0386-48bb-9635-0de0b3e1a17e",
           "description": "Gold Ring 22K",
           "purity": 916,
           "category": null,
@@ -124,25 +124,25 @@
   {
     "test": "Create Draft Return",
     "success": true,
-    "details": "Created draft return: RET-00003 (Amount: 603.92 OMR)",
-    "timestamp": "2026-01-28T12:37:30.360998",
+    "details": "Created draft return: RET-00004 (Amount: 603.92 OMR)",
+    "timestamp": "2026-01-28T12:40:09.503661",
     "response_data": {
-      "return_id": "1dabd4b2-ac3a-4ced-8312-86999bb94729",
-      "return_number": "RET-00003"
+      "return_id": "b73e9194-0563-4959-aebd-009bf9e07e31",
+      "return_number": "RET-00004"
     }
   },
   {
     "test": "Get Test Account",
     "success": true,
     "details": "Using existing account: Test Cash Account 1769567374",
-    "timestamp": "2026-01-28T12:37:31.039681",
+    "timestamp": "2026-01-28T12:40:10.055252",
     "response_data": null
   },
   {
     "test": "Edit Draft Return",
     "success": true,
     "details": "Added refund details: money refund of 603.93 OMR",
-    "timestamp": "2026-01-28T12:37:32.386373",
+    "timestamp": "2026-01-28T12:40:11.079189",
     "response_data": {
       "refund_mode": "money",
       "refund_amount": 603.93
@@ -150,53 +150,70 @@
   },
   {
     "test": "Get Finalize Impact",
-    "success": false,
-    "details": "Failed: 520 - Internal Server Error",
-    "timestamp": "2026-01-28T12:37:32.851064",
-    "response_data": null
+    "success": true,
+    "details": "Retrieved finalize impact preview",
+    "timestamp": "2026-01-28T12:40:11.632905",
+    "response_data": {
+      "action": "Finalize Return",
+      "return_number": "RET-00004",
+      "return_type": "sale_return",
+      "party_name": "Perf Test Party 1 20260125073346",
+      "refund_mode": "money",
+      "can_proceed": true,
+      "impacts": [
+        "\u2705 Stock IN: 2.575g returned to inventory",
+        "\ud83d\udcb0 Customer Refund: 603.93 OMR",
+        "\ud83d\udcca Customer outstanding will be updated"
+      ],
+      "warning": "This action cannot be undone. All stock movements, transactions, and ledger entries will be created."
+    }
   },
   {
     "test": "Finalize Return",
-    "success": false,
-    "details": "Failed: 520 - {\"detail\":\"Error finalizing return: 4 validation errors for StockMovement\\nmovement_type\\n  Field required [type=missing, input_value={'id': '44acdab7-95ed-4a4...44ff-86a3-c953c630585a'}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\\nheader_name\\n  Field required [type=missing, input_value={'id': '44acdab7-95ed-4a4...44ff-86a3-c953c630585a'}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\\nqty_delta\\n  Field required [type=missing, input_value={'id': '44acdab7-95ed-4a4...44ff-86a3-c953c630585a'}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.12/v/missing\\nweight_delta\\n  Field required [type=missing, input_value={'id': '44acdab7-95ed-4a4...44ff-86a3-c953c630585a'}, input_type=dict]\\n    For further information visit https://errors.pydantic.dev/2.12/v/missing. Changes have been rolled back.\"}",
-    "timestamp": "2026-01-28T12:37:33.888769",
-    "response_data": null
+    "success": true,
+    "details": "Return finalized successfully. ",
+    "timestamp": "2026-01-28T12:40:14.412900",
+    "response_data": {
+      "status": null,
+      "transaction_id": null,
+      "stock_movements_count": 0
+    }
   },
   {
     "test": "Validation - Exceed Original Amount",
     "success": true,
-    "details": "Correctly blocked excessive return: Cannot return more quantity than original Invoice INV-2026-0013. Original qty: 1, Already returned: 0, Current return: 10, Total would be: 10",
-    "timestamp": "2026-01-28T12:37:34.785971",
+    "details": "Correctly blocked excessive return: Cannot return more quantity than original Invoice INV-2026-0015. Original qty: 1, Already returned: 1, Current return: 10, Total would be: 11",
+    "timestamp": "2026-01-28T12:40:15.195459",
     "response_data": null
   },
   {
     "test": "Validation - Edit Finalized Return",
-    "success": false,
-    "details": "Should have blocked editing finalized return but got: 200",
-    "timestamp": "2026-01-28T12:37:35.799281",
+    "success": true,
+    "details": "Correctly blocked editing finalized return: Cannot update finalized return",
+    "timestamp": "2026-01-28T12:40:15.746918",
     "response_data": null
   },
   {
     "test": "Validation - Delete Finalized Return",
-    "success": false,
-    "details": "Should have blocked deleting finalized return but got: 200",
-    "timestamp": "2026-01-28T12:37:36.691274",
+    "success": true,
+    "details": "Correctly blocked deleting finalized return: Cannot delete finalized return. Finalized returns are immutable.",
+    "timestamp": "2026-01-28T12:40:16.300420",
     "response_data": null
   },
   {
     "test": "Get Test Vendor",
     "success": true,
     "details": "Using existing vendor: Axe",
-    "timestamp": "2026-01-28T12:37:37.358846",
+    "timestamp": "2026-01-28T12:40:16.970935",
     "response_data": null
   },
   {
     "test": "Create Draft Purchase",
     "success": true,
     "details": "Created draft purchase (Status: Draft, Balance: 18642.75 OMR)",
-    "timestamp": "2026-01-28T12:37:38.956099",
+    "timestamp": "2026-01-28T12:40:18.467371",
     "response_data": {
-      "purchase_id": "72beec10-6d5e-4e66-b489-4752428a57f5",
+      "purchase_id": "17d35ac4-ebd4-4219-8982-60131398a239",
       "status": "Draft",
       "balance_due": 18642.75
     }
@@ -205,14 +222,14 @@
     "test": "Get Test Account",
     "success": true,
     "details": "Using existing account: Test Cash Account 1769567374",
-    "timestamp": "2026-01-28T12:37:39.606199",
+    "timestamp": "2026-01-28T12:40:19.121709",
     "response_data": null
   },
   {
     "test": "Add Payment to Purchase",
     "success": true,
     "details": "Payment added successfully (Status: None, Paid: None OMR, Balance: None OMR, Locked: False)",
-    "timestamp": "2026-01-28T12:37:41.076360",
+    "timestamp": "2026-01-28T12:40:20.610568",
     "response_data": {
       "status": null,
       "paid_amount": null,
@@ -224,14 +241,14 @@
     "test": "Get Test Customer",
     "success": true,
     "details": "Using existing customer: Perf Test Party 1 20260125073346",
-    "timestamp": "2026-01-28T12:37:41.748667",
+    "timestamp": "2026-01-28T12:40:21.285615",
     "response_data": null
   },
   {
     "test": "Invoice Stock Movements",
     "success": true,
-    "details": "Stock OUT movement created: Invoice INV-2026-0014 - Finalized (Qty: -1.0, Weight: -4.45g)",
-    "timestamp": "2026-01-28T12:37:44.542479",
+    "details": "Stock OUT movement created: Invoice INV-2026-0016 - Finalized (Qty: -1.0, Weight: -4.45g)",
+    "timestamp": "2026-01-28T12:40:23.885264",
     "response_data": {
       "movement_type": "Stock OUT",
       "qty_delta": -1.0,
@@ -241,18 +258,18 @@
   {
     "test": "Finance Dashboard",
     "success": true,
-    "details": "Dashboard structure valid (Categories: 13, Outstanding: 22445.55 OMR, Customers: 127)",
-    "timestamp": "2026-01-28T12:37:46.118970",
+    "details": "Dashboard structure valid (Categories: 13, Outstanding: 25159.54 OMR, Customers: 127)",
+    "timestamp": "2026-01-28T12:40:25.364654",
     "response_data": {
       "inventory": {
         "total_categories": 13,
-        "total_stock_weight_grams": 3086.0,
-        "total_stock_qty": 111.0,
+        "total_stock_weight_grams": 3186.5,
+        "total_stock_qty": 112.0,
         "low_stock_items": 9
       },
       "financial": {
-        "total_outstanding_omr": 22445.55,
-        "outstanding_invoices_count": 12
+        "total_outstanding_omr": 25159.54,
+        "outstanding_invoices_count": 14
       },
       "parties": {
         "total_customers": 127,
@@ -266,6 +283,128 @@
       },
       "recent_activity": {
         "recent_invoices": [
+          {
+            "id": "5814c740-8f5c-4f30-b8c0-4e7e435bc9a8",
+            "invoice_number": "INV-2026-0016",
+            "date": "2026-01-28T12:40:21.630000",
+            "created_at": "2026-01-28T12:40:21.630000",
+            "due_date": null,
+            "customer_type": "saved",
+            "customer_id": "a8b552ab-efa7-4f5b-a1ae-95064962d367",
+            "customer_name": null,
+            "customer_phone": null,
+            "customer_address": null,
+            "customer_gstin": null,
+            "walk_in_name": null,
+            "walk_in_phone": null,
+            "worker_id": null,
+            "worker_name": null,
+            "invoice_type": "sale",
+            "payment_status": "unpaid",
+            "status": "finalized",
+            "finalized_at": "2026-01-28T12:40:22.416000",
+            "finalized_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
+            "paid_at": null,
+            "items": [
+              {
+                "id": "6a78c7f3-177c-4de1-8917-989de80ebda2",
+                "category": "Rings",
+                "description": "Gold Ring 18K - Stock Test",
+                "qty": 1,
+                "gross_weight": 4.5,
+                "stone_weight": 0.05,
+                "net_gold_weight": 4.45,
+                "weight": 4.45,
+                "purity": 750,
+                "metal_rate": 165.0,
+                "gold_value": 734.25,
+                "making_charge_type": "flat",
+                "making_value": 100.0,
+                "stone_charges": 15.0,
+                "wastage_charges": 10.0,
+                "item_discount": 0.0,
+                "vat_percent": 5.0,
+                "vat_amount": 42.96,
+                "line_total": 902.21
+              }
+            ],
+            "subtotal": 859.25,
+            "discount_amount": 0.0,
+            "tax_type": "cgst_sgst",
+            "gst_percent": 5.0,
+            "cgst_total": 21.48,
+            "sgst_total": 21.48,
+            "igst_total": 0.0,
+            "vat_total": 42.96,
+            "grand_total": 902.21,
+            "paid_amount": 0.0,
+            "balance_due": 902.21,
+            "notes": "Test invoice for stock movement verification",
+            "jobcard_id": null,
+            "created_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
+            "is_deleted": false
+          },
+          {
+            "id": "f8a0f7a0-77db-4d1c-90bf-2f47f09a1344",
+            "invoice_number": "INV-2026-0015",
+            "date": "2026-01-28T12:40:05.015000",
+            "created_at": "2026-01-28T12:40:05.015000",
+            "due_date": null,
+            "customer_type": "saved",
+            "customer_id": "a8b552ab-efa7-4f5b-a1ae-95064962d367",
+            "customer_name": null,
+            "customer_phone": null,
+            "customer_address": null,
+            "customer_gstin": null,
+            "walk_in_name": null,
+            "walk_in_phone": null,
+            "worker_id": null,
+            "worker_name": null,
+            "invoice_type": "sale",
+            "payment_status": "unpaid",
+            "status": "finalized",
+            "finalized_at": "2026-01-28T12:40:05.908000",
+            "finalized_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
+            "paid_at": null,
+            "items": [
+              {
+                "id": "b8d96c3a-0386-48bb-9635-0de0b3e1a17e",
+                "category": null,
+                "description": "Gold Ring 22K",
+                "qty": 1,
+                "gross_weight": 5.25,
+                "stone_weight": 0.1,
+                "net_gold_weight": 5.15,
+                "weight": 5.15,
+                "purity": 916,
+                "metal_rate": 185.5,
+                "gold_value": 955.33,
+                "making_charge_type": "per_gram",
+                "making_value": 150.0,
+                "stone_charges": 25.0,
+                "wastage_charges": 20.0,
+                "item_discount": 0.0,
+                "vat_percent": 5.0,
+                "vat_amount": 57.52,
+                "line_total": 1207.85
+              }
+            ],
+            "subtotal": 1150.33,
+            "discount_amount": 0.0,
+            "tax_type": "cgst_sgst",
+            "gst_percent": 5.0,
+            "cgst_total": 28.76,
+            "sgst_total": 28.76,
+            "igst_total": 0.0,
+            "vat_total": 57.52,
+            "grand_total": 1207.85,
+            "paid_amount": 0,
+            "balance_due": 1811.78,
+            "notes": "Test invoice for returns testing",
+            "jobcard_id": null,
+            "created_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
+            "is_deleted": false
+          },
           {
             "id": "b0444704-b64c-43ec-969d-876e07cc5cbb",
             "invoice_number": "INV-2026-0014",
@@ -448,132 +587,10 @@
             "jobcard_id": null,
             "created_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
             "is_deleted": false
-          },
-          {
-            "id": "e9fb66f5-5583-4b23-9798-4910be21f637",
-            "invoice_number": "INV-2026-0011",
-            "date": "2026-01-28T12:36:07.302000",
-            "created_at": "2026-01-28T12:36:07.302000",
-            "due_date": null,
-            "customer_type": "saved",
-            "customer_id": "a8b552ab-efa7-4f5b-a1ae-95064962d367",
-            "customer_name": null,
-            "customer_phone": null,
-            "customer_address": null,
-            "customer_gstin": null,
-            "walk_in_name": null,
-            "walk_in_phone": null,
-            "worker_id": null,
-            "worker_name": null,
-            "invoice_type": "sale",
-            "payment_status": "unpaid",
-            "status": "finalized",
-            "finalized_at": "2026-01-28T12:36:08.090000",
-            "finalized_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
-            "paid_at": null,
-            "items": [
-              {
-                "id": "8b0d06ed-4823-4a69-8470-b3a4bd841dcc",
-                "category": null,
-                "description": "Gold Ring 22K",
-                "qty": 1,
-                "gross_weight": 5.25,
-                "stone_weight": 0.1,
-                "net_gold_weight": 5.15,
-                "weight": 5.15,
-                "purity": 916,
-                "metal_rate": 185.5,
-                "gold_value": 955.33,
-                "making_charge_type": "per_gram",
-                "making_value": 150.0,
-                "stone_charges": 25.0,
-                "wastage_charges": 20.0,
-                "item_discount": 0.0,
-                "vat_percent": 5.0,
-                "vat_amount": 57.52,
-                "line_total": 1207.85
-              }
-            ],
-            "subtotal": 1150.33,
-            "discount_amount": 0.0,
-            "tax_type": "cgst_sgst",
-            "gst_percent": 5.0,
-            "cgst_total": 28.76,
-            "sgst_total": 28.76,
-            "igst_total": 0.0,
-            "vat_total": 57.52,
-            "grand_total": 1207.85,
-            "paid_amount": 0.0,
-            "balance_due": 1207.85,
-            "notes": "Test invoice for returns testing",
-            "jobcard_id": null,
-            "created_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
-            "is_deleted": false
-          },
-          {
-            "id": "30713144-7c62-4c2c-9127-0445c6b80263",
-            "invoice_number": "INV-2026-0010",
-            "date": "2026-01-28T12:34:35.905000",
-            "created_at": "2026-01-28T12:34:35.905000",
-            "due_date": null,
-            "customer_type": "saved",
-            "customer_id": "a8b552ab-efa7-4f5b-a1ae-95064962d367",
-            "customer_name": null,
-            "customer_phone": null,
-            "customer_address": null,
-            "customer_gstin": null,
-            "walk_in_name": null,
-            "walk_in_phone": null,
-            "worker_id": null,
-            "worker_name": null,
-            "invoice_type": "sale",
-            "payment_status": "unpaid",
-            "status": "finalized",
-            "finalized_at": "2026-01-28T12:34:36.683000",
-            "finalized_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
-            "paid_at": null,
-            "items": [
-              {
-                "id": "82a3c903-6c0f-4d88-9caf-8e46089ddaac",
-                "category": "Rings",
-                "description": "Gold Ring 18K - Stock Test",
-                "qty": 1,
-                "gross_weight": 4.5,
-                "stone_weight": 0.05,
-                "net_gold_weight": 4.45,
-                "weight": 4.45,
-                "purity": 750,
-                "metal_rate": 165.0,
-                "gold_value": 734.25,
-                "making_charge_type": "flat",
-                "making_value": 100.0,
-                "stone_charges": 15.0,
-                "wastage_charges": 10.0,
-                "item_discount": 0.0,
-                "vat_percent": 5.0,
-                "vat_amount": 42.96,
-                "line_total": 902.21
-              }
-            ],
-            "subtotal": 859.25,
-            "discount_amount": 0.0,
-            "tax_type": "cgst_sgst",
-            "gst_percent": 5.0,
-            "cgst_total": 21.48,
-            "sgst_total": 21.48,
-            "igst_total": 0.0,
-            "vat_total": 42.96,
-            "grand_total": 902.21,
-            "paid_amount": 0.0,
-            "balance_due": 902.21,
-            "notes": "Test invoice for stock movement verification",
-            "jobcard_id": null,
-            "created_by": "336cdc1b-081b-44ff-86a3-c953c630585a",
-            "is_deleted": false
           }
         ]
       },
-      "timestamp": "2026-01-28T12:37:45.908511+00:00"
+      "timestamp": "2026-01-28T12:40:25.152049+00:00"
     }
   }
 ]
