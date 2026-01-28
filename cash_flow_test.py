@@ -129,10 +129,13 @@ class CashFlowTester:
     def setup_test_entities(self):
         """Setup required entities for testing"""
         try:
+            # Generate unique identifiers
+            unique_id = str(uuid.uuid4())[:8]
+            
             # Create customer party
             customer_data = {
-                "name": "Test Customer",
-                "phone": "+968-9876-5432",
+                "name": f"Test Customer {unique_id}",
+                "phone": f"+968-9876-{unique_id[:4]}",
                 "address": "123 Test Street, Muscat",
                 "party_type": "customer",
                 "notes": "Test customer for cash flow testing"
