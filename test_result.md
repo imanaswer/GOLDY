@@ -1330,6 +1330,205 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+user_problem_statement: |
+  CASH FLOW / FINANCE DASHBOARD – CRITICAL CALCULATION FIX
+  ❌ Current Problems:
+  - Net Flow shows 0.00 when it should reflect actual money movement
+  - Credits ≠ Debits (visible mismatch)
+  - Money movement not clearly reflected
+  
+  🔴 Root Cause:
+  - Transaction debit/credit directions were inconsistent with balance updates
+  - Net flow formula was backwards for asset accounts (cash/bank)
+  - Invoice payments creating double-entry but only one should count for cash flow
+  
+  ✅ Required Fix:
+  1. Lock the Formula: Net Flow = Total Debit − Total Credit (for asset accounts)
+  2. Verify Transaction Directions:
+     - Invoice payment → DEBIT (money IN to cash/bank)
+     - Purchase payment → CREDIT (money OUT from cash/bank)
+     - Sales return refund → CREDIT (money OUT to customer)
+     - Purchase return refund → DEBIT (money IN from vendor)
+
+backend:
+  - task: "Fix Transaction Directions - Purchase Payment"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "CRITICAL FIX: Changed purchase payment transaction from 'debit' to 'credit' (line 3531). Purchase payments are money OUT, so should be CREDIT for asset accounts. Balance update already correctly decreased balance (-delta)."
+  
+  - task: "Fix Transaction Directions - Sales Return"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "CRITICAL FIX: Changed sales return refund transaction from 'debit' to 'credit' (line 10715). Refunding customer is money OUT, so should be CREDIT for asset accounts. Balance update already correctly decreased balance."
+  
+  - task: "Fix Transaction Directions - Purchase Return"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "CRITICAL FIX: Changed purchase return refund transaction from 'credit' to 'debit' (line 10879). Receiving refund from vendor is money IN, so should be DEBIT for asset accounts. Balance update already correctly increased balance."
+  
+  - task: "Fix Net Flow Formula"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "CRITICAL FIX: Reversed net flow formula for asset accounts (lines 6317-6319). Changed from 'credit - debit' to 'debit - credit' because for asset accounts: DEBIT = money IN (increase), CREDIT = money OUT (decrease). Also fixed cash_summary.net and bank_summary.net calculations (lines 6329, 6334)."
+  
+  - task: "Fix Account Breakdown Net Calculation"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "CRITICAL FIX: Added account-type-aware net calculation (line 6289-6297). For asset accounts (cash/bank/petty), net = debit - credit. For income/expense accounts, net = credit - debit. This ensures correct net calculations across all account types."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Fix Transaction Directions - Purchase Payment"
+    - "Fix Transaction Directions - Sales Return"
+    - "Fix Transaction Directions - Purchase Return"
+    - "Fix Net Flow Formula"
+    - "Fix Account Breakdown Net Calculation"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "critical_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🎯 CASH FLOW CALCULATION - COMPREHENSIVE FIX COMPLETED
+      
+      CRITICAL ISSUE IDENTIFIED:
+      ================================================================================
+      The finance dashboard showed Net Flow = 0.00 due to:
+      1. Inconsistent transaction debit/credit directions
+      2. Backwards formula for asset accounts
+      3. Transaction types not matching balance updates
+      
+      ROOT CAUSE ANALYSIS:
+      ================================================================================
+      The system uses standard accounting double-entry bookkeeping:
+      - For ASSET accounts (Cash/Bank): DEBIT = increase, CREDIT = decrease
+      - For INCOME accounts: CREDIT = increase, DEBIT = decrease
+      - For EXPENSE accounts: DEBIT = increase, CREDIT = decrease
+      
+      But transaction types were inconsistent with balance changes:
+      - Purchase payment: Said "debit" but decreased balance (should be "credit")
+      - Sales return: Said "debit" but decreased balance (should be "credit")
+      - Purchase return: Said "credit" but increased balance (should be "debit")
+      - Net flow formula: Used credit - debit (wrong for assets!)
+      
+      FIXES APPLIED:
+      ================================================================================
+      
+      1. ✅ Fixed Purchase Payment Transaction (Line 3531)
+         BEFORE: transaction_type="debit" (wrong!)
+         AFTER: transaction_type="credit"
+         LOGIC: Paying vendor = money OUT = credit decreases cash/bank asset
+         EFFECT: Purchase payments now correctly reduce net flow
+      
+      2. ✅ Fixed Sales Return Transaction (Line 10715)
+         BEFORE: transaction_type="debit" (wrong!)
+         AFTER: transaction_type="credit"
+         LOGIC: Refunding customer = money OUT = credit decreases cash/bank asset
+         EFFECT: Sales returns now correctly reduce net flow
+      
+      3. ✅ Fixed Purchase Return Transaction (Line 10879)
+         BEFORE: transaction_type="credit" (wrong!)
+         AFTER: transaction_type="debit"
+         LOGIC: Receiving refund = money IN = debit increases cash/bank asset
+         EFFECT: Purchase returns now correctly increase net flow
+      
+      4. ✅ Fixed Net Flow Formula (Lines 6317-6319)
+         BEFORE: cash_net = cash_credit - cash_debit (wrong for assets!)
+         AFTER: cash_net = cash_debit - cash_credit
+         LOGIC: For assets, DEBIT=IN, CREDIT=OUT, so Net = Debit - Credit
+         EFFECT: Formula now correctly calculates: Money IN - Money OUT
+      
+      5. ✅ Fixed Cash/Bank Summary Net (Lines 6329, 6334)
+         BEFORE: net = credit - debit (wrong!)
+         AFTER: net = debit - credit
+         EFFECT: Cash and Bank summaries now show correct net flow
+      
+      6. ✅ Fixed Account Breakdown Net Calculation (Lines 6289-6297)
+         BEFORE: Always used credit - debit (wrong for assets!)
+         AFTER: Asset accounts use debit - credit, others use credit - debit
+         LOGIC: Different account types follow different rules
+         EFFECT: All account breakdowns now calculate net correctly
+      
+      TRANSACTION DIRECTION VERIFICATION:
+      ================================================================================
+      ✅ Invoice Payment → DEBIT to Cash/Bank (money IN) ✅ CORRECT
+      ✅ Purchase Payment → CREDIT to Cash/Bank (money OUT) ✅ FIXED
+      ✅ Sales Return Refund → CREDIT to Cash/Bank (money OUT) ✅ FIXED
+      ✅ Purchase Return Refund → DEBIT to Cash/Bank (money IN) ✅ FIXED
+      
+      NET FLOW FORMULA VERIFICATION:
+      ================================================================================
+      Net Flow = (Cash Debits - Cash Credits) + (Bank Debits - Bank Credits)
+      
+      Example calculation:
+      - Invoice payments: +1000 (DEBIT) → net flow +1000 ✅
+      - Purchase payments: +500 (CREDIT) → net flow -500 ✅
+      - Sales returns: +200 (CREDIT) → net flow -200 ✅
+      - Purchase returns: +100 (DEBIT) → net flow +100 ✅
+      TOTAL NET FLOW: 1000 - 500 - 200 + 100 = +400 ✅
+      
+      DOUBLE-ENTRY ACCOUNTING PRESERVED:
+      ================================================================================
+      - Invoice payments still create TWO transactions (Cash/Bank + Sales Income)
+      - But only Cash/Bank transactions counted in net flow (correct!)
+      - Sales Income transactions filtered out by account type
+      - Full accounting integrity maintained
+      
+      TESTING NEEDED:
+      ================================================================================
+      1. Create invoice and add payment → Net flow should INCREASE
+      2. Create purchase with payment → Net flow should DECREASE
+      3. Process sales return with refund → Net flow should DECREASE
+      4. Process purchase return with refund → Net flow should INCREASE
+      5. Verify Credits ≠ Debits shows correct breakdown
+      6. Verify Net Flow = Total Debit - Total Credit
+      7. Check cash_summary and bank_summary net values
+      8. Verify account breakdown net calculations
+      
+      🚀 BACKEND READY FOR RESTART AND TESTING
+
 agent_communication:
   - agent: "main"
     message: |
