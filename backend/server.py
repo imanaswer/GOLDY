@@ -10753,7 +10753,7 @@ async def finalize_return(
                     id=income_transaction_id,
                     transaction_number=income_transaction_number,
                     date=datetime.now(timezone.utc),
-                    transaction_type="debit",  # Debit income = reduce revenue
+                    transaction_type="credit",  # Credit income = reduce revenue (opposite of normal credit)
                     mode="adjustment",
                     account_id=sales_income_account.get('id'),
                     account_name=sales_income_account.get('name'),
