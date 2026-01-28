@@ -3150,7 +3150,7 @@ async def delete_gold_ledger_entry(entry_id: str, current_user: User = Depends(r
 # MODULE 9/10 - GOLD DEPOSITS (Customer Gold Received) - Specific IN Entry API
 # ============================================================================
 
-@api_router.post("/gold-deposits", response_model=GoldLedgerEntry)
+@api_router.post("/gold-deposits", response_model=GoldLedgerEntry, status_code=201)
 async def create_gold_deposit(deposit_data: dict, current_user: User = Depends(require_permission('finance.create'))):
     """
     Create a gold deposit entry - specifically for recording gold RECEIVED from customer.
