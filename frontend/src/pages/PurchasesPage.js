@@ -1243,6 +1243,126 @@ export default function PurchasesPage() {
         </DialogContent>
       </Dialog>
 
+
+      {/* Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Payment - Purchase #{selectedPurchase?.id?.slice(0, 8)}</DialogTitle>
+          </DialogHeader>
+
+          {selectedPurchase && (
+            <div className="space-y-6">
+              {/* Purchase Summary */}
+              <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Vendor:</span>
+                  <span className="font-semibold">{getVendorName(selectedPurchase.vendor_party_id)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Total Amount:</span>
+                  <span className="font-mono font-semibold">{safeToFixed(selectedPurchase.amount_total, 2)} OMR</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Paid Amount:</span>
+                  <span className="font-mono">{safeToFixed(selectedPurchase.paid_amount_money, 2)} OMR</span>
+                </div>
+                <div className="flex justify-between text-base font-semibold border-t pt-2">
+                  <span>Balance Due:</span>
+                  <span className="font-mono text-red-600">{safeToFixed(selectedPurchase.balance_due_money, 2)} OMR</span>
+                </div>
+              </div>
+
+              {/* Payment Form */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Payment Mode *</Label>
+                  <Select 
+                    value={paymentData.payment_mode} 
+                    onValueChange={(value) => setPaymentData({...paymentData, payment_mode: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Cash">Cash</SelectItem>
+                      <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="Card">Card</SelectItem>
+                      <SelectItem value="UPI/Online">UPI/Online</SelectItem>
+                      <SelectItem value="Cheque">Cheque</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Payment Amount (OMR) *</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={paymentData.payment_amount}
+                    onChange={(e) => setPaymentData({...paymentData, payment_amount: e.target.value})}
+                    placeholder="Enter payment amount"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setPaymentData({...paymentData, payment_amount: safeToFixed(selectedPurchase.balance_due_money, 2)})}
+                    className="text-xs text-blue-600 hover:text-blue-700"
+                  >
+                    Set to full balance ({safeToFixed(selectedPurchase.balance_due_money, 2)} OMR)
+                  </button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Account (Where money comes from) *</Label>
+                  <Select 
+                    value={paymentData.account_id} 
+                    onValueChange={(value) => setPaymentData({...paymentData, account_id: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select account" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts.map(account => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.name} ({account.account_type})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Notes (Optional)</Label>
+                  <Input
+                    value={paymentData.notes}
+                    onChange={(e) => setPaymentData({...paymentData, notes: e.target.value})}
+                    placeholder="Payment notes or reference"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPaymentDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddPayment}
+                  className="flex-1"
+                >
+                  Add Payment
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         open={showDeleteConfirm}
