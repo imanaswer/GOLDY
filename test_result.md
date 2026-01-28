@@ -1557,6 +1557,118 @@ frontend:
 
 metadata:
   created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Purchase Draft Creation - Allow Unpaid Purchases"
+    - "Purchase Add Payment Endpoint"
+    - "Purchase Locking Rules - Balance-Based"
+    - "Purchase Edit Rules - Unlocked Only"
+    - "Purchase Add Payment Button - UI Visibility"
+    - "Purchase Payment Dialog"
+    - "Purchase Payment Handler - API Integration"
+    - "Purchase Edit Button - Lock-Based Display"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🔍 PURCHASE PAYMENT FLOW BUG INVESTIGATION
+      
+      CURRENT STATUS: CODE REVIEW COMPLETED
+      ================================================================================
+      
+      USER REPORT:
+      - Partially paid purchases cannot be paid fully
+      - Purchases shown as locked even when balance > 0
+      - No way to create unpaid draft purchases
+      - Edit option missing for unpaid/partially paid purchases
+      
+      CODE REVIEW FINDINGS:
+      ================================================================================
+      
+      ✅ BACKEND IMPLEMENTATION APPEARS CORRECT:
+      
+      1. Draft Creation (line 3385 - create_purchase):
+         - Supports paid_amount = 0
+         - Status calculated via calculate_purchase_status()
+         - Returns "Draft" when paid_amount == 0
+      
+      2. Add Payment Endpoint (line 3676 - add_payment_to_purchase):
+         - POST /api/purchases/{purchase_id}/add-payment exists
+         - Creates CREDIT transaction
+         - Updates paid_amount_money and balance_due_money
+         - Auto-calculates status
+         - Locks only when balance_due reaches 0
+      
+      3. Locking Rules (lines 3483-3490, 3807-3811):
+         - locked = True ONLY when balance_due_money == 0
+         - locked = False otherwise
+         - Matches Invoice behavior
+      
+      4. Edit Rules (lines 3916-3921 - update_purchase):
+         - Blocks editing when locked = True
+         - Allows editing when locked = False
+         - Clear error message
+      
+      5. Status Calculation (line 700 - calculate_purchase_status):
+         - Draft: paid_amount == 0
+         - Partially Paid: 0 < paid_amount < total_amount
+         - Paid: paid_amount >= total_amount
+      
+      ✅ FRONTEND IMPLEMENTATION APPEARS CORRECT:
+      
+      1. Add Payment Button (lines 646-658):
+         - Shows when balance_due_money > 0 && !locked
+         - DollarSign icon with "Add Payment" label
+         - Opens payment dialog
+      
+      2. Payment Dialog (lines 1251+, 386-395):
+         - Fields: payment_amount, payment_mode, account_id, notes
+         - Defaults to full balance_due
+         - Has "Set to full balance" helper button
+      
+      3. Payment Handler (lines 397-432):
+         - Calls POST /api/purchases/{id}/add-payment
+         - Shows success toast with transaction number
+         - Shows lock notification
+         - Reloads purchases
+      
+      4. Edit/Delete Buttons (lines 661-682):
+         - Show when !purchase.locked
+         - Locked badge shows when purchase.locked
+      
+      5. Status Badges (line 439):
+         - Handles Draft, Partially Paid, Paid, Finalized (Unpaid)
+         - Appropriate colors and icons
+      
+      CONCLUSION:
+      ================================================================================
+      Both backend and frontend implementations look correct based on code review.
+      However, user reports suggest these features are not working.
+      
+      HYPOTHESIS:
+      1. Services might be out of sync (old code cached)
+      2. There might be a subtle bug not visible in static code review
+      3. Database might have old purchase records with incorrect locked state
+      
+      NEXT STEPS:
+      1. Run comprehensive backend testing to verify all endpoints work
+      2. Test purchase creation with paid_amount = 0 (draft)
+      3. Test adding payments to partially paid purchases
+      4. Test that locked state is only set when balance_due = 0
+      5. Test that edit button shows/hides correctly
+      6. If tests pass, the issue might be with existing database records
+      
+      READY FOR TESTING. Services are running. Code review complete.
+
+metadata:
+  created_by: "main_agent"
   version: "1.5"
   test_sequence: 7
   run_ui: false
