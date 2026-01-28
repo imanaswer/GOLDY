@@ -3528,7 +3528,7 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
         payment_transaction = Transaction(
             transaction_number=payment_txn_number,
             date=purchase.date,
-            transaction_type="debit",
+            transaction_type="credit",
             mode=purchase_data.get("payment_mode", "Cash"),
             account_id=purchase_data["account_id"],
             account_name=account["name"],
