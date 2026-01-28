@@ -3843,7 +3843,7 @@ async def add_payment_to_purchase(
     return {
         "success": True,
         "message": "Payment added successfully",
-        "purchase": updated_purchase,
+        "purchase": decimal_to_float(updated_purchase),
         "transaction_number": payment_txn_number,
         "locked": should_lock
     }
