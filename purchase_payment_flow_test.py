@@ -323,7 +323,8 @@ class PurchasePaymentFlowTester:
             response = self.session.post(f"{self.base_url}/purchases/{purchase_id}/add-payment", json=payment_data)
             
             if response.status_code == 200:
-                updated_purchase = response.json()
+                response_data = response.json()
+                updated_purchase = response_data.get("purchase", {})
                 
                 # Verify response
                 expected_status = "Paid"
