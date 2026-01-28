@@ -156,7 +156,7 @@ class InventoryStockOutTester:
                 self.test_data["vendor"] = vendor
                 self.log_result("Step 1 - Create Vendor", True, f"Created vendor: {vendor['name']}")
             else:
-                self.log_result("Step 1 - Create Vendor", False, "", f"Failed to create vendor: {response.text}")
+                self.log_result("Step 1 - Create Vendor", False, "", f"Failed to create vendor: {response.status_code} - {response.text}")
                 return False
 
             # Step 2: Create a purchase with category "Gold Ring"
