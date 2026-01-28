@@ -1322,6 +1322,66 @@ user_problem_statement: |
   5. Editing Rules: Allow Edit when status = draft or partially_paid, Block when status = finalized
 
 backend:
+  - task: "Purchase Draft Creation - Allow Unpaid Purchases"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ CODE REVIEW - create_purchase endpoint (line 3385) supports creating purchases with paid_amount = 0. Status calculation function (line 700) returns 'Draft' when paid_amount == 0. Locking logic (lines 3483-3490) only locks when balance_due_money == 0. Implementation appears correct but needs testing to verify it works in practice."
+  
+  - task: "Purchase Add Payment Endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ CODE REVIEW - POST /api/purchases/{purchase_id}/add-payment endpoint exists (line 3676). Accepts payment_amount, payment_mode, account_id, notes. Creates CREDIT transaction. Updates paid_amount_money and balance_due_money. Auto-updates status. Locks purchase only when balance_due reaches 0. Implementation appears correct but needs testing."
+  
+  - task: "Purchase Locking Rules - Balance-Based"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ CODE REVIEW - Locking logic in create_purchase (lines 3483-3490) only sets locked=True when balance_due_money == 0, otherwise locked=False. Add-payment endpoint (lines 3807-3811) locks purchase only when balance reaches 0. Implementation appears correct but needs real-world testing."
+  
+  - task: "Purchase Edit Rules - Unlocked Only"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ CODE REVIEW - update_purchase endpoint (line 3898) checks locked status (lines 3916-3921). Blocks editing when locked=True. Allows editing when locked=False. Error message is clear. Implementation appears correct but needs testing."
+  
+  - task: "Purchase Status Calculation"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ CODE REVIEW - calculate_purchase_status function (line 700) returns 'Draft' when paid_amount == 0, 'Partially Paid' when 0 < paid_amount < total_amount, 'Paid' when paid_amount >= total_amount. Logic matches Invoice behavior. Implementation appears correct."
+  
   - task: "Returns Finalization - Remove MongoDB Transactions"
     implemented: true
     working: true
