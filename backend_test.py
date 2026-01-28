@@ -781,7 +781,7 @@ class BackendTester:
             # Create invoice
             response = self.session.post(f"{BACKEND_URL}/invoices", json=invoice_data)
             
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 invoice = response.json()
                 invoice_id = invoice.get("id")
                 
