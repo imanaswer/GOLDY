@@ -223,8 +223,8 @@ class GoldShopERPTester:
 
             # Create worker
             worker_data = {
-                "name": "Mohammed Al-Balushi",
-                "phone": "+968-7777-8888",
+                "name": f"Mohammed Al-Balushi Test {int(time.time())}",
+                "phone": f"+968-{int(time.time()) % 10000}-7777",
                 "role": "goldsmith",
                 "active": True
             }
