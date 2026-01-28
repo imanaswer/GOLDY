@@ -6286,7 +6286,13 @@ async def get_transactions_summary(
         # Add account type to breakdown and calculate net
         for acc_id, breakdown in account_breakdown.items():
             breakdown['account_type'] = account_types.get(acc_id, 'unknown')
-            breakdown['net'] = round(breakdown['credit'] - breakdown['debit'], 3)
+            acc_type = breakdown['account_type']
+            # For asset accounts (cash/bank), net = debit - credit (debit increases, credit decreases)
+            # For income/expense accounts, net = credit - debit (credit increases, debit decreases)
+            if acc_type in ['cash', 'bank', 'petty', 'asset']:
+                breakdown['net'] = round(breakdown['debit'] - breakdown['credit'], 3)
+            else:  # income, expense, liability, equity
+                breakdown['net'] = round(breakdown['credit'] - breakdown['debit'], 3)
             breakdown['credit'] = round(breakdown['credit'], 3)
             breakdown['debit'] = round(breakdown['debit'], 3)
         
