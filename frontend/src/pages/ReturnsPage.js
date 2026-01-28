@@ -5,6 +5,7 @@ import { safeToFixed, formatCurrency, formatWeight } from '../utils/numberFormat
 import Pagination from '../components/Pagination';
 import useURLPagination from '../hooks/useURLPagination';
 import { usePermission } from '../hooks/usePermission';
+import { Eye, Edit2, CheckCircle, Trash2, X, AlertTriangle } from 'lucide-react';
 
 const ReturnsPage = () => {
   const [returns, setReturns] = useState([]);
