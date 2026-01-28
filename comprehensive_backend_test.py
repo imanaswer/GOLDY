@@ -180,7 +180,7 @@ class GoldShopERPTester:
                 "notes": "Primary gold supplier for testing"
             }
             response = self.session.post(f"{BASE_URL}/parties", json=vendor_data)
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 vendor_result = response.json()
                 self.test_data["vendor"] = vendor_result
                 self.log_result("Setup - Vendor Party", True, f"Created vendor: {vendor_result['name']}")
