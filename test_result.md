@@ -1301,9 +1301,9 @@ backend:
       - working: true
         agent: "testing"
 <<<<<<< HEAD
-        comment: "✅ INFRASTRUCTURE ISSUES RESOLVED - Restarted all services successfully. Backend now running on port 8001, Frontend compiled and serving. Application accessible at https://netflow-cash.preview.emergentagent.com with HTTP 200 responses."
+        comment: "✅ INFRASTRUCTURE ISSUES RESOLVED - Restarted all services successfully. Backend now running on port 8001, Frontend compiled and serving. Application accessible at https://bankflow-testing.preview.emergentagent.com with HTTP 200 responses."
 =======
-        comment: "✅ INFRASTRUCTURE ISSUES RESOLVED - Restarted all services successfully. Backend now running on port 8001, Frontend compiled and serving. Application accessible at https://netflow-cash.preview.emergentagent.com with HTTP 200 responses."
+        comment: "✅ INFRASTRUCTURE ISSUES RESOLVED - Restarted all services successfully. Backend now running on port 8001, Frontend compiled and serving. Application accessible at https://bankflow-testing.preview.emergentagent.com with HTTP 200 responses."
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
       - working: true
         agent: "main"
@@ -4390,9 +4390,9 @@ backend:
           - Changed CORS configuration from wildcard "*" to strict allowlist
           - Updated CORS_ORIGINS environment variable in backend/.env
 <<<<<<< HEAD
-          - Configured single allowed origin: https://netflow-cash.preview.emergentagent.com
+          - Configured single allowed origin: https://bankflow-testing.preview.emergentagent.com
 =======
-          - Configured single allowed origin: https://netflow-cash.preview.emergentagent.com
+          - Configured single allowed origin: https://bankflow-testing.preview.emergentagent.com
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
           - Maintained allow_credentials=True for cookie-based authentication
           - Fixed missing 'deprecated' dependency (required by limits/slowapi)
@@ -4407,9 +4407,9 @@ backend:
           
           AFTER (SECURE):
 <<<<<<< HEAD
-          ✅ allow_origins=["https://netflow-cash.preview.emergentagent.com"]
+          ✅ allow_origins=["https://bankflow-testing.preview.emergentagent.com"]
 =======
-          ✅ allow_origins=["https://netflow-cash.preview.emergentagent.com"]
+          ✅ allow_origins=["https://bankflow-testing.preview.emergentagent.com"]
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
           ✅ Strict origin validation enforced by browser
           ✅ Only specified domain can make cross-origin requests
@@ -4443,9 +4443,9 @@ backend:
           
           ✅ TEST 1: Allowed Origin (PASS)
 <<<<<<< HEAD
-             - Origin: https://netflow-cash.preview.emergentagent.com
+             - Origin: https://bankflow-testing.preview.emergentagent.com
 =======
-             - Origin: https://netflow-cash.preview.emergentagent.com
+             - Origin: https://bankflow-testing.preview.emergentagent.com
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
              - Preflight OPTIONS request: HTTP 200
              - Access-Control-Allow-Origin header: Set correctly
@@ -4465,9 +4465,9 @@ backend:
           
           ✅ TEST 4: GET Request with Allowed Origin (PASS)
 <<<<<<< HEAD
-             - Origin: https://netflow-cash.preview.emergentagent.com
+             - Origin: https://bankflow-testing.preview.emergentagent.com
 =======
-             - Origin: https://netflow-cash.preview.emergentagent.com
+             - Origin: https://bankflow-testing.preview.emergentagent.com
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
              - Request: HTTP 200
              - CORS headers correctly set
@@ -4485,9 +4485,9 @@ backend:
           1. backend/.env:
              - Changed: CORS_ORIGINS="*"
 <<<<<<< HEAD
-             - To: CORS_ORIGINS="https://netflow-cash.preview.emergentagent.com"
+             - To: CORS_ORIGINS="https://bankflow-testing.preview.emergentagent.com"
 =======
-             - To: CORS_ORIGINS="https://netflow-cash.preview.emergentagent.com"
+             - To: CORS_ORIGINS="https://bankflow-testing.preview.emergentagent.com"
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
           
           2. backend/requirements.txt:
@@ -4504,9 +4504,9 @@ backend:
               CORSMiddleware,
               allow_credentials=True,  # Required for cookie-based auth
 <<<<<<< HEAD
-              allow_origins=["https://netflow-cash.preview.emergentagent.com"],
+              allow_origins=["https://bankflow-testing.preview.emergentagent.com"],
 =======
-              allow_origins=["https://netflow-cash.preview.emergentagent.com"],
+              allow_origins=["https://bankflow-testing.preview.emergentagent.com"],
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
               allow_methods=["*"],  # GET, POST, PUT, DELETE, PATCH, OPTIONS
               allow_headers=["*"],  # Common headers allowed
@@ -4555,9 +4555,9 @@ agent_communication:
       - Removed wildcard CORS configuration ("*")
       - Configured strict origin allowlist
 <<<<<<< HEAD
-      - Set single allowed origin: https://netflow-cash.preview.emergentagent.com
+      - Set single allowed origin: https://bankflow-testing.preview.emergentagent.com
 =======
-      - Set single allowed origin: https://netflow-cash.preview.emergentagent.com
+      - Set single allowed origin: https://bankflow-testing.preview.emergentagent.com
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
       - Maintained cookie credential support
       - Fixed dependency issue (deprecated package)
@@ -4581,9 +4581,9 @@ agent_communication:
       
       Allowed Origin:
 <<<<<<< HEAD
-      • https://netflow-cash.preview.emergentagent.com
+      • https://bankflow-testing.preview.emergentagent.com
 =======
-      • https://netflow-cash.preview.emergentagent.com
+      • https://bankflow-testing.preview.emergentagent.com
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
       
       CORS Headers Set:
