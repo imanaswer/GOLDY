@@ -5,9 +5,9 @@ from datetime import datetime
 
 class InvoiceStateManagementTester:
 <<<<<<< HEAD
-    def __init__(self, base_url="https://ledger-correction.preview.emergentagent.com"):
+    def __init__(self, base_url="https://inventory-fix-40.preview.emergentagent.com"):
 =======
-    def __init__(self, base_url="https://ledger-correction.preview.emergentagent.com"):
+    def __init__(self, base_url="https://inventory-fix-40.preview.emergentagent.com"):
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
         self.base_url = base_url
         self.token = None
