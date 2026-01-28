@@ -6503,12 +6503,16 @@ async def get_transactions_summary(
         try:
             accounts = await db.accounts.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
             account_types = {acc['id']: acc.get('account_type', 'unknown') for acc in accounts if 'id' in acc}
+            # FIX: Also get account names to properly identify cash/bank accounts
+            account_names = {acc['id']: acc.get('name', '').lower() for acc in accounts if 'id' in acc}
         except Exception:
             account_types = {}
+            account_names = {}
         
-        # Add account type to breakdown and calculate net
+        # Add account type and name to breakdown and calculate net
         for acc_id, breakdown in account_breakdown.items():
             breakdown['account_type'] = account_types.get(acc_id, 'unknown')
+            breakdown['account_name'] = account_names.get(acc_id, '')
             acc_type = breakdown['account_type']
             # For asset accounts (cash/bank), net = debit - credit (debit increases, credit decreases)
             # For income/expense accounts, net = credit - debit (credit increases, debit decreases)
@@ -6520,6 +6524,8 @@ async def get_transactions_summary(
             breakdown['debit'] = round(breakdown['debit'], 3)
         
         # Cash vs Bank breakdown
+        # FIX: Identify cash/bank accounts by account_type='asset' AND account name containing 'cash'/'bank'/'petty'
+        # This matches the pattern used in get_profit_loss_statement (lines 7734-7743)
         cash_credit = 0.0
         cash_debit = 0.0
         bank_credit = 0.0
@@ -6527,10 +6533,13 @@ async def get_transactions_summary(
         
         for breakdown in account_breakdown.values():
             acc_type = breakdown.get('account_type', 'unknown')
-            if acc_type in ['cash', 'petty']:
+            acc_name = breakdown.get('account_name', '').lower()
+            # Identify cash/petty accounts: asset type with 'cash' or 'petty' in name
+            if acc_type == 'asset' and ('cash' in acc_name or 'petty' in acc_name):
                 cash_credit += breakdown['credit']
                 cash_debit += breakdown['debit']
-            elif acc_type == 'bank':
+            # Identify bank accounts: asset type with 'bank' in name
+            elif acc_type == 'asset' and 'bank' in acc_name:
                 bank_credit += breakdown['credit']
                 bank_debit += breakdown['debit']
         
