@@ -467,25 +467,37 @@ const ReturnsPage = () => {
     }
   };
   
-  // Delete return
-  const handleDeleteReturn = async (returnId) => {
-    if (!window.confirm('Are you sure you want to delete this return? This action cannot be undone.')) {
-      return;
-    }
+  // Open delete confirmation dialog
+  const openDeleteDialog = (returnObj) => {
+    setReturnToDelete(returnObj);
+    setShowDeleteDialog(true);
+  };
+  
+  // Close delete dialog
+  const closeDeleteDialog = () => {
+    setShowDeleteDialog(false);
+    setReturnToDelete(null);
+  };
+  
+  // Delete return (confirmed)
+  const handleDeleteReturn = async () => {
+    if (!returnToDelete) return;
     
-    setLoading(true);
+    setDeleting(true);
     setError('');
     setSuccess('');
     
     try {
-      await API.delete(`/api/returns/${returnId}`);
-      setSuccess('Return deleted successfully');
+      await API.delete(`/api/returns/${returnToDelete.id}`);
+      setSuccess(`Return ${returnToDelete.return_number} deleted successfully`);
+      closeDeleteDialog();
       loadReturns();
     } catch (err) {
       console.error('Error deleting return:', err);
       setError(err.response?.data?.detail || 'Failed to delete return');
+      closeDeleteDialog();
     } finally {
-      setLoading(false);
+      setDeleting(false);
     }
   };
   
