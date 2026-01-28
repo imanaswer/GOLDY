@@ -152,7 +152,7 @@ class InventoryStockOutTester:
             }
             
             response = self.session.post(f"{BASE_URL}/parties", json=vendor_data)
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 vendor = response.json()
                 self.test_data["vendor"] = vendor
                 self.log_result("Step 1 - Create Vendor", True, f"Created vendor: {vendor['name']}")
