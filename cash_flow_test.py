@@ -172,7 +172,7 @@ class CashFlowTester:
                 self.test_data["category"] = response.json()
                 self.log_result("Setup Inventory", True, f"Created category: {self.test_data['category']['name']}")
             else:
-                self.log_result("Setup Inventory", False, "", f"Failed to create category: {response.text}")
+                self.log_result("Setup Inventory", False, "", f"Failed to create category: {response.status_code} - {response.text}")
                 return False
 
             return True
