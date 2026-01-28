@@ -1146,8 +1146,8 @@ class Return(BaseModel):
     total_amount: float = 0.0  # Input as float, stored as Decimal128 with 2 decimals
     reason: Optional[str] = None  # Return reason
     
-    # Refund details
-    refund_mode: str  # "money" | "gold" | "mixed"
+    # Refund details (optional at draft creation, required at finalization)
+    refund_mode: Optional[str] = None  # "money" | "gold" | "mixed" - Required at finalize, optional at draft
     refund_money_amount: float = 0.0  # Input as float, stored as Decimal128 with 2 decimals
     refund_gold_grams: float = 0.0  # Input as float, stored as Decimal128 with 3 decimals
     refund_gold_purity: Optional[int] = None  # Purity of gold being refunded
