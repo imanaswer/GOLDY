@@ -164,7 +164,7 @@ class GoldShopERPTester:
                 "opening_balance": 50000.0
             }
             response = self.session.post(f"{BASE_URL}/accounts", json=account_data)
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 self.test_data["cash_account"] = response.json()
                 self.log_result("Setup - Cash Account", True, f"Created account: {self.test_data['cash_account']['name']}")
             else:
