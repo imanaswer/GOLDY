@@ -72,7 +72,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 
 # Configuration - Use the external URL from frontend/.env
-BASE_URL = "https://erp-backend-tests.preview.emergentagent.com/api"
+BASE_URL = "https://jobcard-status.preview.emergentagent.com/api"
 HEADERS = {"Content-Type": "application/json"}
 
 class InventoryStockOutTester:

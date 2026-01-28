@@ -44,9 +44,9 @@ class PurchasePaymentFlowTester:
                         self.base_url = f"{backend_url}/api"
                         break
                 else:
-                    self.base_url = "https://erp-backend-tests.preview.emergentagent.com/api"
+                    self.base_url = "https://jobcard-status.preview.emergentagent.com/api"
         except:
-            self.base_url = "https://erp-backend-tests.preview.emergentagent.com/api"
+            self.base_url = "https://jobcard-status.preview.emergentagent.com/api"
         
         self.session.headers.update({"Content-Type": "application/json"})
         

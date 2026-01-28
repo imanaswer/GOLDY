@@ -482,9 +482,9 @@ def main():
     """Main execution function"""
     # Configuration
 <<<<<<< HEAD
-    BASE_URL = "https://erp-backend-tests.preview.emergentagent.com"
+    BASE_URL = "https://jobcard-status.preview.emergentagent.com"
 =======
-    BASE_URL = "https://erp-backend-tests.preview.emergentagent.com"
+    BASE_URL = "https://jobcard-status.preview.emergentagent.com"
 >>>>>>> b31b2899369e7f105da7aa8839d08cfdd4516b95
     USERNAME = "admin"
     PASSWORD = "admin123"
