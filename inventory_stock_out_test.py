@@ -190,7 +190,7 @@ class InventoryStockOutTester:
                 self.log_result("Step 3 - Finalize Purchase", True, 
                               f"Finalized purchase - should create Stock IN movement")
             else:
-                self.log_result("Step 3 - Finalize Purchase", False, "", f"Failed to finalize purchase: {response.text}")
+                self.log_result("Step 3 - Finalize Purchase", False, "", f"Failed to finalize purchase: {response.status_code} - {response.text}")
                 return False
 
             # Step 4: Verify Stock IN movement exists
