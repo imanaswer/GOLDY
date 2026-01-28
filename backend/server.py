@@ -3900,17 +3900,24 @@ async def update_purchase(
     updates: Dict,
     current_user: User = Depends(require_permission('purchases.create'))
 ):
-    """Update a purchase (only draft purchases can be edited)"""
+    """
+    Update a purchase.
+    
+    Edit Rules:
+    - Allow edit when status = Draft or Partially Paid
+    - Block edit when locked = True (fully paid and finalized)
+    - This matches Invoice behavior for consistency
+    """
     # Get existing purchase
     existing = await db.purchases.find_one({"id": purchase_id, "is_deleted": False})
     if not existing:
         raise HTTPException(status_code=404, detail="Purchase not found")
     
-    # Check if purchase is finalized
-    if existing.get("status") == "finalized":
+    # Check if purchase is locked
+    if existing.get("locked"):
         raise HTTPException(
             status_code=400,
-            detail="Cannot edit finalized purchase. Finalized purchases are immutable to maintain financial integrity."
+            detail="Cannot edit locked purchase. Purchase is finalized and fully paid. Locked purchases are immutable to maintain financial integrity."
         )
     
     # Validate vendor if being updated
