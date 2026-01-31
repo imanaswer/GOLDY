@@ -1346,15 +1346,21 @@ export default function JobCardsPage() {
                     const goldRate = parseFloat(formData.gold_rate_at_jobcard) || 0;
                     const weightIn = parseFloat(item.weight_in) || 0;
                     const makingValue = parseFloat(item.making_charge_value) || 0;
+                    const inches = parseFloat(item.inches) || 0;
                     const vatPercent = parseFloat(item.vat_percent) || 0;
                     
                     // Calculate metal value (weight × gold rate)
                     const metalValue = weightIn * goldRate;
                     
-                    // Calculate making charges
-                    const makingCharges = item.making_charge_type === 'per_gram' 
-                      ? makingValue * weightIn 
-                      : makingValue;
+                    // Calculate making charges based on type
+                    let makingCharges = 0;
+                    if (item.making_charge_type === 'per_gram') {
+                      makingCharges = makingValue * weightIn;
+                    } else if (item.making_charge_type === 'per_inch') {
+                      makingCharges = makingValue * inches;
+                    } else {
+                      makingCharges = makingValue;
+                    }
                     
                     // Calculate subtotal before VAT
                     const subtotal = metalValue + makingCharges;
