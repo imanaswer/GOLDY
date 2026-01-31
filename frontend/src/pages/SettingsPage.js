@@ -43,9 +43,17 @@ export default function SettingsPage() {
     is_active: true
   });
 
+  // Shop Settings State
+  const [shopSettings, setShopSettings] = useState(null);
+  const [shopSettingsLoading, setShopSettingsLoading] = useState(false);
+  const [shopSettingsData, setShopSettingsData] = useState({
+    purchase_conversion_factor: 0.920
+  });
+
   useEffect(() => {
     loadUsers();
     loadWorkTypes();
+    loadShopSettings();
   }, []);
 
   const loadUsers = async () => {
