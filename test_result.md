@@ -1057,29 +1057,65 @@ test_plan:
   test_priority: "sequential"
 
 frontend:
-  - task: "Work Types Management Page - UI Layout and Functionality"
+  - task: "PurchasesPage - Multiple Items Form"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/WorkTypesPage.js"
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-      - working: true
-        agent: "testing"
-        comment: "✅ COMPREHENSIVE TESTING COMPLETED - Work Types Management feature VERIFIED WORKING. Successfully tested: (1) Navigation - Work Types menu item visible in sidebar after Workers, navigates to /work-types correctly, (2) Page Layout - Title 'Work Types', subtitle 'Manage work types for job cards', Add Work Type button, search input, All Status filter dropdown, table with NAME/DESCRIPTION/STATUS/ACTIONS columns all present, (3) Create Work Type - Dialog opens with 'Add Work Type' title, form fields (Name, Description, Active checkbox) work correctly, Active checkbox checked by default, Create button functions, success toast appears, (4) Data Display - New work type 'Custom Engraving' appears in table with Active status badge, existing work types (Custom, Polish, Repair, Resize) display correctly, (5) Form Validation - Required name field validation working, (6) Toast Notifications - Success message 'Work type created successfully' appears after creation. All core functionality working as expected."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added 'Multiple Items' toggle checkbox. Dynamic item rows with add/remove buttons. Each row has: Description, Weight (3 decimals with step=0.001), Purity, Rate/g (3 decimals), Amount (auto-calculated). Shows total amount as sum of all items. Displays conversion factor (read-only from settings). Items state managed with updateItem, addItem, removeItem functions."
 
-  - task: "Work Types Integration with Job Cards"
+  - task: "PurchasesPage - Walk-in Vendor Support"
     implemented: true
-    working: true
-    file: "/app/frontend/src/pages/JobCardsPage.js"
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-      - working: true
-        agent: "testing"
-        comment: "✅ INTEGRATION VERIFIED - Work Types successfully integrated with Job Cards. JobCardsPage loads work types from /api/work-types?active=true endpoint. Custom work types appear in work type dropdown when creating job cards. Integration working correctly between Work Types management and Job Card creation workflow."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added 'Walk-in Vendor' toggle checkbox. When walk-in=true: Shows Customer ID (Oman ID) input with validation, Shows Vendor Name input with validation, Hides vendor party dropdown. When walk-in=false: Shows vendor party dropdown, Hides Customer ID and Vendor name fields. Proper validation ensures walk-in requires both customer ID and vendor name."
+
+  - task: "PurchasesPage - Display Enhancements"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Updated getVendorName function to handle walk-in vendors (checks is_walk_in flag and returns walk_in_vendor_name). Table shows 'Walk-in' badge for walk-in vendors. Table shows multiple items count badge when items exist. View dialog displays all items in expandable cards with individual details. View dialog shows walk-in vendor info including Customer ID. View dialog conditionally shows single-item OR multiple-items section."
+
+  - task: "PurchasesPage - Calculations & Validations"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Auto-calculation: amount = (weight × rate) ÷ conversion_factor for each item. 3 decimal precision throughout (step=0.001 in inputs, toFixed(3) in displays). Validation: Walk-in requires customer ID + vendor name. Validation: Saved vendor requires vendor_party_id. Validation: Each item needs description, weight > 0, rate > 0. Proper payload construction for single vs multiple items."
+
+  - task: "SettingsPage - Conversion Factor"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/SettingsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ VERIFIED & ENHANCED - Shop Settings section already exists (admin-only). Input for purchase_conversion_factor with default 0.920. Validation enforces range 0.900-0.930. Save functionality calls PUT /api/settings/shop. Displays usage in formula explanation. Shows warning about affecting future purchases only."
 
 backend:
   - task: "Work Types API Endpoints"
