@@ -888,8 +888,9 @@ class JobCardItem(BaseModel):
     purity: int
     work_type: str
     remarks: Optional[str] = None
-    making_charge_type: Optional[str] = None  # 'flat' or 'per_gram'
+    making_charge_type: Optional[str] = None  # 'flat', 'per_gram', or 'per_inch'
     making_charge_value: Optional[float] = None
+    inches: Optional[float] = None  # Required when making_charge_type is 'per_inch'
     vat_percent: Optional[float] = None
     vat_amount: Optional[float] = None
 
