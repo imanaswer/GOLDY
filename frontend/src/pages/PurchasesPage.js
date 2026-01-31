@@ -69,8 +69,19 @@ export default function PurchasesPage() {
   // Form validation errors
   const [errors, setErrors] = useState({});
 
+  // NEW: Multiple items and walk-in vendor support
+  const [isMultipleItems, setIsMultipleItems] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [conversionFactor, setConversionFactor] = useState(0.920);
+  const [items, setItems] = useState([
+    { id: '1', description: '', weight_grams: '', entered_purity: '916', rate_per_gram_22k: '', calculated_amount: 0 }
+  ]);
+
   const [formData, setFormData] = useState({
     vendor_party_id: '',
+    is_walk_in: false,
+    walk_in_vendor_name: '',
+    vendor_oman_id: '',
     date: new Date().toISOString().split('T')[0],
     description: '',
     weight_grams: '',
