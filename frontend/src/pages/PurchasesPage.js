@@ -1053,7 +1053,7 @@ export default function PurchasesPage() {
                 </div>
               )}
 
-              {!isWalkIn && (
+              {!isWalkIn && !isMultipleItems && (
                 <div className="space-y-2">
                   <Label>Description</Label>
                   <Input
