@@ -21,6 +21,7 @@ import SettingsPage from './pages/SettingsPage';
 import PurchasesPage from './pages/PurchasesPage';
 import WorkersPage from './pages/WorkersPage';
 import ReturnsPage from './pages/ReturnsPage';
+import WorkTypesPage from './pages/WorkTypesPage';
 
 function App() {
   return (
