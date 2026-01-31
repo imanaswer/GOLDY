@@ -338,7 +338,15 @@ class JobCardEnhancementsTester:
     def convert_job_card_to_invoice(self, job_card_id):
         """Convert job card to invoice"""
         try:
-            response = self.session.post(f"{BACKEND_URL}/jobcards/{job_card_id}/convert-to-invoice")
+            # The endpoint requires invoice_data in the body
+            invoice_data = {
+                "invoice_type": "sale",
+                "payment_status": "unpaid",
+                "status": "draft",
+                "notes": "Converted from job card for testing"
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/jobcards/{job_card_id}/convert-to-invoice", json=invoice_data)
             
             if response.status_code == 200:
                 result = response.json()
