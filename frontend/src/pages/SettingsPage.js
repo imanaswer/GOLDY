@@ -137,6 +137,69 @@ export default function SettingsPage() {
     }
   };
 
+  // Work Types Management Functions
+  const loadWorkTypes = async () => {
+    try {
+      setWorkTypeLoading(true);
+      const response = await API.get(`/api/work-types`);
+      setWorkTypes(response.data.items || []);
+    } catch (error) {
+      toast.error('Failed to load work types');
+    } finally {
+      setWorkTypeLoading(false);
+    }
+  };
+
+  const handleWorkTypeSave = async () => {
+    if (!workTypeFormData.name.trim()) {
+      toast.error('Work type name is required');
+      return;
+    }
+
+    try {
+      if (editingWorkType) {
+        await API.patch(`/api/work-types/${editingWorkType.id}`, workTypeFormData);
+        toast.success('Work type updated successfully');
+      } else {
+        await API.post(`/api/work-types`, workTypeFormData);
+        toast.success('Work type created successfully');
+      }
+      
+      setShowWorkTypeDialog(false);
+      setEditingWorkType(null);
+      setWorkTypeFormData({
+        name: '',
+        description: '',
+        is_active: true
+      });
+      loadWorkTypes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Operation failed');
+    }
+  };
+
+  const handleWorkTypeEdit = (workType) => {
+    setEditingWorkType(workType);
+    setWorkTypeFormData({
+      name: workType.name,
+      description: workType.description || '',
+      is_active: workType.is_active
+    });
+    setShowWorkTypeDialog(true);
+  };
+
+  const handleWorkTypeDelete = async () => {
+    try {
+      await API.delete(`/api/work-types/${deletingWorkType.id}`);
+      toast.success('Work type deleted successfully');
+      setShowWorkTypeDeleteDialog(false);
+      setDeletingWorkType(null);
+      loadWorkTypes();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete work type');
+    }
+  };
+
   const canManageUsers = user?.role === 'admin' || user?.role === 'manager';
 
   return (
