@@ -3974,24 +3974,41 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
         await db.transactions.insert_one(payable_transaction.model_dump())
     
     # Create audit log
+    audit_changes = {
+        "vendor": vendor_name,
+        "is_walk_in": is_walk_in,
+        "conversion_factor": conversion_factor,
+        "amount_total": purchase.amount_total,
+        "paid_amount_money": purchase.paid_amount_money,
+        "balance_due_money": purchase.balance_due_money,
+        "status": calculated_status,
+        "auto_finalized": True
+    }
+    
+    if is_walk_in:
+        audit_changes["vendor_oman_id"] = purchase.vendor_oman_id
+    else:
+        audit_changes["vendor_party_id"] = purchase.vendor_party_id
+    
+    if purchase_data["items"]:
+        audit_changes["items_count"] = len(purchase_data["items"])
+        audit_changes["total_weight_grams"] = purchase.weight_grams
+    else:
+        audit_changes["weight_grams"] = purchase.weight_grams
+        audit_changes["entered_purity"] = purchase.entered_purity
+    
+    if purchase.advance_in_gold_grams:
+        audit_changes["advance_in_gold_grams"] = purchase.advance_in_gold_grams
+    if purchase.exchange_in_gold_grams:
+        audit_changes["exchange_in_gold_grams"] = purchase.exchange_in_gold_grams
+    
     await create_audit_log(
         user_id=current_user.id,
         user_name=current_user.username,
         module="purchases",
         record_id=purchase_id,
         action="create",
-        changes={
-            "vendor_party_id": purchase.vendor_party_id,
-            "weight_grams": purchase.weight_grams,
-            "entered_purity": purchase.entered_purity,
-            "amount_total": purchase.amount_total,
-            "paid_amount_money": purchase.paid_amount_money,
-            "balance_due_money": purchase.balance_due_money,
-            "advance_in_gold_grams": purchase.advance_in_gold_grams,
-            "exchange_in_gold_grams": purchase.exchange_in_gold_grams,
-            "status": calculated_status,
-            "auto_finalized": True
-        }
+        changes=audit_changes
     )
     
     # Return the created purchase with correct status
