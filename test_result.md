@@ -2516,40 +2516,74 @@ backend:
 
 frontend:
   - task: "PurchasesPage - Multiple Items Form"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: "needs_testing"
     file: "/app/frontend/src/pages/PurchasesPage.js"
     stuck_count: 0
     priority: "critical"
     needs_retesting: true
     status_history:
-      - working: "NA"
+      - working: "needs_testing"
         agent: "main"
-        comment: "NOT IMPLEMENTED - Will add: Dynamic item rows (add/remove), Each row: description, weight, purity, rate, auto-calculated amount, Total amount display, Conversion factor display (read-only)"
+        comment: |
+          ✅ IMPLEMENTED - Multiple items form fully functional:
+          - "Multiple Items" toggle checkbox added
+          - Dynamic item rows with Add/Remove buttons
+          - Each row has: Description, Weight (3 decimals), Purity, Rate (3 decimals)
+          - Auto-calculated amount per item using formula: (weight × rate) ÷ conversion_factor
+          - Total amount display showing sum of all items
+          - Conversion factor displayed at top (read-only, fetched from settings)
+          - Proper validation for each item (description, weight > 0, rate > 0)
+          - Items array properly sent to backend in payload
+          - Beautiful UI with amber theme for items section
   
   - task: "PurchasesPage - Walk-in Vendor Support"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: "needs_testing"
     file: "/app/frontend/src/pages/PurchasesPage.js"
     stuck_count: 0
     priority: "critical"
     needs_retesting: true
     status_history:
-      - working: "NA"
+      - working: "needs_testing"
         agent: "main"
-        comment: "NOT IMPLEMENTED - Will add: Walk-in vendor toggle, Customer ID (Oman ID) field, Vendor name field for walk-in, Conditional party dropdown (only for saved vendors)"
+        comment: |
+          ✅ IMPLEMENTED - Walk-in vendor support fully functional:
+          - "Walk-in Vendor" toggle checkbox with User icon
+          - When walk-in = true:
+            * Customer ID (Oman ID) input field shown (required)
+            * Vendor Name input field shown (required)
+            * Vendor party dropdown hidden
+            * Purple-themed section for walk-in fields
+            * Informative message explaining walk-in purchases
+          - When walk-in = false:
+            * Vendor party dropdown shown
+            * Customer ID and Vendor name fields hidden
+          - Proper validation: walk-in requires customer ID + vendor name
+          - Correct payload sent to backend with is_walk_in flag
   
   - task: "Settings Page - Conversion Factor Configuration"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: "needs_testing"
     file: "/app/frontend/src/pages/SettingsPage.js"
     stuck_count: 0
     priority: "high"
     needs_retesting: true
     status_history:
-      - working: "NA"
+      - working: "needs_testing"
         agent: "main"
-        comment: "NOT IMPLEMENTED - Will add: Conversion factor input (0.920 or 0.917), Admin only access, Save to shop settings API"
+        comment: |
+          ✅ IMPLEMENTED - Conversion factor configuration added:
+          - New "Shop Settings" card added before Work Types
+          - Admin-only access (user.role === 'admin' check)
+          - Input field for purchase_conversion_factor with 3 decimal precision
+          - Default value: 0.920
+          - Range validation: 0.900 to 0.930
+          - "Save Settings" button to update via PUT /api/settings/shop
+          - Clear description of formula usage
+          - Warning message about impact on future purchases
+          - Suggestions for common values (0.920, 0.917)
+          - Blue-themed UI matching settings aesthetic
 
 metadata:
   created_by: "main_agent"
