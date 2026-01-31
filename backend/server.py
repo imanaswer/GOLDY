@@ -4591,8 +4591,12 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
         
         # Use making charge from job card if provided, otherwise use default
         if item.get('making_charge_value') is not None:
-            if item.get('making_charge_type') == 'per_gram':
+            making_charge_type = item.get('making_charge_type', 'flat')
+            if making_charge_type == 'per_gram':
                 making_value = round(float(item.get('making_charge_value', 0)) * weight, 3)
+            elif making_charge_type == 'per_inch':
+                inches = float(item.get('inches', 0))
+                making_value = round(float(item.get('making_charge_value', 0)) * inches, 3)
             else:  # flat
                 making_value = round(float(item.get('making_charge_value', 0)), 3)
         else:
@@ -4610,7 +4614,9 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
             'purity': item.get('purity', 916),
             'metal_rate': metal_rate,
             'gold_value': gold_value,
+            'making_charge_type': item.get('making_charge_type'),
             'making_value': making_value,
+            'inches': item.get('inches'),
             'vat_percent': item_vat_percent,
         })
         
