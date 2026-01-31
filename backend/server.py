@@ -5559,7 +5559,8 @@ async def finalize_invoice(invoice_id: str, current_user: User = Depends(require
                     reference_id=invoice.id,
                     created_by=current_user.id
                 )
-                await db.stock_movements.insert_one(movement.model_dump())
+                movement_dict = convert_stock_movement_to_decimal(movement.model_dump())
+                await db.stock_movements.insert_one(movement_dict)
         
         # If there were stock errors, rollback the invoice finalization
         # CRITICAL: Status rollback must NOT delete timestamps (audit safety)
