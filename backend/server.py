@@ -942,8 +942,9 @@ class InvoiceItem(BaseModel):
     metal_rate: float  # Gold rate per gram
     gold_value: float  # net_gold_weight * metal_rate
     # Charges breakdown
-    making_charge_type: Optional[str] = None  # 'per_gram' or 'flat'
+    making_charge_type: Optional[str] = None  # 'per_gram', 'flat', or 'per_inch'
     making_value: float  # Making charges
+    inches: Optional[float] = None  # Required when making_charge_type is 'per_inch'
     stone_charges: float = 0.0  # Stone/gem charges
     wastage_charges: float = 0.0  # Wastage charges
     item_discount: float = 0.0  # Item-level discount
