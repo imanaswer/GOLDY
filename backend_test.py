@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive Backend API Testing for Gold Shop ERP
-Testing Returns Module workflow and previously fixed features
+Testing Gold Shop ERP Purchase Module with ALL scenarios
 """
 
 import requests
@@ -14,7 +14,7 @@ import time
 BACKEND_URL = "https://gold-vendor-portal.preview.emergentagent.com/api"
 TEST_USER = {
     "username": "admin_netflow_test",
-    "password": "TestAdmin@123"  # Test admin user for net flow testing
+    "password": "TestAdmin@123"  # Test admin user for purchase module testing
 }
 
 class BackendTester:
