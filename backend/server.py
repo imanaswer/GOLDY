@@ -6765,7 +6765,9 @@ async def create_account(account_data: dict, current_user: User = Depends(requir
     
     try:
         account = Account(**account_data, created_by=current_user.id)
-        await db.accounts.insert_one(account.model_dump())
+        # Convert to Decimal128 for precise storage
+        account_dict = convert_account_to_decimal(account.model_dump())
+        await db.accounts.insert_one(account_dict)
         await create_audit_log(current_user.id, current_user.full_name, "account", account.id, "create")
         return account
     except ValueError as e:
