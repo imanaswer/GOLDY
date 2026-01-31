@@ -1260,14 +1260,30 @@ export default function JobCardsPage() {
                       <SelectContent>
                         <SelectItem value="flat">Flat Rate</SelectItem>
                         <SelectItem value="per_gram">Per Gram</SelectItem>
+                        <SelectItem value="per_inch">Per Inch Rate</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   
+                  {/* Inches Field (only for per_inch type) */}
+                  {item.making_charge_type === 'per_inch' && (
+                    <div>
+                      <Label className="text-xs">Inches</Label>
+                      <Input
+                        data-testid={`inches-${idx}`}
+                        type="number"
+                        step="0.001"
+                        value={item.inches || ''}
+                        onChange={(e) => updateItem(idx, 'inches', e.target.value)}
+                        placeholder="0.000"
+                      />
+                    </div>
+                  )}
+                  
                   {/* Making Charge Value */}
                   <div>
                     <Label className="text-xs">
-                      Making Charge ({item.making_charge_type === 'per_gram' ? 'OMR/g' : 'OMR'})
+                      Making Charge ({item.making_charge_type === 'per_gram' ? 'OMR/g' : item.making_charge_type === 'per_inch' ? 'OMR/inch' : 'OMR'})
                     </Label>
                     <Input
                       data-testid={`making-charge-value-${idx}`}
