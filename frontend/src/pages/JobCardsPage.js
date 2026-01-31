@@ -63,6 +63,7 @@ export default function JobCardsPage() {
     customer_type: 'saved',  // 'saved' or 'walk_in'
     customer_id: '',
     customer_name: '',
+    customer_oman_id: '',  // Customer ID (Oman ID) - Optional
     walk_in_name: '',
     walk_in_phone: '',
     worker_id: '',
@@ -83,6 +84,7 @@ export default function JobCardsPage() {
       remarks: '',
       making_charge_type: 'flat',
       making_charge_value: 0,
+      inches: 0,  // For per_inch making charge type
       vat_percent: 5
     }]
   });
