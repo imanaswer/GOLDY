@@ -1906,6 +1906,7 @@ export default function JobCardsPage() {
                         <th className="px-3 py-2 text-right font-semibold">Weight Out (g)</th>
                         <th className="px-3 py-2 text-right font-semibold">Purity</th>
                         <th className="px-3 py-2 text-left font-semibold">Work Type</th>
+                        <th className="px-3 py-2 text-left font-semibold">Making Charge</th>
                         <th className="px-3 py-2 text-left font-semibold">Remarks</th>
                       </tr>
                     </thead>
@@ -1919,7 +1920,25 @@ export default function JobCardsPage() {
                           <td className="px-3 py-2 text-right font-mono">{(item.weight_out || 0).toFixed(3)}</td>
                           <td className="px-3 py-2 text-right font-mono">{item.purity || 916}K</td>
                           <td className="px-3 py-2 capitalize">{item.work_type || '-'}</td>
-                          <td className="px-3 py-2 text-xs">{item.remarks || '-'}</td>
+                          <td className="px-3 py-2 text-sm">
+                            {item.making_charge_value ? (
+                              <div>
+                                <div className="font-mono">
+                                  {item.making_charge_type === 'per_gram' 
+                                    ? `${item.making_charge_value} OMR/g` 
+                                    : item.making_charge_type === 'per_inch'
+                                    ? `${item.making_charge_value} OMR/inch`
+                                    : `${item.making_charge_value} OMR`}
+                                </div>
+                                {item.making_charge_type === 'per_inch' && item.inches && (
+                                  <div className="text-xs text-muted-foreground">
+                                    ({item.inches} inches)
+                                  </div>
+                                )}
+                              </div>
+                            ) : '-'}
+                          </td>
+                          <td className="px-3 py-2 text-sm">{item.remarks || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
