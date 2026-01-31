@@ -6987,7 +6987,7 @@ async def create_transaction(transaction_data: dict, current_user: User = Depend
         created_by=current_user.id
     )
     
-    await db.transactions.insert_one(transaction.model_dump())
+    await db.transactions.insert_one(convert_transaction_to_decimal(transaction.model_dump()))
     
     # Calculate balance delta using account-type-aware logic
     account_type = account.get('account_type', 'asset')
