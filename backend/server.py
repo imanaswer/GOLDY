@@ -3051,6 +3051,111 @@ async def delete_worker(worker_id: str, current_user: User = Depends(get_current
     await create_audit_log(current_user.id, current_user.full_name, "worker", worker_id, "delete")
     return {"message": "Worker deleted successfully"}
 
+# ============================================================================
+# WORK TYPES ENDPOINTS (Customizable Job Card Work Types)
+# ============================================================================
+
+@api_router.get("/work-types")
+@limiter.limit("1000/hour")
+async def get_work_types(
+    request: Request,
+    active: Optional[bool] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all work types with optional active filter"""
+    query = {"is_deleted": False}
+    if active is not None:
+        query['is_active'] = active
+    
+    work_types = await db.work_types.find(query, {"_id": 0}).sort("name", 1).to_list(None)
+    return {"items": work_types}
+
+@api_router.post("/work-types", response_model=WorkType, status_code=201)
+@limiter.limit("1000/hour")
+async def create_work_type(request: Request, work_type_data: dict, current_user: User = Depends(get_current_user)):
+    """Create a new work type"""
+    # Validate work type name
+    name = work_type_data.get('name', '').strip()
+    if not name or len(name) < 2:
+        raise HTTPException(status_code=400, detail="Work type name must be at least 2 characters")
+    
+    work_type_data['name'] = name
+    
+    # Check for duplicate name (case-insensitive)
+    existing_name = await db.work_types.find_one({
+        "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"},
+        "is_deleted": False
+    })
+    if existing_name:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Work type '{name}' already exists"
+        )
+    
+    work_type = WorkType(**work_type_data, created_by=current_user.id)
+    await db.work_types.insert_one(work_type.model_dump())
+    await create_audit_log(current_user.id, current_user.full_name, "work_type", work_type.id, "create")
+    return work_type
+
+@api_router.get("/work-types/{work_type_id}", response_model=WorkType)
+async def get_work_type(work_type_id: str, current_user: User = Depends(get_current_user)):
+    """Get a specific work type by ID"""
+    work_type = await db.work_types.find_one({"id": work_type_id, "is_deleted": False}, {"_id": 0})
+    if not work_type:
+        raise HTTPException(status_code=404, detail="Work type not found")
+    return WorkType(**work_type)
+
+@api_router.patch("/work-types/{work_type_id}")
+async def update_work_type(work_type_id: str, update_data: dict, current_user: User = Depends(get_current_user)):
+    """Update a work type"""
+    existing = await db.work_types.find_one({"id": work_type_id, "is_deleted": False})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Work type not found")
+    
+    # Validate work type name if name is being changed
+    if 'name' in update_data:
+        name = update_data['name'].strip()
+        if not name or len(name) < 2:
+            raise HTTPException(status_code=400, detail="Work type name must be at least 2 characters")
+        
+        update_data['name'] = name
+        
+        # Check for duplicate name (case-insensitive, excluding current work type)
+        existing_name = await db.work_types.find_one({
+            "name": {"$regex": f"^{re.escape(name)}$", "$options": "i"},
+            "is_deleted": False,
+            "id": {"$ne": work_type_id}
+        })
+        if existing_name:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Work type '{name}' already exists"
+            )
+    
+    await db.work_types.update_one({"id": work_type_id}, {"$set": update_data})
+    await create_audit_log(current_user.id, current_user.full_name, "work_type", work_type_id, "update", update_data)
+    return {"message": "Work type updated successfully"}
+
+@api_router.delete("/work-types/{work_type_id}")
+async def delete_work_type(work_type_id: str, current_user: User = Depends(get_current_user)):
+    """Soft delete a work type"""
+    existing = await db.work_types.find_one({"id": work_type_id, "is_deleted": False})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Work type not found")
+    
+    await db.work_types.update_one(
+        {"id": work_type_id},
+        {"$set": {
+            "is_deleted": True,
+            "deleted_at": datetime.now(timezone.utc),
+            "deleted_by": current_user.id
+        }}
+    )
+    await create_audit_log(current_user.id, current_user.full_name, "work_type", work_type_id, "delete")
+    return {"message": "Work type deleted successfully"}
+    await create_audit_log(current_user.id, current_user.full_name, "worker", worker_id, "delete")
+    return {"message": "Worker deleted successfully"}
+
 @api_router.get("/parties/{party_id}/ledger")
 async def get_party_ledger(party_id: str, current_user: User = Depends(require_permission('parties.view'))):
     invoices = await db.invoices.find({"customer_id": party_id, "is_deleted": False}, {"_id": 0}).to_list(1000)
