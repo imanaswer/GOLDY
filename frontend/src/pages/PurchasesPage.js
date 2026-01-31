@@ -1505,6 +1505,67 @@ export default function PurchasesPage() {
                 </div>
               </div>
 
+              {/* Multiple Items Section (if applicable) */}
+              {viewPurchase.items && viewPurchase.items.length > 0 && (
+                <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-lg text-amber-900 flex items-center gap-2">
+                      <Package className="w-6 h-6 text-amber-600" />
+                      Purchase Items ({viewPurchase.items.length})
+                    </h3>
+                    <Badge className="bg-amber-100 text-amber-800 px-3 py-1">Multiple Items Purchase</Badge>
+                  </div>
+
+                  {/* Items Table */}
+                  <div className="space-y-3">
+                    {viewPurchase.items.map((item, index) => (
+                      <div key={index} className="bg-white border-2 border-amber-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-bold text-amber-900 bg-amber-100 px-2 py-1 rounded">
+                            Item #{index + 1}
+                          </span>
+                          <span className="text-lg font-bold font-mono text-amber-900">
+                            {item.calculated_amount?.toFixed(3) || '0.000'} OMR
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div>
+                            <div className="text-xs text-amber-700 font-medium uppercase mb-1">Description</div>
+                            <div className="font-medium text-sm">{item.description}</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-amber-700 font-medium uppercase mb-1">Weight</div>
+                            <div className="font-mono font-semibold">{item.weight_grams?.toFixed(3) || '0.000'} g</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-amber-700 font-medium uppercase mb-1">Purity</div>
+                            <div className="font-mono font-semibold">{item.entered_purity || 916}K</div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-amber-700 font-medium uppercase mb-1">Rate/g (22K)</div>
+                            <div className="font-mono font-semibold">{item.rate_per_gram_22k?.toFixed(3) || '0.000'} OMR</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Total Summary */}
+                  <div className="mt-4 p-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg shadow-md">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs opacity-90">Total Purchase Amount</div>
+                        <div className="font-semibold">All Items ({viewPurchase.items.length})</div>
+                      </div>
+                      <span className="font-mono font-bold text-2xl">
+                        {(viewPurchase.amount_total || 0).toFixed(3)} OMR
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* ENHANCED Gold Details Section - Option C Improvements */}
               <div className="bg-gradient-to-br from-amber-50 via-yellow-50 to-amber-50 border-2 border-amber-300 rounded-xl p-5 shadow-lg">
                 <div className="flex items-center justify-between mb-4">
