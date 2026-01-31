@@ -2985,9 +2985,9 @@ class BackendTester:
             return None
 
 def main():
-    """Main test execution - Focus on Net Flow / Cash Flow / Bank Flow fix"""
-    print("Starting Net Flow / Cash Flow / Bank Flow Fix Testing")
-    print("Testing the backend filtering logic fix for transactions summary")
+    """Main test execution - Focus on Gold Shop ERP Purchase Module"""
+    print("Starting Gold Shop ERP Purchase Module Testing")
+    print("Testing ALL scenarios documented in test_result.md")
     print("="*80)
     
     tester = BackendTester()
@@ -2997,11 +2997,8 @@ def main():
         print("❌ Authentication failed. Cannot proceed with tests.")
         return
     
-    # Primary Focus: Test the specific Net Flow filtering fix
-    tester.test_net_flow_filtering_fix()
-    
-    # Secondary: Test general Net Flow calculations
-    tester.test_finance_dashboard_net_flow_calculations()
+    # Primary Focus: Test Gold Shop ERP Purchase Module
+    tester.test_gold_shop_purchase_module()
     
     # Print summary
     tester.print_summary()
