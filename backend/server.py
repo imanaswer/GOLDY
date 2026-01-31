@@ -5761,8 +5761,8 @@ async def add_payment_to_invoice(
             created_by=current_user.id
         )
         
-        # Insert gold ledger entry
-        await db.gold_ledger.insert_one(gold_ledger_entry.model_dump())
+        # Insert gold ledger entry with decimal conversion
+        await db.gold_ledger.insert_one(convert_gold_ledger_to_decimal(gold_ledger_entry.model_dump()))
         
         # Fetch or create default account for gold exchange transactions
         account = await db.accounts.find_one({"name": "Gold Exchange Income", "is_deleted": False}, {"_id": 0})
