@@ -321,6 +321,91 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Work Types Management Card */}
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-xl font-serif flex items-center gap-2">
+              <Wrench className="w-5 h-5" />
+              Work Types Management
+            </CardTitle>
+            <Button
+              onClick={() => {
+                setEditingWorkType(null);
+                setWorkTypeFormData({ name: '', description: '', is_active: true });
+                setShowWorkTypeDialog(true);
+              }}
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Add Work Type
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {workTypeLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading...</div>
+          ) : workTypes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No work types found. Add your first work type to get started.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase">Description</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase">Status</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {workTypes.map((wt) => (
+                    <tr key={wt.id} className="border-t hover:bg-muted/30">
+                      <td className="px-4 py-3 font-medium">{wt.name}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{wt.description || '-'}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                          wt.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {wt.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleWorkTypeEdit(wt)}
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setDeletingWorkType(wt);
+                              setShowWorkTypeDeleteDialog(true);
+                            }}
+                            className="text-destructive hover:text-destructive"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
