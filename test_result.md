@@ -9532,3 +9532,90 @@ agent_communication:
       9. Verify pagination works with filters
       
       The finance page should now be fully functional with working filters.
+
+user_problem_statement: "Fix Job Card Enhancements - Add missing GET endpoint for individual job card retrieval and resolve invoice conversion issues"
+
+backend:
+  - task: "Job Card GET endpoint - Individual retrieval"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ GET /api/jobcards/{id} endpoint returns 405 Method Not Allowed. This blocks testing of customer_oman_id and per-inch making charge features."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED - Added missing GET /api/jobcards/{jobcard_id} endpoint (after line 4245). Endpoint retrieves single job card by ID with proper authentication (requires jobcards.view permission). Returns 404 if job card not found or deleted. This resolves the 405 error and enables testing of customer_oman_id and per-inch features."
+  
+  - task: "Job Card to Invoice Conversion - 520 Error"
+    implemented: true
+    working: "needs_testing"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ Job card to invoice conversion fails with 520 error. This blocks testing of invoice calculation with new per-inch making charge types."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Investigating the 520 error. Code review shows invoice conversion endpoint looks correct with proper handling of per-inch making charge (lines 4607-4609). Will need testing to reproduce and identify root cause."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Job Card GET endpoint - Individual retrieval"
+    - "Job Card to Invoice Conversion - 520 Error"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ✅ JOB CARD ENHANCEMENTS - CRITICAL FIX IMPLEMENTED
+      
+      ISSUE ANALYSIS:
+      Testing agent reported 2 critical issues blocking feature verification:
+      1. GET /api/jobcards/{id} returns 405 Method Not Allowed
+      2. Job card to invoice conversion returns 520 error
+      
+      FIX IMPLEMENTED:
+      
+      1. ✅ ADDED Missing GET Endpoint (line 4247-4256):
+         - Added GET /api/jobcards/{jobcard_id} endpoint
+         - Requires 'jobcards.view' permission
+         - Returns single job card by ID
+         - Returns 404 if not found or deleted
+         - This resolves the 405 error
+      
+      2. 🔍 INVESTIGATING Invoice Conversion 520 Error:
+         - Reviewed convert_jobcard_to_invoice endpoint (lines 4554-4729)
+         - Code appears correct with proper handling of:
+           • customer_oman_id field carry-forward (line 4700)
+           • per-inch making charge calculation (lines 4607-4609)
+           • inches field (line 4629)
+         - Need testing to reproduce the 520 error and identify root cause
+      
+      BACKEND STATUS:
+      ✅ Backend restarted successfully
+      ✅ Server running on port 8001
+      ✅ No startup errors detected
+      
+      READY FOR TESTING:
+      - Test GET /api/jobcards/{id} endpoint - should now work (was 405)
+      - Test job card creation with customer_oman_id field
+      - Test job card creation with per-inch making charge
+      - Test invoice conversion to verify customer_oman_id carry-forward
+      - Test invoice conversion with per-inch charge calculation
+      - Reproduce and debug the 520 error if it still occurs
