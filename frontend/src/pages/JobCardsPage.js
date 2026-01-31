@@ -97,13 +97,14 @@ export default function JobCardsPage() {
 
   const loadData = async () => {
     try {
-      const [jobcardsRes, partiesRes, headersRes, workersRes] = await Promise.all([
+      const [jobcardsRes, partiesRes, headersRes, workersRes, workTypesRes] = await Promise.all([
         API.get(`/api/jobcards`, {
           params: { page: currentPage, page_size: 10 }
         }),
         API.get(`/api/parties?party_type=customer`),
         API.get(`/api/inventory/headers`),
-        API.get(`/api/workers?active=true`)
+        API.get(`/api/workers?active=true`),
+        API.get(`/api/work-types?active=true`)
       ]);
       
       const loadedJobcards = jobcardsRes.data.items || [];
@@ -112,6 +113,7 @@ export default function JobCardsPage() {
       setParties(partiesRes.data.items || []);
       setInventoryHeaders(headersRes.data?.items || []);
       setWorkers(workersRes.data.items || []);
+      setWorkTypes(workTypesRes.data.items || []);
       
       // Fetch invoices for all invoiced job cards to check payment status
       const invoicedJobcards = loadedJobcards.filter(jc => jc.is_invoiced);
