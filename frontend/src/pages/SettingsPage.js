@@ -505,6 +505,71 @@ export default function SettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Work Type Dialog */}
+      <Dialog open={showWorkTypeDialog} onOpenChange={setShowWorkTypeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingWorkType ? 'Edit Work Type' : 'Add New Work Type'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label>Name *</Label>
+              <Input
+                value={workTypeFormData.name}
+                onChange={(e) => setWorkTypeFormData({...workTypeFormData, name: e.target.value})}
+                placeholder="e.g., Polish, Resize, Repair"
+              />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                value={workTypeFormData.description}
+                onChange={(e) => setWorkTypeFormData({...workTypeFormData, description: e.target.value})}
+                placeholder="Optional description"
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={workTypeFormData.is_active}
+                onChange={(e) => setWorkTypeFormData({...workTypeFormData, is_active: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="is_active" className="cursor-pointer">Active</Label>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setShowWorkTypeDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleWorkTypeSave}>
+              {editingWorkType ? 'Update' : 'Create'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Work Type Delete Dialog */}
+      <AlertDialog open={showWorkTypeDeleteDialog} onOpenChange={setShowWorkTypeDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the work type <strong>{deletingWorkType?.name}</strong>. 
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleWorkTypeDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
