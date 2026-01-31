@@ -3760,48 +3760,94 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
     
     # ========== AUTO-FINALIZATION: CREATE ALL ACCOUNTING ENTRIES ==========
     
-    # === OPERATION 1: Create Stock IN movement ===
-    purity = purchase_data["valuation_purity_fixed"]  # Always 916
-    header_name = f"Gold {purity // 41.6:.0f}K"  # 916 = 22K
-    
-    header = await db.inventory_headers.find_one({"name": header_name, "is_deleted": False})
-    if not header:
-        # Create new inventory header
-        header = InventoryHeader(
-            name=header_name,
+    # === OPERATION 1: Create Stock IN movements (for each item or single legacy item) ===
+    if items_list and len(items_list) > 0:
+        # Multiple items: Create separate stock movements for each
+        for item in purchase_data["items"]:
+            purity = purchase_data["valuation_purity_fixed"]  # Always 916
+            header_name = f"Gold {purity // 41.6:.0f}K"  # 916 = 22K
+            
+            header = await db.inventory_headers.find_one({"name": header_name, "is_deleted": False})
+            if not header:
+                # Create new inventory header
+                header = InventoryHeader(
+                    name=header_name,
+                    purity=purity,
+                    current_qty=0,
+                    current_weight=0,
+                    created_by=current_user.username
+                )
+                await db.inventory_headers.insert_one(header.model_dump())
+            
+            # Create Stock IN movement for this item
+            movement = StockMovement(
+                date=purchase.date,
+                movement_type="Stock IN",
+                header_id=header.get("id") if isinstance(header, dict) else header.id,
+                header_name=header_name,
+                description=f"Purchase from {vendor_name}: {item['description']}",
+                qty_delta=1,
+                weight_delta=item["weight_grams"],
+                purity=purity,
+                reference_type="purchase",
+                reference_id=purchase_id,
+                created_by=current_user.username,
+                notes=f"Entered purity: {item['entered_purity']}, Valuation purity: {purity}, Rate: {item['rate_per_gram_22k']}, Amount: {item['calculated_amount']} OMR"
+            )
+            await db.stock_movements.insert_one(movement.model_dump())
+            
+            # Update inventory header
+            header_id = header.get("id") if isinstance(header, dict) else header.id
+            await db.inventory_headers.update_one(
+                {"id": header_id},
+                {"$inc": {
+                    "current_qty": 1,
+                    "current_weight": item["weight_grams"]
+                }}
+            )
+    else:
+        # Legacy single item
+        purity = purchase_data["valuation_purity_fixed"]  # Always 916
+        header_name = f"Gold {purity // 41.6:.0f}K"  # 916 = 22K
+        
+        header = await db.inventory_headers.find_one({"name": header_name, "is_deleted": False})
+        if not header:
+            # Create new inventory header
+            header = InventoryHeader(
+                name=header_name,
+                purity=purity,
+                current_qty=0,
+                current_weight=0,
+                created_by=current_user.username
+            )
+            await db.inventory_headers.insert_one(header.model_dump())
+        
+        # Create Stock IN movement
+        movement = StockMovement(
+            date=purchase.date,
+            movement_type="Stock IN",
+            header_id=header.get("id") if isinstance(header, dict) else header.id,
+            header_name=header_name,
+            description=f"Purchase from {vendor_name}: {purchase_data.get('description', '')}",
+            qty_delta=1,
+            weight_delta=purchase.weight_grams,
             purity=purity,
-            current_qty=0,
-            current_weight=0,
-            created_by=current_user.username
+            reference_type="purchase",
+            reference_id=purchase_id,
+            created_by=current_user.username,
+            notes=f"Entered purity: {purchase.entered_purity}, Valuation purity: {purity}"
         )
-        await db.inventory_headers.insert_one(header.model_dump())
-    
-    # Create Stock IN movement
-    movement = StockMovement(
-        date=purchase.date,
-        movement_type="Stock IN",
-        header_id=header.get("id") if isinstance(header, dict) else header.id,
-        header_name=header_name,
-        description=f"Purchase from {vendor['name']}: {purchase.description}",
-        qty_delta=1,
-        weight_delta=purchase.weight_grams,
-        purity=purity,
-        reference_type="purchase",
-        reference_id=purchase_id,
-        created_by=current_user.username,
-        notes=f"Entered purity: {purchase.entered_purity}, Valuation purity: {purity}"
-    )
-    await db.stock_movements.insert_one(movement.model_dump())
-    
-    # Update inventory header
-    header_id = header.get("id") if isinstance(header, dict) else header.id
-    await db.inventory_headers.update_one(
-        {"id": header_id},
-        {"$inc": {
-            "current_qty": 1,
-            "current_weight": purchase.weight_grams
-        }}
-    )
+        await db.stock_movements.insert_one(movement.model_dump())
+        
+        # Update inventory header
+        header_id = header.get("id") if isinstance(header, dict) else header.id
+        await db.inventory_headers.update_one(
+            {"id": header_id},
+            {"$inc": {
+                "current_qty": 1,
+                "current_weight": purchase.weight_grams
+            }}
+        )
     
     # === OPERATION 2: Create DEBIT transaction if paid_amount_money > 0 ===
     if purchase_data["paid_amount_money"] > 0:
