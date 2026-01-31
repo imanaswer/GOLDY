@@ -5071,7 +5071,9 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
     
     invoice = Invoice(**invoice_dict)
     
-    await db.invoices.insert_one(invoice.model_dump())
+    # Convert to Decimal128 for precise storage
+    invoice_data = convert_invoice_to_decimal(invoice.model_dump())
+    await db.invoices.insert_one(invoice_data)
     await create_audit_log(current_user.id, current_user.full_name, "invoice", invoice.id, "create_from_jobcard")
     
     # CRITICAL: Update job card to mark as invoiced and prevent duplicate conversions
