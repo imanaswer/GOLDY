@@ -3563,39 +3563,138 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
     - Status is calculated based on payment: "Draft" | "Partially Paid" | "Paid"
     - Locking is allowed ONLY AFTER FULL PAYMENT (balance_due == 0)
     - Editing and adding payments allowed until fully paid
+    
+    ⚠️ NEW FEATURES (NON-NEGOTIABLE):
+    - Multiple items per purchase with different purities
+    - Walk-in vendor support (no party creation)
+    - Mandatory 22K valuation: amount = (weight × rate) ÷ conversion_factor
+    - Money precision: 3 decimals (OMR requirement)
     """
     if not user_has_permission(current_user, 'purchases.create'):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to create purchases")
     
-    # Validate vendor exists and is vendor type
-    vendor = await db.parties.find_one({"id": purchase_data.get("vendor_party_id"), "is_deleted": False})
-    if not vendor:
-        raise HTTPException(status_code=404, detail="Vendor not found")
-    if vendor.get("party_type") != "vendor":
-        raise HTTPException(status_code=400, detail="Party must be a vendor type")
+    # Get conversion factor from settings
+    settings = await db.settings.find_one({})
+    conversion_factor = settings.get("purchase_conversion_factor", 0.920) if settings else 0.920
+    purchase_data["conversion_factor"] = conversion_factor
     
-    # ========== CRITICAL VALIDATION: NEVER TRUST FRONTEND ==========
-    # Extract and validate weight
-    try:
-        weight_grams = float(purchase_data.get("weight_grams", 0))
-    except (ValueError, TypeError):
-        raise HTTPException(status_code=400, detail="Invalid weight value")
+    # Determine if walk-in or saved vendor
+    is_walk_in = purchase_data.get("is_walk_in", False)
+    vendor = None
+    vendor_name = None
+    vendor_party_id = None
     
-    if weight_grams <= 0:
-        raise HTTPException(status_code=400, detail="Weight must be greater than 0")
+    if is_walk_in:
+        # Walk-in purchase: Require customer_id (Oman ID) but no party creation
+        walk_in_customer_id = purchase_data.get("vendor_oman_id", "").strip()
+        walk_in_vendor_name = purchase_data.get("walk_in_vendor_name", "").strip()
+        
+        if not walk_in_customer_id:
+            raise HTTPException(status_code=400, detail="Customer ID (Oman ID) is required for walk-in purchases")
+        if not walk_in_vendor_name:
+            raise HTTPException(status_code=400, detail="Vendor name is required for walk-in purchases")
+        
+        purchase_data["vendor_oman_id"] = walk_in_customer_id
+        purchase_data["walk_in_vendor_name"] = walk_in_vendor_name
+        purchase_data["vendor_party_id"] = None  # No party for walk-in
+        vendor_name = walk_in_vendor_name
+    else:
+        # Saved vendor: Validate vendor exists and is vendor type
+        vendor = await db.parties.find_one({"id": purchase_data.get("vendor_party_id"), "is_deleted": False})
+        if not vendor:
+            raise HTTPException(status_code=404, detail="Vendor not found")
+        if vendor.get("party_type") != "vendor":
+            raise HTTPException(status_code=400, detail="Party must be a vendor type")
+        vendor_name = vendor["name"]
+        vendor_party_id = vendor["id"]
     
-    # Extract and validate rate
-    try:
-        rate_per_gram = float(purchase_data.get("rate_per_gram", 0))
-    except (ValueError, TypeError):
-        raise HTTPException(status_code=400, detail="Invalid rate value")
+    # ========== CRITICAL VALIDATION: MULTIPLE ITEMS SUPPORT ==========
+    items_list = purchase_data.get("items", [])
     
-    if rate_per_gram <= 0:
-        raise HTTPException(status_code=400, detail="Rate per gram must be greater than 0")
-    
-    # RECALCULATE total_amount on backend (SINGLE SOURCE OF TRUTH)
-    # Never trust client-sent total_amount
-    calculated_total = round(weight_grams * rate_per_gram, 2)
+    if items_list and len(items_list) > 0:
+        # NEW: Multiple items purchase
+        total_amount = 0.0
+        validated_items = []
+        
+        for idx, item in enumerate(items_list):
+            # Validate weight
+            try:
+                weight = float(item.get("weight_grams", 0))
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail=f"Invalid weight value for item {idx + 1}")
+            
+            if weight <= 0:
+                raise HTTPException(status_code=400, detail=f"Weight must be greater than 0 for item {idx + 1}")
+            
+            # Validate rate
+            try:
+                rate = float(item.get("rate_per_gram_22k", 0))
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail=f"Invalid rate value for item {idx + 1}")
+            
+            if rate <= 0:
+                raise HTTPException(status_code=400, detail=f"Rate per gram must be greater than 0 for item {idx + 1}")
+            
+            # Validate purity
+            try:
+                purity = int(item.get("entered_purity", 916))
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail=f"Invalid purity value for item {idx + 1}")
+            
+            # ⚠️ MANDATORY VALUATION RULE: amount = (weight × rate) ÷ conversion_factor
+            # All gold valued at 22K (916) regardless of entered purity
+            item_amount = (weight * rate) / conversion_factor
+            item_amount = round(item_amount, 3)  # 3 decimal precision (Oman)
+            
+            validated_item = {
+                "id": item.get("id", str(uuid.uuid4())),
+                "description": item.get("description", "").strip(),
+                "weight_grams": round(weight, 3),
+                "entered_purity": purity,
+                "rate_per_gram_22k": round(rate, 3),
+                "calculated_amount": item_amount
+            }
+            validated_items.append(validated_item)
+            total_amount += item_amount
+        
+        purchase_data["items"] = validated_items
+        purchase_data["amount_total"] = round(total_amount, 3)
+        
+        # Clear legacy single-item fields
+        purchase_data["description"] = f"Multiple items purchase ({len(validated_items)} items)"
+        purchase_data["weight_grams"] = sum(item["weight_grams"] for item in validated_items)
+        purchase_data["entered_purity"] = None
+        purchase_data["rate_per_gram"] = None
+        
+    else:
+        # LEGACY: Single item purchase (backwards compatibility)
+        # Extract and validate weight
+        try:
+            weight_grams = float(purchase_data.get("weight_grams", 0))
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid weight value")
+        
+        if weight_grams <= 0:
+            raise HTTPException(status_code=400, detail="Weight must be greater than 0")
+        
+        # Extract and validate rate
+        try:
+            rate_per_gram = float(purchase_data.get("rate_per_gram", 0))
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Invalid rate value")
+        
+        if rate_per_gram <= 0:
+            raise HTTPException(status_code=400, detail="Rate per gram must be greater than 0")
+        
+        # ⚠️ MANDATORY VALUATION RULE: amount = (weight × rate) ÷ conversion_factor
+        calculated_total = (weight_grams * rate_per_gram) / conversion_factor
+        calculated_total = round(calculated_total, 3)  # 3 decimal precision (Oman)
+        
+        # Set validated and calculated values
+        purchase_data["weight_grams"] = round(weight_grams, 3)
+        purchase_data["rate_per_gram"] = round(rate_per_gram, 3)
+        purchase_data["amount_total"] = calculated_total
+        purchase_data["items"] = []  # Empty for legacy single-item
     
     # Validate paid amount
     try:
@@ -3606,15 +3705,11 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
     if paid_amount < 0:
         raise HTTPException(status_code=400, detail="Paid amount cannot be negative")
     
-    if paid_amount > calculated_total:
-        raise HTTPException(status_code=400, detail=f"Paid amount ({paid_amount}) cannot exceed total amount ({calculated_total})")
+    if paid_amount > purchase_data["amount_total"]:
+        raise HTTPException(status_code=400, detail=f"Paid amount ({paid_amount}) cannot exceed total amount ({purchase_data['amount_total']})")
     
-    # Set validated and calculated values
-    purchase_data["weight_grams"] = round(weight_grams, 3)
-    purchase_data["rate_per_gram"] = round(rate_per_gram, 2)
-    purchase_data["amount_total"] = calculated_total  # Backend-calculated, not from client
-    purchase_data["paid_amount_money"] = round(paid_amount, 2)
-    purchase_data["balance_due_money"] = round(calculated_total - paid_amount, 2)
+    purchase_data["paid_amount_money"] = round(paid_amount, 3)
+    purchase_data["balance_due_money"] = round(purchase_data["amount_total"] - paid_amount, 3)
     
     # Round gold settlement fields to 3 decimals
     if purchase_data.get("advance_in_gold_grams") is not None:
@@ -3634,7 +3729,6 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
     purchase_data["valuation_purity_fixed"] = 916
     
     # ========== CRITICAL: CALCULATE STATUS (SERVER-SIDE AUTHORITY) ==========
-    # Purchase lifecycle matches Invoice lifecycle: Draft → Partially Paid → Paid → Finalized (Locked)
     calculated_status = calculate_purchase_status(
         paid_amount=purchase_data["paid_amount_money"],
         total_amount=purchase_data["amount_total"]
@@ -3648,8 +3742,6 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
     purchase_data["finalized_by"] = current_user.username
     
     # ========== LOCKING RULES: ONLY LOCK WHEN FULLY PAID ==========
-    # Locking is allowed ONLY AFTER FULL PAYMENT (balance_due == 0)
-    # This allows editing and adding payments until purchase is fully paid
     if purchase_data["balance_due_money"] == 0:
         purchase_data["locked"] = True
         purchase_data["locked_at"] = finalize_time
