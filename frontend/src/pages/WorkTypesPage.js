@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, X } from 'lucide-react';
 import axios from 'axios';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
