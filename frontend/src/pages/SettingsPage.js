@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Settings as SettingsIcon, UserPlus, Edit, Trash2, Key } from 'lucide-react';
+import { Settings as SettingsIcon, UserPlus, Edit, Trash2, Key, Wrench, Plus } from 'lucide-react';
+import { Textarea } from '../components/ui/textarea';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -29,8 +30,22 @@ export default function SettingsPage() {
   });
   const [passwordData, setPasswordData] = useState({ new_password: '' });
 
+  // Work Types Management State
+  const [workTypes, setWorkTypes] = useState([]);
+  const [showWorkTypeDialog, setShowWorkTypeDialog] = useState(false);
+  const [showWorkTypeDeleteDialog, setShowWorkTypeDeleteDialog] = useState(false);
+  const [editingWorkType, setEditingWorkType] = useState(null);
+  const [deletingWorkType, setDeletingWorkType] = useState(null);
+  const [workTypeLoading, setWorkTypeLoading] = useState(false);
+  const [workTypeFormData, setWorkTypeFormData] = useState({
+    name: '',
+    description: '',
+    is_active: true
+  });
+
   useEffect(() => {
     loadUsers();
+    loadWorkTypes();
   }, []);
 
   const loadUsers = async () => {
