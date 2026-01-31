@@ -395,28 +395,116 @@ export default function PurchasesPage() {
   };
 
   const handleSavePurchase = async () => {
-    // Validate form before submission
-    if (!validateForm()) {
-      toast.error('Please fix the errors in the form');
-      return;
+    // Validate walk-in vendor fields
+    if (isWalkIn) {
+      const newErrors = {};
+      let isValid = true;
+      
+      if (!formData.vendor_oman_id || formData.vendor_oman_id.trim() === '') {
+        newErrors.vendor_oman_id = 'Customer ID (Oman ID) is required for walk-in purchases';
+        isValid = false;
+      }
+      
+      if (!formData.walk_in_vendor_name || formData.walk_in_vendor_name.trim() === '') {
+        newErrors.walk_in_vendor_name = 'Vendor name is required for walk-in purchases';
+        isValid = false;
+      }
+      
+      if (!isValid) {
+        setErrors(newErrors);
+        toast.error('Please fill in all required fields for walk-in purchase');
+        return;
+      }
+    } else if (!isMultipleItems) {
+      // Validate regular single-item form
+      if (!validateForm()) {
+        toast.error('Please fix the errors in the form');
+        return;
+      }
+    } else {
+      // Validate multiple items
+      const newErrors = {};
+      let isValid = true;
+      
+      if (!formData.vendor_party_id) {
+        newErrors.vendor_party_id = 'Please select a vendor';
+        isValid = false;
+      }
+      
+      // Validate each item
+      items.forEach((item, index) => {
+        if (!item.description || item.description.trim() === '') {
+          newErrors[`item_${index}_description`] = 'Description is required';
+          isValid = false;
+        }
+        if (!item.weight_grams || parseFloat(item.weight_grams) <= 0) {
+          newErrors[`item_${index}_weight`] = 'Valid weight is required';
+          isValid = false;
+        }
+        if (!item.rate_per_gram_22k || parseFloat(item.rate_per_gram_22k) <= 0) {
+          newErrors[`item_${index}_rate`] = 'Valid rate is required';
+          isValid = false;
+        }
+      });
+      
+      if (!isValid) {
+        setErrors(newErrors);
+        toast.error('Please fix the errors in the items');
+        return;
+      }
     }
 
     setIsSubmitting(true);
     try {
-      const payload = {
-        vendor_party_id: formData.vendor_party_id,
-        date: formData.date,
-        description: formData.description,
-        weight_grams: parseFloat(formData.weight_grams),
-        entered_purity: parseInt(formData.entered_purity),
-        rate_per_gram: parseFloat(formData.rate_per_gram),
-        amount_total: parseFloat(formData.amount_total),
-        paid_amount_money: parseFloat(formData.paid_amount_money) || 0,
-        payment_mode: formData.payment_mode,
-        account_id: formData.account_id || null,
-        advance_in_gold_grams: formData.advance_in_gold_grams ? parseFloat(formData.advance_in_gold_grams) : null,
-        exchange_in_gold_grams: formData.exchange_in_gold_grams ? parseFloat(formData.exchange_in_gold_grams) : null
-      };
+      let payload;
+      
+      if (isMultipleItems) {
+        // Multiple items purchase
+        payload = {
+          is_walk_in: isWalkIn,
+          date: formData.date,
+          paid_amount_money: parseFloat(formData.paid_amount_money) || 0,
+          payment_mode: formData.payment_mode,
+          account_id: formData.account_id || null,
+          advance_in_gold_grams: formData.advance_in_gold_grams ? parseFloat(formData.advance_in_gold_grams) : null,
+          exchange_in_gold_grams: formData.exchange_in_gold_grams ? parseFloat(formData.exchange_in_gold_grams) : null,
+          items: items.map(item => ({
+            description: item.description,
+            weight_grams: parseFloat(item.weight_grams),
+            entered_purity: parseInt(item.entered_purity),
+            rate_per_gram_22k: parseFloat(item.rate_per_gram_22k)
+          }))
+        };
+        
+        if (isWalkIn) {
+          payload.vendor_oman_id = formData.vendor_oman_id;
+          payload.walk_in_vendor_name = formData.walk_in_vendor_name;
+        } else {
+          payload.vendor_party_id = formData.vendor_party_id;
+        }
+      } else {
+        // Single item purchase (legacy)
+        payload = {
+          is_walk_in: isWalkIn,
+          date: formData.date,
+          description: formData.description,
+          weight_grams: parseFloat(formData.weight_grams),
+          entered_purity: parseInt(formData.entered_purity),
+          rate_per_gram: parseFloat(formData.rate_per_gram),
+          paid_amount_money: parseFloat(formData.paid_amount_money) || 0,
+          payment_mode: formData.payment_mode,
+          account_id: formData.account_id || null,
+          advance_in_gold_grams: formData.advance_in_gold_grams ? parseFloat(formData.advance_in_gold_grams) : null,
+          exchange_in_gold_grams: formData.exchange_in_gold_grams ? parseFloat(formData.exchange_in_gold_grams) : null
+        };
+        
+        if (isWalkIn) {
+          payload.vendor_oman_id = formData.vendor_oman_id;
+          payload.walk_in_vendor_name = formData.walk_in_vendor_name;
+        } else {
+          payload.vendor_party_id = formData.vendor_party_id;
+        }
+      }
 
       if (editingPurchase) {
         await API.patch(`/api/purchases/${editingPurchase.id}`, payload);
