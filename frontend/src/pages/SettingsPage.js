@@ -370,6 +370,66 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Shop Settings Card */}
+      {user?.role === 'admin' && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="text-xl font-serif flex items-center gap-2">
+              <SettingsIcon className="w-5 h-5" />
+              Shop Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {shopSettingsLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading...</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="text-base font-semibold text-blue-900">
+                        Purchase Conversion Factor
+                      </Label>
+                      <p className="text-sm text-blue-700 mt-1 mb-3">
+                        Used in 22K gold valuation formula: Amount = (Weight × Rate) ÷ Conversion Factor
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <Input
+                          type="number"
+                          step="0.001"
+                          min="0.900"
+                          max="0.930"
+                          value={shopSettingsData.purchase_conversion_factor}
+                          onChange={(e) => setShopSettingsData({
+                            ...shopSettingsData,
+                            purchase_conversion_factor: e.target.value
+                          })}
+                          className="max-w-xs font-mono text-lg"
+                          placeholder="0.920"
+                        />
+                        <Button onClick={handleShopSettingsSave}>
+                          Save Settings
+                        </Button>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">
+                        Common values: <strong>0.920</strong> (standard) or <strong>0.917</strong> (alternate)
+                      </p>
+                    </div>
+                    
+                    <div className="p-3 bg-amber-50 border border-amber-300 rounded">
+                      <p className="text-sm text-amber-900">
+                        <strong>⚠️ Important:</strong> Changes to this factor will affect all future purchase valuations. 
+                        Existing purchases retain their original conversion factor.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Work Types Management Card */}
       <Card className="mt-6">
         <CardHeader>
