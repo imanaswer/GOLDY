@@ -4048,7 +4048,7 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
                 notes=f"Advance gold settled in purchase from {vendor_name}",
                 created_by=current_user.username
             )
-            await db.gold_ledger.insert_one(advance_entry.model_dump())
+            await db.gold_ledger.insert_one(convert_gold_ledger_to_decimal(advance_entry.model_dump()))
     
     # === OPERATION 4: Create GoldLedgerEntry IN if exchange_in_gold_grams > 0 ===
     # Only for saved vendors (walk-in vendors don't have gold ledger)
@@ -4072,7 +4072,7 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
                 notes=f"Gold exchanged in purchase from {vendor_name}",
                 created_by=current_user.username
             )
-            await db.gold_ledger.insert_one(exchange_entry.model_dump())
+            await db.gold_ledger.insert_one(convert_gold_ledger_to_decimal(exchange_entry.model_dump()))
     
     # === OPERATION 5: Create vendor payable transaction ONLY for balance_due_money ===
     # Only for saved vendors (walk-in vendors don't have payables)
