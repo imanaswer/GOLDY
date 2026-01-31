@@ -4663,7 +4663,9 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
             purity=item_data['purity'],
             metal_rate=item_data['metal_rate'],
             gold_value=item_data['gold_value'],
+            making_charge_type=item_data.get('making_charge_type'),
             making_value=item_data['making_value'],
+            inches=item_data.get('inches'),
             vat_percent=item_data['vat_percent'],
             vat_amount=item_vat_amount,
             line_total=item_line_total
