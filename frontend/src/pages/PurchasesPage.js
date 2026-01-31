@@ -251,8 +251,22 @@ export default function PurchasesPage() {
   const handleOpenDialog = (purchase = null) => {
     if (purchase) {
       setEditingPurchase(purchase);
+      setIsWalkIn(purchase.is_walk_in || false);
+      setIsMultipleItems(purchase.items && purchase.items.length > 0);
+      
+      if (purchase.items && purchase.items.length > 0) {
+        setItems(purchase.items);
+      } else {
+        setItems([
+          { id: '1', description: '', weight_grams: '', entered_purity: '916', rate_per_gram_22k: '', calculated_amount: 0 }
+        ]);
+      }
+      
       setFormData({
         vendor_party_id: purchase.vendor_party_id || '',
+        is_walk_in: purchase.is_walk_in || false,
+        walk_in_vendor_name: purchase.walk_in_vendor_name || '',
+        vendor_oman_id: purchase.vendor_oman_id || '',
         date: purchase.date ? new Date(purchase.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         description: purchase.description || '',
         weight_grams: purchase.weight_grams || '',
@@ -267,8 +281,16 @@ export default function PurchasesPage() {
       });
     } else {
       setEditingPurchase(null);
+      setIsWalkIn(false);
+      setIsMultipleItems(false);
+      setItems([
+        { id: '1', description: '', weight_grams: '', entered_purity: '916', rate_per_gram_22k: '', calculated_amount: 0 }
+      ]);
       setFormData({
         vendor_party_id: vendors.length > 0 ? vendors[0].id : '',
+        is_walk_in: false,
+        walk_in_vendor_name: '',
+        vendor_oman_id: '',
         date: new Date().toISOString().split('T')[0],
         description: '',
         weight_grams: '',
