@@ -897,9 +897,250 @@ export default function PurchasesPage() {
           </DialogHeader>
 
           <div className="space-y-6">
+            {/* Mode Toggles */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="walkInToggle"
+                  checked={isWalkIn}
+                  onChange={(e) => {
+                    setIsWalkIn(e.target.checked);
+                    if (e.target.checked) {
+                      setFormData({...formData, vendor_party_id: ''});
+                    }
+                  }}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <Label htmlFor="walkInToggle" className="cursor-pointer flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  Walk-in Vendor
+                </Label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="multipleItemsToggle"
+                  checked={isMultipleItems}
+                  onChange={(e) => setIsMultipleItems(e.target.checked)}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <Label htmlFor="multipleItemsToggle" className="cursor-pointer flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Multiple Items
+                </Label>
+              </div>
+            </div>
+
+            {/* Conversion Factor Display */}
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-blue-900 font-medium">Purchase Conversion Factor:</span>
+                <span className="font-mono font-bold text-blue-700">{conversionFactor}</span>
+              </div>
+              <p className="text-xs text-blue-700 mt-1">
+                All purchases are valued at 22K (916) using formula: Amount = (Weight × Rate) ÷ {conversionFactor}
+              </p>
+            </div>
+
             {/* Basic Information */}
             <div className="space-y-4">
               <h3 className="font-semibold text-sm text-gray-700">Basic Information</h3>
+              
+              {isWalkIn ? (
+                /* Walk-in Vendor Fields */
+                <div className="grid grid-cols-2 gap-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                  <div className="space-y-2">
+                    <Label>Customer ID (Oman ID) *</Label>
+                    <Input
+                      value={formData.vendor_oman_id}
+                      onChange={(e) => setFormData({...formData, vendor_oman_id: e.target.value})}
+                      placeholder="12345678"
+                      className={errors.vendor_oman_id ? 'border-red-500' : ''}
+                    />
+                    <FormErrorMessage error={errors.vendor_oman_id} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Vendor Name *</Label>
+                    <Input
+                      value={formData.walk_in_vendor_name}
+                      onChange={(e) => setFormData({...formData, walk_in_vendor_name: e.target.value})}
+                      placeholder="Ahmed Al-Balushi"
+                      className={errors.walk_in_vendor_name ? 'border-red-500' : ''}
+                    />
+                    <FormErrorMessage error={errors.walk_in_vendor_name} />
+                  </div>
+                  
+                  <div className="col-span-2">
+                    <p className="text-xs text-purple-700">
+                      <strong>Walk-in Purchase:</strong> No party record will be created. This purchase is tracked for inventory and finance only.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                /* Regular Vendor Dropdown */
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Vendor *</Label>
+                    <Select 
+                      value={formData.vendor_party_id} 
+                      onValueChange={(value) => {
+                        setFormData({...formData, vendor_party_id: value});
+                        validateField('vendor_party_id', value);
+                      }}
+                    >
+                      <SelectTrigger className={errors.vendor_party_id ? 'border-red-500' : ''}>
+                        <SelectValue placeholder="Select vendor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendors.map(vendor => (
+                          <SelectItem key={vendor.id} value={vendor.id}>{vendor.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormErrorMessage error={errors.vendor_party_id} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Date *</Label>
+                    <Input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!isWalkIn && (
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Input
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    placeholder="Purchase description or notes"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Conditional Content: Multiple Items OR Single Item */}
+            {isMultipleItems ? (
+              /* Multiple Items Table */
+              <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm text-amber-900">Purchase Items</h3>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={addItem}
+                    variant="outline"
+                    className="border-amber-300 hover:bg-amber-100"
+                  >
+                    <Plus className="w-4 h-4 mr-1" /> Add Item
+                  </Button>
+                </div>
+                
+                <div className="space-y-3">
+                  {items.map((item, index) => (
+                    <div key={item.id} className="p-4 bg-white border border-amber-200 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-gray-600">Item #{index + 1}</span>
+                        {items.length > 1 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeItem(item.id)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2 space-y-2">
+                          <Label>Description *</Label>
+                          <Input
+                            value={item.description}
+                            onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                            placeholder="Gold Bar, Jewelry, etc."
+                            className={errors[`item_${index}_description`] ? 'border-red-500' : ''}
+                          />
+                          <FormErrorMessage error={errors[`item_${index}_description`]} />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Weight (grams) *</Label>
+                          <Input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={item.weight_grams}
+                            onChange={(e) => updateItem(item.id, 'weight_grams', e.target.value)}
+                            placeholder="0.000"
+                            className={errors[`item_${index}_weight`] ? 'border-red-500' : ''}
+                          />
+                          <FormErrorMessage error={errors[`item_${index}_weight`]} />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Entered Purity *</Label>
+                          <Input
+                            type="number"
+                            value={item.entered_purity}
+                            onChange={(e) => updateItem(item.id, 'entered_purity', e.target.value)}
+                            placeholder="916"
+                          />
+                          <p className="text-xs text-gray-600">Purity claimed</p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Rate/gram (22K) *</Label>
+                          <Input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={item.rate_per_gram_22k}
+                            onChange={(e) => updateItem(item.id, 'rate_per_gram_22k', e.target.value)}
+                            placeholder="0.000"
+                            className={errors[`item_${index}_rate`] ? 'border-red-500' : ''}
+                          />
+                          <FormErrorMessage error={errors[`item_${index}_rate`]} />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label>Calculated Amount (OMR)</Label>
+                          <div className="p-2 bg-gray-100 border border-gray-300 rounded text-right font-mono font-semibold">
+                            {item.calculated_amount.toFixed(3)}
+                          </div>
+                          <p className="text-xs text-gray-600">Auto-calculated at 22K</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Total Display */}
+                <div className="p-4 bg-gradient-to-r from-amber-600 to-orange-600 text-white rounded-lg shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs opacity-90">Total Purchase Amount</div>
+                      <div className="font-semibold">All Items ({items.length})</div>
+                    </div>
+                    <span className="font-mono font-bold text-2xl">
+                      {parseFloat(formData.amount_total || 0).toFixed(3)} OMR
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Single Item Form (Original) */
+            <div className="space-y-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <h3 className="font-semibold text-sm text-amber-900">Gold Details</h3>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -981,12 +1222,12 @@ export default function PurchasesPage() {
                   <Label>Rate per Gram (OMR) *</Label>
                   <Input
                     type="number"
-                    step="0.01"
+                    step="0.001"
                     min="0"
                     value={formData.rate_per_gram}
                     onChange={(e) => setFormData({...formData, rate_per_gram: e.target.value})}
                     onBlur={(e) => validateField('rate_per_gram', e.target.value)}
-                    placeholder="0.00"
+                    placeholder="0.000"
                     className={errors.rate_per_gram ? 'border-red-500' : ''}
                   />
                   <FormErrorMessage error={errors.rate_per_gram} />
@@ -1006,9 +1247,9 @@ export default function PurchasesPage() {
                   <div className="space-y-3 text-sm">
                     {/* Calculation Formula */}
                     <div className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
-                      <span className="text-gray-700">Weight × Rate per Gram</span>
+                      <span className="text-gray-700">Weight × Rate per Gram ÷ {conversionFactor}</span>
                       <span className="font-mono font-semibold text-gray-600 text-xs">
-                        {parseFloat(formData.weight_grams || 0).toFixed(3)}g × {parseFloat(formData.rate_per_gram || 0).toFixed(2)} OMR/g
+                        {parseFloat(formData.weight_grams || 0).toFixed(3)}g × {parseFloat(formData.rate_per_gram || 0).toFixed(3)} OMR/g
                       </span>
                     </div>
 
@@ -1029,7 +1270,7 @@ export default function PurchasesPage() {
                         <div className="font-semibold">Auto-Calculated</div>
                       </div>
                       <span className="font-mono font-bold text-2xl">
-                        {parseFloat(formData.amount_total || 0).toFixed(2)} OMR
+                        {parseFloat(formData.amount_total || 0).toFixed(3)} OMR
                       </span>
                     </div>
                   </div>
@@ -1038,10 +1279,11 @@ export default function PurchasesPage() {
 
               <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
                 <p className="text-blue-900">
-                  <strong>Note:</strong> Total Amount is automatically calculated as Weight × Rate. Stock will be valued at <strong>916 purity (22K)</strong> regardless of entered purity.
+                  <strong>Note:</strong> Total Amount is automatically calculated as (Weight × Rate) ÷ {conversionFactor}. Stock will be valued at <strong>916 purity (22K)</strong> regardless of entered purity.
                 </p>
               </div>
             </div>
+            )}
 
             {/* Payment Details */}
             <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
