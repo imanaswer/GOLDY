@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
-import { Package, CheckCircle, Lock, Edit, ShoppingCart, Calendar, Trash2, Eye, AlertTriangle, DollarSign } from 'lucide-react';
+import { Package, CheckCircle, Lock, Edit, ShoppingCart, Calendar, Trash2, Eye, AlertTriangle, DollarSign, Plus, X, User } from 'lucide-react';
 import { extractErrorMessage } from '../utils/errorHandler';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import { 
