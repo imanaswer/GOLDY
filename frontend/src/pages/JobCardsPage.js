@@ -1419,7 +1419,15 @@ export default function JobCardsPage() {
                       {formData.items.reduce((total, item) => {
                         const weightIn = parseFloat(item.weight_in) || 0;
                         const makingValue = parseFloat(item.making_charge_value) || 0;
-                        const makingCharges = item.making_charge_type === 'per_gram' ? makingValue * weightIn : makingValue;
+                        const inches = parseFloat(item.inches) || 0;
+                        let makingCharges = 0;
+                        if (item.making_charge_type === 'per_gram') {
+                          makingCharges = makingValue * weightIn;
+                        } else if (item.making_charge_type === 'per_inch') {
+                          makingCharges = makingValue * inches;
+                        } else {
+                          makingCharges = makingValue;
+                        }
                         return total + makingCharges;
                       }, 0).toFixed(2)} OMR
                     </div>
@@ -1432,9 +1440,17 @@ export default function JobCardsPage() {
                         const goldRate = parseFloat(formData.gold_rate_at_jobcard) || 0;
                         const weightIn = parseFloat(item.weight_in) || 0;
                         const makingValue = parseFloat(item.making_charge_value) || 0;
+                        const inches = parseFloat(item.inches) || 0;
                         const vatPercent = parseFloat(item.vat_percent) || 0;
                         const metalValue = weightIn * goldRate;
-                        const makingCharges = item.making_charge_type === 'per_gram' ? makingValue * weightIn : makingValue;
+                        let makingCharges = 0;
+                        if (item.making_charge_type === 'per_gram') {
+                          makingCharges = makingValue * weightIn;
+                        } else if (item.making_charge_type === 'per_inch') {
+                          makingCharges = makingValue * inches;
+                        } else {
+                          makingCharges = makingValue;
+                        }
                         const subtotal = metalValue + makingCharges;
                         const vat = (subtotal * vatPercent) / 100;
                         return total + vat;
