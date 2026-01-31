@@ -7269,9 +7269,10 @@ async def create_daily_closing(closing_data: dict, current_user: User = Depends(
         expected_closing = closing_data.get('expected_closing', 0.0)
         closing_data['difference'] = round(actual_closing - expected_closing, 3)
         
-        # Create the closing record
+        # Create the closing record with Decimal128 conversion
         closing = DailyClosing(**closing_data, closed_by=current_user.id)
-        await db.daily_closings.insert_one(closing.model_dump())
+        closing_dict = convert_daily_closing_to_decimal(closing.model_dump())
+        await db.daily_closings.insert_one(closing_dict)
         await create_audit_log(current_user.id, current_user.full_name, "daily_closing", closing.id, "create")
         return closing
         
