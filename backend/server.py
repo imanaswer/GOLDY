@@ -3982,7 +3982,8 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
             created_by=current_user.username,
             notes=f"Entered purity: {purchase.entered_purity}, Valuation purity: {purity}"
         )
-        await db.stock_movements.insert_one(movement.model_dump())
+        movement_dict = convert_stock_movement_to_decimal(movement.model_dump())
+        await db.stock_movements.insert_one(movement_dict)
         
         # Update inventory header
         header_id = header.get("id") if isinstance(header, dict) else header.id
