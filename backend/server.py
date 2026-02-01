@@ -11715,7 +11715,11 @@ async def finalize_return(
         # PURCHASE RETURN WORKFLOW
         # ========================================================================
         elif return_type == 'purchase_return':
-            # 1. Create stock movements (Stock OUT - returned to vendor)
+            # CRITICAL BUSINESS RULE: DO NOT AUTO-UPDATE INVENTORY
+            # Inventory adjustments must be done manually after physical verification
+            
+            # 1. Create pending inventory adjustment records (for audit trail only - NO stock updates)
+            pending_adjustments = []
             for item in return_doc.get('items', []):
                 weight_grams = item.get('weight_grams', 0)
                 qty = item.get('qty', 0)
@@ -11726,33 +11730,27 @@ async def finalize_return(
                     qty = float(qty.to_decimal())
                 
                 if weight_grams > 0:
-                    movement_id = str(uuid.uuid4())
-                    stock_movement = StockMovement(
-                        id=movement_id,
-                        movement_type="OUT",  # FIXED: Use correct field name
-                        header_name=item.get('description'),  # FIXED: Use correct field name
-                        qty_delta=-round(qty, 0),  # FIXED: Use correct field name (negative for OUT)
-                        weight_delta=-round(weight_grams, 3),  # FIXED: Use correct field name (negative for OUT)
-                        purity=item.get('purity'),
-                        date=datetime.now(timezone.utc),
-                        reference_type="return",
-                        reference_id=return_id,
-                        notes=f"Purchase Return - {return_doc.get('return_number')} - {return_doc.get('reason', '')}",
-                        created_by=current_user.id
-                    )
-                    await db.stock_movements.insert_one(stock_movement.model_dump())
-                    stock_movement_ids.append(movement_id)
-                    
-                    # Update inventory header stock (decrease)
-                    await db.inventory_headers.update_one(
-                        {"name": item.get('description')},
-                        {
-                            "$inc": {
-                                "current_qty": -qty,
-                                "current_weight": -round(weight_grams, 3)
-                            }
+                    # Store pending adjustment (NO automatic inventory update)
+                    pending_adjustments.append({
+                        "item_description": item.get('description'),
+                        "qty": -qty,  # Negative because stock goes out
+                        "weight_grams": -round(weight_grams, 3),  # Negative because stock goes out
+                        "purity": item.get('purity'),
+                        "action_required": "manual_stock_adjustment",
+                        "notes": f"Purchase Return - {return_doc.get('return_number')} - Requires manual inventory adjustment after physical verification"
+                    })
+            
+            # Store pending adjustments in return document for reference
+            if pending_adjustments:
+                await db.returns.update_one(
+                    {"id": return_id},
+                    {
+                        "$set": {
+                            "pending_inventory_adjustments": pending_adjustments,
+                            "inventory_action_status": "manual_action_required"
                         }
-                    )
+                    }
+                )
             
             # 2. Create money refund (Transaction - Credit - vendor refunds us)
             if refund_mode in ['money', 'mixed'] and refund_money_amount > 0:
