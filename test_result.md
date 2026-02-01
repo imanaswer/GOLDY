@@ -1147,6 +1147,114 @@ test_plan:
   test_all: true
   test_priority: "high_first"
 
+user_problem_statement: |
+  Dashboard is not working - showing all zeros (Categories: 0, Total Stock: 0.000g, Outstanding: 0.00 DMR, Low Stock: 0)
+  and empty Stock Summary table. User is logged in as Administrator but dashboard displays no data.
+  
+  Investigation findings:
+  - Backend and frontend services were STOPPED, now restarted
+  - Cloud MongoDB database has data (19 headers, 158 parties, 67 invoices, 21 users)
+  - Dashboard page calls 3 APIs: /api/inventory/headers, /api/inventory/stock-totals, /api/parties/outstanding-summary
+  - All API endpoints exist and have permission checks
+  - Need to test if APIs are returning data correctly or if there's a permission/authentication issue
+
+backend:
+  - task: "Dashboard API - Inventory Headers Endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Endpoint GET /api/inventory/headers exists (line 2153). Requires 'inventory.view' permission. Returns paginated inventory headers. Need to test if returning data correctly."
+  
+  - task: "Dashboard API - Stock Totals Endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Endpoint GET /api/inventory/stock-totals exists (line 2542). Requires 'inventory.view' permission. Returns stock totals from inventory headers. Need to test if returning data correctly."
+  
+  - task: "Dashboard API - Outstanding Summary Endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Endpoint GET /api/parties/outstanding-summary exists (line 2938). Requires 'parties.view' permission. Returns total outstanding from unpaid invoices. Need to test if returning data correctly."
+
+frontend:
+  - task: "Dashboard Page Data Loading"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/Dashboard.js"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ USER REPORT - Dashboard showing all zeros despite data existing in database. Not displaying any inventory categories, stock totals, or outstanding amounts."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Dashboard.js makes API calls to 3 endpoints on load. If any error occurs, it silently defaults to zeros (line 36-46). Need to test API calls with proper authentication to verify data is being returned and parsed correctly."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Dashboard API - Inventory Headers Endpoint"
+    - "Dashboard API - Stock Totals Endpoint"
+    - "Dashboard API - Outstanding Summary Endpoint"
+    - "Dashboard Page Data Loading"
+  stuck_tasks:
+    - "Dashboard Page Data Loading"
+  test_all: true
+  test_priority: "critical"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🔍 DASHBOARD ISSUE INVESTIGATION
+      
+      PROBLEM: Dashboard displaying all zeros despite data in database
+      
+      FINDINGS:
+      1. ✅ Services Status: Backend and frontend were stopped, now restarted successfully
+      2. ✅ Database Status: Cloud MongoDB has data (19 headers, 158 parties, 67 invoices)
+      3. ✅ API Endpoints: All 3 dashboard endpoints exist with proper routes
+      4. ⚠️ Permission Checks: Each endpoint requires specific permissions (inventory.view, parties.view)
+      5. ⚠️ Error Handling: Frontend silently defaults to zeros on any error
+      
+      TESTING NEEDED:
+      1. Test /api/inventory/headers with valid admin token - verify returns headers with pagination
+      2. Test /api/inventory/stock-totals with valid admin token - verify returns stock data
+      3. Test /api/parties/outstanding-summary with valid admin token - verify returns outstanding amounts
+      4. Check if permission system is properly allowing admin user access
+      5. Verify frontend is correctly parsing API responses
+      
+      Please test all 3 dashboard API endpoints with proper authentication to identify if:
+      - APIs are returning empty arrays/zero values
+      - Permission checks are blocking data
+      - Response format is incorrect
+      - Frontend parsing is failing
+
 agent_communication:
   - agent: "main"
     message: |
