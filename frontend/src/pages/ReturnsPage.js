@@ -453,8 +453,18 @@ const ReturnsPage = () => {
     setSuccess('');
     
     try {
-      await API.post(`/api/returns/${selectedReturn.id}/finalize`);
-      setSuccess('Return finalized successfully');
+      const response = await API.post(`/api/returns/${selectedReturn.id}/finalize`);
+      
+      // Show success message with manual inventory notice
+      const message = response.data?.message || 'Return finalized successfully';
+      const notice = response.data?.details?.notice;
+      
+      if (notice) {
+        setSuccess(`${message}\n\n⚠️ ${notice}`);
+      } else {
+        setSuccess(message);
+      }
+      
       setShowFinalizeDialog(false);
       setSelectedReturn(null);
       setFinalizeImpact(null);
