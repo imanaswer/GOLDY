@@ -10749,6 +10749,9 @@ async def get_purchase_finalize_impact(purchase_id: str, current_user: User = De
     if not purchase:
         raise HTTPException(status_code=404, detail="Purchase not found")
     
+    # Convert Decimal128 to float for calculations
+    purchase = decimal_to_float(purchase)
+    
     vendor = await db.parties.find_one({"id": purchase.get("vendor_party_id")})
     vendor_name = vendor.get("name") if vendor else "Unknown"
     
