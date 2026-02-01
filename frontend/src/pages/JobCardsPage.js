@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, FileText, Trash2, Edit, AlertTriangle, Save, FolderOpen, Settings, CheckCircle, Truck, Eye, Lock } from 'lucide-react';
+import { Plus, FileText, Trash2, Edit, AlertTriangle, Save, FolderOpen, Settings, CheckCircle, Truck, Eye, Lock, Info } from 'lucide-react';
 import { ConfirmationDialog } from '../components/ConfirmationDialog';
 import Pagination from '../components/Pagination';
 import { useURLPagination } from '../hooks/useURLPagination';
