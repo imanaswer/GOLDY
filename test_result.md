@@ -12301,38 +12301,55 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      🐛 RETURNS MODULE - DECIMAL128 INVOICE DATA LOADING FIX
+      🐛 RETURNS MODULE - DECIMAL128 INVOICE DATA LOADING FIX (2nd ATTEMPT)
       
       PROBLEM:
       ========
       - User clicks "+ Create Return" button
       - Frontend calls /api/invoices/returnable to load finalized invoices
-      - Backend crashes with TypeError when trying to convert Decimal128 to float
+      - Backend crashes with Decimal128 serialization errors
       - Dialog shows "Failed to load invoice data" error
       - Warning displays "No finalized or paid invoices available for return"
       
-      ROOT CAUSE:
-      ===========
-      At lines 5443-5444 in get_returnable_invoices endpoint:
+      ITERATION 1 - Incomplete Fix:
+      ==============================
+      Initial fix attempted to convert grand_total and balance_due fields individually.
+      Result: Still failed with ValueError: [TypeError("'Decimal128' object is not iterable")]
+      Reason: Items array inside invoices still contained unconverted Decimal128 objects
+      
+      ITERATION 2 - Complete Fix:
+      ============================
+      ROOT CAUSE ANALYSIS:
+      Invoices contain nested structures with Decimal128 in multiple places:
+      - invoice.grand_total (Decimal128)
+      - invoice.balance_due (Decimal128)  
+      - invoice.items[].weight (Decimal128)
+      - invoice.items[].line_total (Decimal128)
+      - invoice.items[].net_gold_weight (Decimal128)
+      
+      When FastAPI tries to serialize the response, it encounters Decimal128 in the
+      items array and fails because Decimal128 is not JSON-serializable.
+      
+      FINAL FIX APPLIED:
+      ==================
+      Line 5438 in get_returnable_invoices endpoint:
       ```python
-      "total_amount": float(inv.get("grand_total", 0)),
-      "balance_amount": float(inv.get("balance_due", 0)),
+      # Convert all Decimal128 values in the invoice to float
+      inv = decimal_to_float(inv)
       ```
       
-      Python's float() function cannot directly convert Decimal128 objects.
-      Must first call .to_decimal() method, then convert to float.
+      This uses the existing decimal_to_float() helper function which:
+      1. Recursively traverses the entire invoice document
+      2. Converts ALL Decimal128 objects to float (including nested items)
+      3. Also converts datetime to ISO format and ObjectId to string
+      4. Returns a fully JSON-serializable dictionary
       
-      FIX APPLIED:
-      ============
-      1. get_returnable_invoices endpoint (lines 5440-5455):
+      After conversion, we can safely access fields:
       ```python
-      # Handle Decimal128 conversion for monetary values
-      grand_total = inv.get("grand_total", 0)
-      if isinstance(grand_total, Decimal128):
-          grand_total = float(grand_total.to_decimal())
-      else:
-          grand_total = float(grand_total) if grand_total else 0.0
-      
+      "total_amount": float(inv.get("grand_total", 0)) if inv.get("grand_total") else 0.0,
+      "balance_amount": float(inv.get("balance_due", 0)) if inv.get("balance_due") else 0.0,
+      "items": inv.get("items", [])  # Now safe - all Decimal128 converted
+      ```
       balance_due = inv.get("balance_due", 0)
       if isinstance(balance_due, Decimal128):
           balance_due = float(balance_due.to_decimal())
