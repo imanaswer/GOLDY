@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone
 
 # Configuration
-BACKEND_URL = "https://purchase-value-test.preview.emergentagent.com/api"
+BACKEND_URL = "https://filter-search-issue.preview.emergentagent.com/api"
 TEST_USER = {
     "username": "admin_netflow_test",
     "password": "TestAdmin@123"
