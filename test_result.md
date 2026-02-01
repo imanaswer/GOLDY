@@ -12107,3 +12107,41 @@ agent_communication:
       6. Verify payment appears in Finance page transactions
       
       Backend restarted successfully. Ready for user to test the payment flow.
+  
+  - agent: "main"
+    message: |
+      🔧 ADDITIONAL FIX APPLIED - DECIMAL128 SERIALIZATION ERROR
+      
+      USER FEEDBACK:
+      Payment still failing with same "Failed to add payment" error.
+      - Vendor: AShly (walk-in)
+      - Balance Due: 112.45 OMR
+      - Payment Amount: 112.45
+      
+      NEW ROOT CAUSE IDENTIFIED:
+      Backend logs revealed Pydantic ValidationError at line 4244:
+      - MongoDB stores financial values as Decimal128 (for precision)
+      - Pydantic Purchase model expects regular float values
+      - Creating Purchase(**existing) failed validation for:
+        * items[].weight_grams (Decimal128 → float)
+        * items[].rate_per_gram_22k (Decimal128 → float)
+        * items[].calculated_amount (Decimal128 → float)
+        * paid_amount_money (Decimal128 → float)
+        * balance_due_money (Decimal128 → float)
+      
+      SECOND FIX APPLIED (Line 4245):
+      ✅ Added decimal_to_float() conversion before Pydantic validation
+      ✅ Converts all Decimal128 values to Python floats
+      ✅ Maintains data integrity while fixing serialization
+      
+      COMPLETE FIX SUMMARY:
+      1. Walk-in vendor handling (lines 4281-4293) ✅
+      2. Decimal128 serialization (line 4245) ✅
+      
+      Backend restarted successfully. Payment endpoint should now work for:
+      - Walk-in vendors
+      - Saved vendors
+      - Partial payments
+      - Full balance payments
+      
+      Ready for user testing.
