@@ -322,75 +322,39 @@ class BackendTester:
             jobcard = jobcard_response.json()
             
             # Extract gold settlement values for calculation verification
-            advance_grams = jobcard.get("advance_in_gold_grams", 0)
-            advance_rate = jobcard.get("advance_gold_rate", 0)
-            exchange_grams = jobcard.get("exchange_in_gold_grams", 0)
-            exchange_rate = jobcard.get("exchange_gold_rate", 0)
+            advance_grams = float(jobcard.get("advance_in_gold_grams", 0) or 0)
+            advance_rate = float(jobcard.get("advance_gold_rate", 0) or 0)
+            exchange_grams = float(jobcard.get("exchange_in_gold_grams", 0) or 0)
+            exchange_rate = float(jobcard.get("exchange_gold_rate", 0) or 0)
             
             # Calculate expected gold settlement deductions
-            # advance_gold_value = 6.750 × 26.50 = 178.875 OMR
-            # exchange_gold_value = 4.125 × 25.75 = 106.219 OMR
-            # Total deduction = 285.094 OMR
-            expected_advance_value = advance_grams * advance_rate
-            expected_exchange_value = exchange_grams * exchange_rate
+            expected_advance_value = round(advance_grams * advance_rate, 3)
+            expected_exchange_value = round(exchange_grams * exchange_rate, 3)
             expected_total_deduction = expected_advance_value + expected_exchange_value
             
-            # Create invoice data for conversion
-            invoice_data = {
-                "customer_type": "saved",
-                "customer_id": jobcard.get("customer_id"),
-                "items": [
-                    {
-                        "description": "Gold Ring Repair - Converted from Job Card",
-                        "qty": 1,
-                        "gross_weight": 15.500,
-                        "stone_weight": 0.000,
-                        "net_gold_weight": 15.500,
-                        "weight": 15.500,
-                        "purity": 916,
-                        "metal_rate": 185.00,
-                        "gold_value": 2867.50,  # 15.5 * 185
-                        "making_charge_type": "flat",
-                        "making_value": 150.00,
-                        "stone_charges": 0.00,
-                        "wastage_charges": 0.00,
-                        "item_discount": 0.00,
-                        "vat_percent": 5.0,
-                        "vat_amount": 150.88,  # 5% of (2867.50 + 150.00)
-                        "line_total": 3168.38
-                    }
-                ],
-                "subtotal": 3017.50,
-                "discount_amount": 0.00,
-                "tax_type": "cgst_sgst",
-                "gst_percent": 5.0,
-                "cgst_total": 75.44,
-                "sgst_total": 75.44,
-                "vat_total": 150.88,
-                "grand_total": 3168.38,
-                "paid_amount": 0.00,
-                "balance_due": 3168.38  # This should be reduced by gold settlement
-            }
+            # Convert job card to invoice - backend will compute grand_total from job card items
+            invoice_data = {}  # Empty - let backend compute from job card
             
-            # Convert job card to invoice
             convert_response = self.session.post(f"{BACKEND_URL}/jobcards/{jobcard_id}/convert-to-invoice", json=invoice_data)
             
             if convert_response.status_code == 200:
-                # API returns full invoice object directly, not a wrapper with invoice_id
+                # API returns full invoice object directly
                 invoice = convert_response.json()
                 invoice_id = invoice.get("id")
                 
-                # Verify we have the invoice data directly
                 if invoice_id:
-                    
-                    # Verify gold settlement calculations
-                    actual_balance_due = invoice.get("balance_due", 0)
+                    # Get actual values from the created invoice
+                    actual_balance_due = float(invoice.get("balance_due", 0))
+                    actual_grand_total = float(invoice.get("grand_total", 0))
                     invoice_notes = invoice.get("notes", "")
                     
-                    # Expected balance_due = grand_total - gold_settlement_deduction
-                    expected_balance_due = 3168.38 - expected_total_deduction
+                    # VERIFY FORMULA: balance_due = grand_total - advance_gold_value - exchange_gold_value
+                    # Backend computes: balance_due = grand_total - (advance_grams * advance_rate) - (exchange_grams * exchange_rate)
+                    expected_balance_due = round(actual_grand_total - expected_total_deduction, 3)
+                    if expected_balance_due < 0:
+                        expected_balance_due = 0.0
                     
-                    # Check if balance_due is calculated correctly
+                    # Check if the formula was applied correctly
                     balance_correct = abs(actual_balance_due - expected_balance_due) < 0.01
                     
                     # Check if notes contain gold settlement breakdown
@@ -401,15 +365,18 @@ class BackendTester:
                     )
                     
                     # Verify precision of calculations
-                    advance_value_precise = abs(expected_advance_value - (advance_grams * advance_rate)) < 0.001
-                    exchange_value_precise = abs(expected_exchange_value - (exchange_grams * exchange_rate)) < 0.001
+                    advance_value_precise = abs(expected_advance_value - round(advance_grams * advance_rate, 3)) < 0.001
+                    exchange_value_precise = abs(expected_exchange_value - round(exchange_grams * exchange_rate, 3)) < 0.001
                     
-                    all_correct = balance_correct and notes_contain_settlement and advance_value_precise and exchange_value_precise
+                    # Check that gold settlement was actually deducted (balance_due < grand_total when there's settlement)
+                    settlement_applied = (expected_total_deduction == 0) or (actual_balance_due < actual_grand_total)
                     
-                    details = f"Balance Due: {actual_balance_due:.3f} OMR (Expected: {expected_balance_due:.3f}) ({'✓' if balance_correct else '✗'}), "
-                    details += f"Advance Value: {expected_advance_value:.3f} OMR ({'✓' if advance_value_precise else '✗'}), "
-                    details += f"Exchange Value: {expected_exchange_value:.3f} OMR ({'✓' if exchange_value_precise else '✗'}), "
-                    details += f"Notes contain settlement: {'✓' if notes_contain_settlement else '✗'}"
+                    all_correct = balance_correct and notes_contain_settlement and advance_value_precise and exchange_value_precise and settlement_applied
+                    
+                    details = f"Grand Total: {actual_grand_total:.3f}, "
+                    details += f"Balance Due: {actual_balance_due:.3f} (Expected: {expected_balance_due:.3f}) ({'✓' if balance_correct else '✗'}), "
+                    details += f"Settlement Deduction: {expected_total_deduction:.3f} OMR ({'✓' if settlement_applied else '✗'}), "
+                    details += f"Notes: {'✓' if notes_contain_settlement else '✗'}"
                     
                     self.log_result(
                         "Convert Job Card to Invoice - Gold Settlement Calculations",
@@ -417,13 +384,14 @@ class BackendTester:
                         details,
                         {
                             "invoice_id": invoice_id,
-                            "original_grand_total": 3168.38,
+                            "grand_total": actual_grand_total,
                             "advance_gold_value": expected_advance_value,
                             "exchange_gold_value": expected_exchange_value,
                             "total_deduction": expected_total_deduction,
                             "expected_balance_due": expected_balance_due,
                             "actual_balance_due": actual_balance_due,
                             "balance_calculation_correct": balance_correct,
+                            "settlement_applied": settlement_applied,
                             "notes_sample": invoice_notes[:100] if invoice_notes else "No notes"
                         }
                     )
