@@ -1233,7 +1233,9 @@ export default function PurchasesPage() {
                           <div className="p-2 bg-gray-100 border border-gray-300 rounded text-right font-mono font-semibold">
                             {item.calculated_amount.toFixed(3)}
                           </div>
-                          <p className="text-xs text-gray-600">Auto-calculated at 22K</p>
+                          <p className="text-xs text-gray-600">
+                            Formula: ({item.weight_grams}g × {item.rate_per_gram_22k} × (916/{item.entered_purity})) ÷ {selectedConversionFactor}
+                          </p>
                         </div>
                       </div>
                     </div>
