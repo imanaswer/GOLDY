@@ -1660,6 +1660,7 @@ export default function JobCardsPage() {
                       <p className="font-semibold mb-1">Important: This is an ESTIMATE only</p>
                       <ul className="list-disc list-inside space-y-0.5 text-amber-800">
                         <li>Based on gold rate: {parseFloat(formData.gold_rate_at_jobcard).toFixed(2)} OMR/g</li>
+                        <li>Gold settlement (advance & exchange gold) is deducted from total</li>
                         <li>Actual invoice amount may vary based on final weight and current market rates</li>
                         <li>Final costs determined at invoice conversion</li>
                       </ul>
