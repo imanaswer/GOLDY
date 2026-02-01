@@ -171,10 +171,10 @@ export default function PurchasesPage() {
       if (filterVendor && filterVendor !== 'all') params.append('vendor_party_id', filterVendor);
       if (filterStatus && filterStatus !== 'all') params.append('status', filterStatus);
       if (filterWalkIn && filterWalkIn !== 'all') {
-        params.append('is_walk_in', filterWalkIn === 'walk_in' ? 'true' : 'false');
+        params.append('vendor_type', filterWalkIn); // Fixed: use 'vendor_type' instead of 'is_walk_in'
       }
       if (searchCustomerId && searchCustomerId.trim() !== '') {
-        params.append('vendor_oman_id', searchCustomerId.trim());
+        params.append('customer_id', searchCustomerId.trim()); // Fixed: use 'customer_id' instead of 'vendor_oman_id'
       }
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
