@@ -6776,6 +6776,8 @@ async def get_accounts(current_user: User = Depends(require_permission('finance.
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have permission to view finance data")
     
     accounts = await db.accounts.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
+    # Convert Decimal128 to float for JSON serialization
+    accounts = [decimal_to_float(account) for account in accounts]
     return accounts
 
 @api_router.get("/accounts/{account_id}", response_model=Account)
