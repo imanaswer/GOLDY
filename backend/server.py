@@ -5094,6 +5094,15 @@ async def convert_jobcard_to_invoice(jobcard_id: str, invoice_data: dict, curren
         "created_by": current_user.id
     }
     
+    # Add notes about gold settlement if applicable
+    notes_parts = []
+    if advance_gold_value > 0:
+        notes_parts.append(f"Advance Gold: {advance_grams:.3f}g @ {advance_rate:.2f} OMR/g = {advance_gold_value:.3f} OMR deducted")
+    if exchange_gold_value > 0:
+        notes_parts.append(f"Exchange Gold: {exchange_grams:.3f}g @ {exchange_rate:.2f} OMR/g = {exchange_gold_value:.3f} OMR deducted")
+    if notes_parts:
+        invoice_dict["notes"] = " | ".join(notes_parts)
+    
     # Add customer-specific fields
     if customer_type == 'saved':
         invoice_dict["customer_id"] = customer_id
