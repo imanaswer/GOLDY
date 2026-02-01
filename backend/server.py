@@ -8381,6 +8381,11 @@ async def get_financial_summary(
     accounts = await db.accounts.find({"is_deleted": False}, {"_id": 0}).to_list(1000)
     invoices = await db.invoices.find(invoice_query, {"_id": 0}).to_list(10000)
     
+    # Convert Decimal128 to float for calculations (prevents TypeError with mixed types)
+    transactions = [decimal_to_float(txn) for txn in transactions]
+    accounts = [decimal_to_float(acc) for acc in accounts]
+    invoices = [decimal_to_float(inv) for inv in invoices]
+    
     # ============================================================================
     # LEDGER-BASED CALCULATIONS (Authoritative Source)
     # ============================================================================
