@@ -12256,3 +12256,122 @@ agent_communication:
       
       Ready for testing!
 
+
+
+user_problem_statement: |
+  Returns Module - Failed to Load Invoice Data (Decimal128 Error)
+  - User reports "Failed to load invoice data" when trying to create a return
+  - Dialog shows warning "No finalized or paid invoices available for return"
+  - Backend error: TypeError: float() argument must be a string or a real number, not 'Decimal128'
+  - Issue occurs at lines 5443-5444 in get_returnable_invoices endpoint
+  - When formatting invoice data, trying to convert Decimal128 to float directly
+
+backend:
+  - task: "Fix Decimal128 in get_returnable_invoices endpoint"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ USER REPORT - Failed to load invoice data when opening Create Return dialog. Shows 'No finalized or paid invoices available for return' error. Backend logs show TypeError: float() argument must be a string or a real number, not 'Decimal128' at lines 5443-5444."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED - Root cause: get_returnable_invoices endpoint (lines 5434-5462) was calling float() directly on Decimal128 values for grand_total and balance_due fields. Added proper Decimal128 type checking and conversion before float casting. Lines 5440-5455: Check if grand_total and balance_due are Decimal128 instances, convert using .to_decimal() method, then cast to float. Also preventively fixed get_invoice_returnable_items endpoint (lines 5533-5543) where net_gold_weight and line_total could have same issue."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Fix Decimal128 in get_returnable_invoices endpoint"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "critical"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🐛 RETURNS MODULE - DECIMAL128 INVOICE DATA LOADING FIX
+      
+      PROBLEM:
+      ========
+      - User clicks "+ Create Return" button
+      - Frontend calls /api/invoices/returnable to load finalized invoices
+      - Backend crashes with TypeError when trying to convert Decimal128 to float
+      - Dialog shows "Failed to load invoice data" error
+      - Warning displays "No finalized or paid invoices available for return"
+      
+      ROOT CAUSE:
+      ===========
+      At lines 5443-5444 in get_returnable_invoices endpoint:
+      ```python
+      "total_amount": float(inv.get("grand_total", 0)),
+      "balance_amount": float(inv.get("balance_due", 0)),
+      ```
+      
+      Python's float() function cannot directly convert Decimal128 objects.
+      Must first call .to_decimal() method, then convert to float.
+      
+      FIX APPLIED:
+      ============
+      1. get_returnable_invoices endpoint (lines 5440-5455):
+      ```python
+      # Handle Decimal128 conversion for monetary values
+      grand_total = inv.get("grand_total", 0)
+      if isinstance(grand_total, Decimal128):
+          grand_total = float(grand_total.to_decimal())
+      else:
+          grand_total = float(grand_total) if grand_total else 0.0
+      
+      balance_due = inv.get("balance_due", 0)
+      if isinstance(balance_due, Decimal128):
+          balance_due = float(balance_due.to_decimal())
+      else:
+          balance_due = float(balance_due) if balance_due else 0.0
+      ```
+      
+      2. get_invoice_returnable_items endpoint (lines 5533-5543):
+      Also added Decimal128 handling for net_gold_weight and line_total
+      to prevent similar errors when loading returnable items.
+      
+      ENDPOINTS FIXED:
+      ================
+      ✅ GET /api/invoices/returnable - Load finalized invoices for return
+      ✅ GET /api/invoices/{invoice_id}/returnable-items - Load items available for return
+      
+      TESTING SCENARIOS:
+      ==================
+      1. Navigate to Returns page
+      2. Click "+ Create Return" button
+      3. Select "Sales Return" as return type
+      4. Invoice dropdown should load successfully showing finalized invoices
+      5. Select an invoice - returnable items should load
+      6. Create a draft return successfully
+      7. Verify no "Failed to load invoice data" errors
+      
+      RELATED FIXES:
+      ==============
+      This is part of a series of Decimal128 serialization fixes:
+      - Invoice finalize-impact endpoint (previous fix)
+      - Invoice delete-impact endpoint (previous fix)
+      - Returns finalize-impact endpoint (already fixed)
+      - Returnable invoices endpoint (this fix)
+      - Returnable items endpoint (this fix)
+      
+      All returns module endpoints now have consistent Decimal128 handling.
+      
+      SERVICES STATUS:
+      ================
+      ✅ Backend: Restarted successfully, running on port 8001
+      ✅ Frontend: Running on port 3000
+      ✅ MongoDB: Running
+      
+      Ready for testing!
+
