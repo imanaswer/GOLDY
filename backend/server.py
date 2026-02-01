@@ -893,6 +893,9 @@ def create_pagination_response(items: list, total_count: int, page: int, page_si
     """
     total_pages = (total_count + page_size - 1) // page_size  # Ceiling division
     
+    # Convert Decimal128 to float for JSON serialization
+    items = [decimal_to_float(item) for item in items]
+    
     return {
         "items": items,
         "pagination": {
