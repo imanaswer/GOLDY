@@ -72,7 +72,8 @@ export default function PurchasesPage() {
   // NEW: Multiple items and walk-in vendor support
   const [isMultipleItems, setIsMultipleItems] = useState(false);
   const [isWalkIn, setIsWalkIn] = useState(false);
-  const [conversionFactor, setConversionFactor] = useState(0.920);
+  const [conversionFactor, setConversionFactor] = useState(0.920); // Global setting from backend
+  const [selectedConversionFactor, setSelectedConversionFactor] = useState('0.920'); // User's selection for this purchase
   const [items, setItems] = useState([
     { id: '1', description: '', weight_grams: '', entered_purity: '916', rate_per_gram_22k: '', calculated_amount: 0 }
   ]);
