@@ -1228,13 +1228,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Dashboard API - Inventory Headers Endpoint"
-    - "Dashboard API - Stock Totals Endpoint"
-    - "Dashboard API - Outstanding Summary Endpoint"
-    - "Dashboard Page Data Loading"
-  stuck_tasks:
-    - "Dashboard Page Data Loading"
-  test_all: true
+    - "Dashboard API - Outstanding Summary Endpoint - Decimal128 Fix"
+  stuck_tasks: []
+  test_all: false
   test_priority: "critical"
 
 agent_communication:
