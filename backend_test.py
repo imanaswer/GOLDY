@@ -900,107 +900,564 @@ class BackendTester:
             self.log_result("Gold Settlement Precision Validation", False, f"Error: {str(e)}")
             return False
     
-    def test_gold_settlement_edge_cases(self):
-        """Test edge cases and error handling for gold settlement"""
-        print("\n--- Testing Gold Settlement Edge Cases ---")
+    def test_enhanced_purchase_valuation_purity_adjustment(self):
+        """Test Enhanced Purchase Valuation - Purity Adjustment Calculation"""
+        print("\n" + "="*80)
+        print("🎯 TESTING ENHANCED PURCHASE VALUATION - PURITY ADJUSTMENT")
+        print("="*80)
+        
+        print("\n📋 TEST REQUIREMENTS:")
+        print("Formula: Amount = (Weight × Rate × (916 / Entered Purity)) ÷ Conversion Factor")
+        print("Test Data: Weight=100g, Rate=50 OMR/g, Conversion Factor=0.920")
+        print("Expected Results:")
+        print("  • Purity 916: (100 × 50 × 1.0) ÷ 0.920 = 5434.783 OMR")
+        print("  • Purity 999: (100 × 50 × 0.917) ÷ 0.920 = 4983.152 OMR")
+        print("  • Purity 875: (100 × 50 × 1.047) ÷ 0.920 = 5688.043 OMR")
         
         try:
-            customer_id = self.get_or_create_test_customer()
-            if not customer_id:
-                return
+            vendor_id = self.get_or_create_test_vendor()
+            if not vendor_id:
+                return False
             
-            # Test 1: Job card with zero gold settlement values
-            zero_settlement_data = {
-                "customer_type": "saved",
-                "customer_id": customer_id,
-                "items": [
-                    {
-                        "category": "Rings",
-                        "description": "Zero Settlement Test",
-                        "qty": 1,
-                        "weight_in": 5.000,
-                        "purity": 916,
-                        "work_type": "Repair"
-                    }
-                ],
-                "advance_in_gold_grams": 0.000,
-                "advance_gold_rate": 0.00,
-                "exchange_in_gold_grams": 0.000,
-                "exchange_gold_rate": 0.00,
-                "notes": "Zero settlement test"
-            }
+            # Test scenarios with consistent test data
+            test_scenarios = [
+                {
+                    "name": "Purity 916 (22K) - Baseline",
+                    "purity": 916,
+                    "expected_amount": 5434.783,
+                    "purity_adjustment": 1.0,
+                    "description": "Should work same as old formula"
+                },
+                {
+                    "name": "Purity 999 (24K) - Lower Amount", 
+                    "purity": 999,
+                    "expected_amount": 4983.152,
+                    "purity_adjustment": 0.917,
+                    "description": "Should give LOWER amount"
+                },
+                {
+                    "name": "Purity 875 (21K) - Higher Amount",
+                    "purity": 875, 
+                    "expected_amount": 5688.043,
+                    "purity_adjustment": 1.047,
+                    "description": "Should give HIGHER amount"
+                }
+            ]
             
-            response = self.session.post(f"{BACKEND_URL}/jobcards", json=zero_settlement_data)
+            all_tests_passed = True
+            test_results = []
             
-            zero_settlement_success = response.status_code == 201
+            for scenario in test_scenarios:
+                print(f"\n--- Testing {scenario['name']} ---")
+                
+                # Create purchase with specific purity
+                purchase_data = {
+                    "vendor_party_id": vendor_id,
+                    "description": f"Purity Test - {scenario['purity']} purity",
+                    "weight_grams": 100.000,  # Test data: 100g
+                    "entered_purity": scenario["purity"],
+                    "rate_per_gram": 50.000,  # Test data: 50 OMR/g
+                    "conversion_factor": 0.920,  # Test data: 0.920
+                    "paid_amount_money": 0.0
+                }
+                
+                response = self.session.post(f"{BACKEND_URL}/purchases", json=purchase_data)
+                
+                if response.status_code == 201:
+                    purchase = response.json()
+                    actual_amount = float(purchase.get("amount_total", 0))
+                    actual_purity = purchase.get("entered_purity")
+                    actual_conversion_factor = float(purchase.get("conversion_factor", 0))
+                    
+                    # Calculate expected purity adjustment
+                    expected_purity_adjustment = 916 / scenario["purity"]
+                    actual_purity_adjustment = round(expected_purity_adjustment, 3)
+                    
+                    # Verify calculation: (100 × 50 × purity_adjustment) ÷ 0.920
+                    calculated_amount = (100.000 * 50.000 * expected_purity_adjustment) / 0.920
+                    
+                    # Validations
+                    amount_correct = abs(actual_amount - scenario["expected_amount"]) < 0.01
+                    purity_correct = actual_purity == scenario["purity"]
+                    conversion_factor_correct = abs(actual_conversion_factor - 0.920) < 0.001
+                    calculation_matches = abs(actual_amount - calculated_amount) < 0.01
+                    
+                    test_passed = all([amount_correct, purity_correct, conversion_factor_correct, calculation_matches])
+                    
+                    if not test_passed:
+                        all_tests_passed = False
+                    
+                    details = f"Purity: {actual_purity} ({'✓' if purity_correct else '✗'}), "
+                    details += f"Amount: {actual_amount:.3f} vs {scenario['expected_amount']:.3f} ({'✓' if amount_correct else '✗'}), "
+                    details += f"Adjustment: {actual_purity_adjustment:.3f} ({'✓' if abs(actual_purity_adjustment - scenario['purity_adjustment']) < 0.01 else '✗'}), "
+                    details += f"Calculation: {'✓' if calculation_matches else '✗'}"
+                    
+                    test_results.append({
+                        "scenario": scenario["name"],
+                        "passed": test_passed,
+                        "details": details,
+                        "actual_amount": actual_amount,
+                        "expected_amount": scenario["expected_amount"],
+                        "purity_adjustment": actual_purity_adjustment
+                    })
+                    
+                    self.log_result(
+                        f"Purity Adjustment - {scenario['name']}",
+                        test_passed,
+                        details,
+                        {
+                            "purchase_id": purchase.get("id"),
+                            "formula": f"(100 × 50 × {actual_purity_adjustment:.3f}) ÷ 0.920 = {actual_amount:.3f}",
+                            "expected_formula": f"(100 × 50 × {scenario['purity_adjustment']:.3f}) ÷ 0.920 = {scenario['expected_amount']:.3f}",
+                            "purity": actual_purity,
+                            "conversion_factor": actual_conversion_factor
+                        }
+                    )
+                else:
+                    all_tests_passed = False
+                    self.log_result(f"Purity Adjustment - {scenario['name']}", False, f"Failed to create purchase: {response.status_code} - {response.text}")
             
-            # Test 2: Job card with null/missing gold settlement values
-            null_settlement_data = {
-                "customer_type": "saved",
-                "customer_id": customer_id,
-                "items": [
-                    {
-                        "category": "Rings",
-                        "description": "Null Settlement Test",
-                        "qty": 1,
-                        "weight_in": 5.000,
-                        "purity": 916,
-                        "work_type": "Repair"
-                    }
-                ],
-                # Omit gold settlement fields entirely
-                "notes": "Null settlement test"
-            }
+            # Summary
+            passed_count = sum(1 for result in test_results if result["passed"])
+            total_count = len(test_results)
             
-            response2 = self.session.post(f"{BACKEND_URL}/jobcards", json=null_settlement_data)
+            print(f"\n🔍 PURITY ADJUSTMENT TEST SUMMARY:")
+            print(f"   • Tests Passed: {passed_count}/{total_count}")
+            print(f"   • Success Rate: {(passed_count/total_count)*100:.1f}%")
             
-            null_settlement_success = response2.status_code == 201
-            
-            # Test 3: Job card with only partial gold settlement (advance only)
-            partial_settlement_data = {
-                "customer_type": "saved",
-                "customer_id": customer_id,
-                "items": [
-                    {
-                        "category": "Rings",
-                        "description": "Partial Settlement Test",
-                        "qty": 1,
-                        "weight_in": 5.000,
-                        "purity": 916,
-                        "work_type": "Repair"
-                    }
-                ],
-                "advance_in_gold_grams": 2.500,
-                "advance_gold_rate": 30.00,
-                # Omit exchange fields
-                "notes": "Partial settlement test"
-            }
-            
-            response3 = self.session.post(f"{BACKEND_URL}/jobcards", json=partial_settlement_data)
-            
-            partial_settlement_success = response3.status_code == 201
-            
-            all_edge_cases_passed = zero_settlement_success and null_settlement_success and partial_settlement_success
-            
-            details = f"Zero settlement: {'✓' if zero_settlement_success else '✗'}, "
-            details += f"Null settlement: {'✓' if null_settlement_success else '✗'}, "
-            details += f"Partial settlement: {'✓' if partial_settlement_success else '✗'}"
+            for result in test_results:
+                status = "✅ PASS" if result["passed"] else "❌ FAIL"
+                print(f"   • {result['scenario']}: {status}")
+                print(f"     Amount: {result['actual_amount']:.3f} (Expected: {result['expected_amount']:.3f})")
             
             self.log_result(
-                "Gold Settlement Edge Cases",
-                all_edge_cases_passed,
-                details,
+                "Enhanced Purchase Valuation - Purity Adjustment Tests",
+                all_tests_passed,
+                f"Passed: {passed_count}/{total_count} scenarios",
                 {
-                    "zero_settlement": zero_settlement_success,
-                    "null_settlement": null_settlement_success,
-                    "partial_settlement": partial_settlement_success
+                    "total_scenarios": total_count,
+                    "passed_scenarios": passed_count,
+                    "success_rate": f"{(passed_count/total_count)*100:.1f}%",
+                    "test_results": test_results
                 }
             )
             
-            return all_edge_cases_passed
+            return all_tests_passed
             
         except Exception as e:
-            self.log_result("Gold Settlement Edge Cases", False, f"Error: {str(e)}")
+            self.log_result("Enhanced Purchase Valuation - Purity Adjustment", False, f"Error: {str(e)}")
+            return False
+    
+    def test_multiple_items_purchase_different_purities(self):
+        """Test multiple items purchase with different purities in same purchase"""
+        print("\n--- Testing Multiple Items Purchase with Different Purities ---")
+        
+        try:
+            vendor_id = self.get_or_create_test_vendor()
+            if not vendor_id:
+                return False
+            
+            # Test multiple items with different purities
+            # Item 1: 50g, 916 purity, 50 OMR/g → (50 × 50 × 1.0) ÷ 0.920 = 2717.391 OMR
+            # Item 2: 30g, 999 purity, 52 OMR/g → (30 × 52 × 0.917) ÷ 0.920 = 1556.304 OMR  
+            # Item 3: 20g, 875 purity, 48 OMR/g → (20 × 48 × 1.047) ÷ 0.920 = 1090.087 OMR
+            # Total: 5363.782 OMR
+            
+            purchase_data = {
+                "vendor_party_id": vendor_id,
+                "items": [
+                    {
+                        "description": "22K Gold Chain",
+                        "weight_grams": 50.000,
+                        "entered_purity": 916,
+                        "rate_per_gram_22k": 50.000
+                    },
+                    {
+                        "description": "24K Gold Bar",
+                        "weight_grams": 30.000,
+                        "entered_purity": 999,
+                        "rate_per_gram_22k": 52.000
+                    },
+                    {
+                        "description": "21K Gold Bracelet",
+                        "weight_grams": 20.000,
+                        "entered_purity": 875,
+                        "rate_per_gram_22k": 48.000
+                    }
+                ],
+                "conversion_factor": 0.920,
+                "paid_amount_money": 0.0
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/purchases", json=purchase_data)
+            
+            if response.status_code == 201:
+                purchase = response.json()
+                actual_items = purchase.get("items", [])
+                actual_total = float(purchase.get("amount_total", 0))
+                
+                # Expected calculations
+                expected_amounts = [2717.391, 1556.304, 1090.087]
+                expected_total = sum(expected_amounts)
+                
+                # Verify each item calculation
+                items_correct = []
+                for i, (actual_item, expected_amount) in enumerate(zip(actual_items, expected_amounts)):
+                    actual_amount = float(actual_item.get("calculated_amount", 0))
+                    amount_correct = abs(actual_amount - expected_amount) < 0.01
+                    items_correct.append(amount_correct)
+                    
+                    purity = actual_item.get("entered_purity")
+                    weight = actual_item.get("weight_grams")
+                    rate = actual_item.get("rate_per_gram_22k")
+                    
+                    print(f"   Item {i+1}: {weight}g @ {rate} OMR/g, Purity {purity} → {actual_amount:.3f} OMR ({'✓' if amount_correct else '✗'})")
+                
+                # Verify total
+                total_correct = abs(actual_total - expected_total) < 0.01
+                items_count_correct = len(actual_items) == 3
+                all_items_correct = all(items_correct)
+                
+                all_correct = all([total_correct, items_count_correct, all_items_correct])
+                
+                details = f"Items: {len(actual_items)}/3 ({'✓' if items_count_correct else '✗'}), "
+                details += f"Individual Calculations: {'✓' if all_items_correct else '✗'}, "
+                details += f"Total: {actual_total:.3f} vs {expected_total:.3f} ({'✓' if total_correct else '✗'})"
+                
+                self.log_result(
+                    "Multiple Items Purchase - Different Purities",
+                    all_correct,
+                    details,
+                    {
+                        "purchase_id": purchase.get("id"),
+                        "items_count": len(actual_items),
+                        "expected_amounts": expected_amounts,
+                        "actual_amounts": [float(item.get("calculated_amount", 0)) for item in actual_items],
+                        "expected_total": expected_total,
+                        "actual_total": actual_total
+                    }
+                )
+                
+                return all_correct
+            else:
+                self.log_result("Multiple Items Purchase - Creation", False, f"Failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Multiple Items Purchase Different Purities", False, f"Error: {str(e)}")
+            return False
+    
+    def test_walk_in_filtering_and_customer_id_search(self):
+        """Test walk-in filtering and customer ID search functionality"""
+        print("\n--- Testing Walk-in Filtering and Customer ID Search ---")
+        
+        try:
+            # Create test purchases: both walk-in and saved vendor
+            vendor_id = self.get_or_create_test_vendor()
+            if not vendor_id:
+                return False
+            
+            # Create saved vendor purchase
+            saved_vendor_purchase = {
+                "vendor_party_id": vendor_id,
+                "description": "Saved Vendor Purchase",
+                "weight_grams": 25.000,
+                "entered_purity": 916,
+                "rate_per_gram": 50.000,
+                "paid_amount_money": 0.0
+            }
+            
+            saved_response = self.session.post(f"{BACKEND_URL}/purchases", json=saved_vendor_purchase)
+            saved_purchase_id = None
+            if saved_response.status_code == 201:
+                saved_purchase_id = saved_response.json().get("id")
+            
+            # Create walk-in vendor purchase
+            walk_in_purchase = {
+                "is_walk_in": True,
+                "walk_in_vendor_name": "Ahmed Al-Rashid",
+                "vendor_oman_id": "87654321",
+                "description": "Walk-in Vendor Purchase",
+                "weight_grams": 15.000,
+                "entered_purity": 916,
+                "rate_per_gram": 48.000,
+                "paid_amount_money": 0.0
+            }
+            
+            walk_in_response = self.session.post(f"{BACKEND_URL}/purchases", json=walk_in_purchase)
+            walk_in_purchase_id = None
+            if walk_in_response.status_code == 201:
+                walk_in_purchase_id = walk_in_response.json().get("id")
+            
+            if not saved_purchase_id or not walk_in_purchase_id:
+                self.log_result("Walk-in Filtering Setup", False, "Failed to create test purchases")
+                return False
+            
+            # Test 1: Get all purchases (no filter)
+            all_response = self.session.get(f"{BACKEND_URL}/purchases")
+            all_purchases = []
+            if all_response.status_code == 200:
+                data = all_response.json()
+                all_purchases = data.get("data", data.get("items", data if isinstance(data, list) else []))
+            
+            # Test 2: Filter by walk-in only
+            walk_in_filter_response = self.session.get(f"{BACKEND_URL}/purchases?vendor_type=walk_in")
+            walk_in_purchases = []
+            if walk_in_filter_response.status_code == 200:
+                data = walk_in_filter_response.json()
+                walk_in_purchases = data.get("data", data.get("items", data if isinstance(data, list) else []))
+            
+            # Test 3: Filter by saved vendors only
+            saved_filter_response = self.session.get(f"{BACKEND_URL}/purchases?vendor_type=saved")
+            saved_purchases = []
+            if saved_filter_response.status_code == 200:
+                data = saved_filter_response.json()
+                saved_purchases = data.get("data", data.get("items", data if isinstance(data, list) else []))
+            
+            # Test 4: Search by customer ID (Oman ID)
+            customer_id_response = self.session.get(f"{BACKEND_URL}/purchases?customer_id=87654321")
+            customer_id_purchases = []
+            if customer_id_response.status_code == 200:
+                data = customer_id_response.json()
+                customer_id_purchases = data.get("data", data.get("items", data if isinstance(data, list) else []))
+            
+            # Validations
+            all_purchases_found = len(all_purchases) >= 2
+            walk_in_filter_works = any(p.get("is_walk_in") == True for p in walk_in_purchases)
+            saved_filter_works = any(p.get("vendor_party_id") is not None for p in saved_purchases)
+            customer_id_search_works = any(p.get("vendor_oman_id") == "87654321" for p in customer_id_purchases)
+            
+            # Check that walk-in filter excludes saved vendors
+            walk_in_filter_excludes_saved = not any(p.get("vendor_party_id") is not None for p in walk_in_purchases)
+            
+            # Check that saved filter excludes walk-in
+            saved_filter_excludes_walk_in = not any(p.get("is_walk_in") == True for p in saved_purchases)
+            
+            all_correct = all([
+                all_purchases_found,
+                walk_in_filter_works,
+                saved_filter_works,
+                customer_id_search_works,
+                walk_in_filter_excludes_saved,
+                saved_filter_excludes_walk_in
+            ])
+            
+            details = f"All: {len(all_purchases)} ({'✓' if all_purchases_found else '✗'}), "
+            details += f"Walk-in Filter: {len(walk_in_purchases)} ({'✓' if walk_in_filter_works else '✗'}), "
+            details += f"Saved Filter: {len(saved_purchases)} ({'✓' if saved_filter_works else '✗'}), "
+            details += f"Customer ID Search: {len(customer_id_purchases)} ({'✓' if customer_id_search_works else '✗'})"
+            
+            self.log_result(
+                "Walk-in Filtering and Customer ID Search",
+                all_correct,
+                details,
+                {
+                    "all_purchases_count": len(all_purchases),
+                    "walk_in_purchases_count": len(walk_in_purchases),
+                    "saved_purchases_count": len(saved_purchases),
+                    "customer_id_purchases_count": len(customer_id_purchases),
+                    "filtering_working": all_correct
+                }
+            )
+            
+            return all_correct
+            
+        except Exception as e:
+            self.log_result("Walk-in Filtering and Customer ID Search", False, f"Error: {str(e)}")
+            return False
+    
+    def test_stock_valuation_916_purity(self):
+        """Test that stock movements use 916 purity regardless of entered purity"""
+        print("\n--- Testing Stock Valuation - 916 Purity Enforcement ---")
+        
+        try:
+            vendor_id = self.get_or_create_test_vendor()
+            if not vendor_id:
+                return False
+            
+            # Create purchase with different purity but stock should be valued at 916
+            purchase_data = {
+                "vendor_party_id": vendor_id,
+                "description": "Stock Valuation Test - 999 Purity Input",
+                "weight_grams": 10.000,
+                "entered_purity": 999,  # Entered as 999 but stock should be 916
+                "rate_per_gram": 50.000,
+                "paid_amount_money": 0.0
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/purchases", json=purchase_data)
+            
+            if response.status_code == 201:
+                purchase = response.json()
+                purchase_id = purchase.get("id")
+                
+                # Check the purchase valuation purity
+                valuation_purity = purchase.get("valuation_purity_fixed")
+                entered_purity = purchase.get("entered_purity")
+                
+                # Get stock movements for this purchase
+                movements_response = self.session.get(f"{BACKEND_URL}/inventory/movements")
+                movements = []
+                if movements_response.status_code == 200:
+                    data = movements_response.json()
+                    movements = data.get("data", data.get("items", data if isinstance(data, list) else []))
+                
+                # Find movement related to this purchase
+                purchase_movement = None
+                for movement in movements:
+                    if movement.get("reference_id") == purchase_id:
+                        purchase_movement = movement
+                        break
+                
+                # Validations
+                valuation_purity_correct = valuation_purity == 916
+                entered_purity_preserved = entered_purity == 999
+                movement_found = purchase_movement is not None
+                
+                movement_purity_correct = False
+                movement_notes_contain_916 = False
+                
+                if purchase_movement:
+                    movement_purity = purchase_movement.get("purity", 0)
+                    movement_notes = purchase_movement.get("notes", "")
+                    
+                    movement_purity_correct = movement_purity == 916
+                    movement_notes_contain_916 = "916" in str(movement_notes)
+                
+                all_correct = all([
+                    valuation_purity_correct,
+                    entered_purity_preserved,
+                    movement_found,
+                    movement_purity_correct,
+                    movement_notes_contain_916
+                ])
+                
+                details = f"Valuation Purity: {valuation_purity} ({'✓' if valuation_purity_correct else '✗'}), "
+                details += f"Entered Purity: {entered_purity} ({'✓' if entered_purity_preserved else '✗'}), "
+                details += f"Movement Found: {'✓' if movement_found else '✗'}, "
+                details += f"Movement Purity: {purchase_movement.get('purity') if purchase_movement else 'N/A'} ({'✓' if movement_purity_correct else '✗'})"
+                
+                self.log_result(
+                    "Stock Valuation - 916 Purity Enforcement",
+                    all_correct,
+                    details,
+                    {
+                        "purchase_id": purchase_id,
+                        "entered_purity": entered_purity,
+                        "valuation_purity_fixed": valuation_purity,
+                        "movement_purity": purchase_movement.get("purity") if purchase_movement else None,
+                        "movement_notes_sample": purchase_movement.get("notes", "")[:100] if purchase_movement else None
+                    }
+                )
+                
+                return all_correct
+            else:
+                self.log_result("Stock Valuation Test - Purchase Creation", False, f"Failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Stock Valuation - 916 Purity Enforcement", False, f"Error: {str(e)}")
+            return False
+    
+    def test_calculation_breakdown_in_notes(self):
+        """Test that calculation breakdown is included in stock movement notes"""
+        print("\n--- Testing Calculation Breakdown in Notes ---")
+        
+        try:
+            vendor_id = self.get_or_create_test_vendor()
+            if not vendor_id:
+                return False
+            
+            # Create purchase with specific values for calculation verification
+            purchase_data = {
+                "vendor_party_id": vendor_id,
+                "description": "Calculation Breakdown Test",
+                "weight_grams": 25.500,
+                "entered_purity": 875,
+                "rate_per_gram": 48.500,
+                "paid_amount_money": 0.0
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/purchases", json=purchase_data)
+            
+            if response.status_code == 201:
+                purchase = response.json()
+                purchase_id = purchase.get("id")
+                
+                # Get stock movements
+                movements_response = self.session.get(f"{BACKEND_URL}/inventory/movements")
+                movements = []
+                if movements_response.status_code == 200:
+                    data = movements_response.json()
+                    movements = data.get("data", data.get("items", data if isinstance(data, list) else []))
+                
+                # Find movement for this purchase
+                purchase_movement = None
+                for movement in movements:
+                    if movement.get("reference_id") == purchase_id:
+                        purchase_movement = movement
+                        break
+                
+                if purchase_movement:
+                    notes = purchase_movement.get("notes", "")
+                    
+                    # Check if notes contain calculation breakdown
+                    contains_weight = "25.5" in notes or "25.500" in notes
+                    contains_rate = "48.5" in notes or "48.500" in notes
+                    contains_purity_calc = "916/875" in notes or "916" in notes and "875" in notes
+                    contains_conversion_factor = "0.92" in notes
+                    contains_formula_elements = "Weight=" in notes and "Rate=" in notes
+                    
+                    # Check for the specific calculation formula
+                    contains_calculation_word = "Calculation" in notes
+                    contains_entered_purity = "Entered purity: 875" in notes
+                    contains_valuation_purity = "Valuation purity: 916" in notes
+                    
+                    breakdown_complete = all([
+                        contains_weight,
+                        contains_rate,
+                        contains_purity_calc,
+                        contains_conversion_factor,
+                        contains_formula_elements,
+                        contains_calculation_word,
+                        contains_entered_purity,
+                        contains_valuation_purity
+                    ])
+                    
+                    details = f"Weight: {'✓' if contains_weight else '✗'}, "
+                    details += f"Rate: {'✓' if contains_rate else '✗'}, "
+                    details += f"Purity Calc: {'✓' if contains_purity_calc else '✗'}, "
+                    details += f"Conversion Factor: {'✓' if contains_conversion_factor else '✗'}, "
+                    details += f"Formula: {'✓' if contains_formula_elements else '✗'}, "
+                    details += f"Complete Breakdown: {'✓' if breakdown_complete else '✗'}"
+                    
+                    self.log_result(
+                        "Calculation Breakdown in Notes",
+                        breakdown_complete,
+                        details,
+                        {
+                            "purchase_id": purchase_id,
+                            "movement_notes": notes,
+                            "breakdown_elements": {
+                                "contains_weight": contains_weight,
+                                "contains_rate": contains_rate,
+                                "contains_purity_calc": contains_purity_calc,
+                                "contains_conversion_factor": contains_conversion_factor,
+                                "contains_formula_elements": contains_formula_elements
+                            }
+                        }
+                    )
+                    
+                    return breakdown_complete
+                else:
+                    self.log_result("Calculation Breakdown - Movement Not Found", False, "Stock movement not found for purchase")
+                    return False
+            else:
+                self.log_result("Calculation Breakdown - Purchase Creation", False, f"Failed: {response.status_code} - {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Calculation Breakdown in Notes", False, f"Error: {str(e)}")
             return False
     
     def get_or_create_test_worker(self):
