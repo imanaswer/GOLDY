@@ -4702,14 +4702,18 @@ class BackendTester:
         print("="*80)
 
 def main():
-    """Main function to run Dashboard Decimal128 Fix tests"""
+    """Main function to run Enhanced Purchase Valuation tests"""
     tester = BackendTester()
     
-    print("🎯 DASHBOARD DECIMAL128 FIX - TESTING PROTOCOL")
+    print("🎯 ENHANCED PURCHASE VALUATION - COMPREHENSIVE TEST SUITE")
     print("="*80)
-    print("FOCUS: Test Outstanding Summary API Decimal128 fix")
-    print("ISSUE: balance_due Decimal128 + float TypeError causing 520 errors")
-    print("FIX: Lines 2943 and 2951-2953 - Convert Decimal128 to float")
+    print("FOCUS: Validate all Enhanced Purchase Valuation features")
+    print("FEATURES:")
+    print("  1. Purity Adjustment Calculation (916, 999, 875)")
+    print("  2. Multiple Items with Different Purities")
+    print("  3. Walk-in Vendor Filtering & Customer ID Search")
+    print("  4. Stock Valuation at 916 Purity")
+    print("  5. Calculation Breakdown in Notes")
     print("="*80)
     
     # Step 1: Authenticate
@@ -4717,75 +4721,93 @@ def main():
         print("❌ Authentication failed. Cannot proceed with testing.")
         return
     
-    # Step 2: Run the focused test
-    dashboard_success = tester.test_dashboard_decimal128_fix()
+    # Step 2: Run Enhanced Purchase Valuation Tests
+    print("\n" + "="*80)
+    print("RUNNING ENHANCED PURCHASE VALUATION TEST SUITE")
+    print("="*80)
+    
+    test_results_summary = []
+    
+    # Test 1: Purity Adjustment Calculation
+    print("\n[TEST 1/5] Purity Adjustment Calculation")
+    purity_success = tester.test_enhanced_purchase_valuation_purity_adjustment()
+    test_results_summary.append(("Purity Adjustment Calculation", purity_success))
+    
+    # Test 2: Multiple Items with Different Purities
+    print("\n[TEST 2/5] Multiple Items Purchase with Different Purities")
+    multiple_items_success = tester.test_multiple_items_purchase_different_purities()
+    test_results_summary.append(("Multiple Items Purchase", multiple_items_success))
+    
+    # Test 3: Walk-in Filtering and Customer ID Search
+    print("\n[TEST 3/5] Walk-in Filtering and Customer ID Search")
+    walk_in_success = tester.test_walk_in_filtering_and_customer_id_search()
+    test_results_summary.append(("Walk-in Filtering & Search", walk_in_success))
+    
+    # Test 4: Stock Valuation at 916 Purity
+    print("\n[TEST 4/5] Stock Valuation - 916 Purity Enforcement")
+    stock_valuation_success = tester.test_stock_valuation_916_purity()
+    test_results_summary.append(("Stock Valuation at 916", stock_valuation_success))
+    
+    # Test 5: Calculation Breakdown in Notes
+    print("\n[TEST 5/5] Calculation Breakdown in Notes")
+    breakdown_success = tester.test_calculation_breakdown_in_notes()
+    test_results_summary.append(("Calculation Breakdown", breakdown_success))
     
     # Step 3: Generate Summary Report
     print("\n" + "="*80)
-    print("📊 DECIMAL128 FIX TEST SUMMARY REPORT")
+    print("📊 ENHANCED PURCHASE VALUATION TEST SUMMARY REPORT")
     print("="*80)
     
     total_tests = len(tester.test_results)
     passed_tests = sum(1 for result in tester.test_results if result["success"])
     failed_tests = total_tests - passed_tests
     
-    print(f"Total Tests: {total_tests}")
+    print(f"\nTotal Tests: {total_tests}")
     print(f"Passed: {passed_tests} ✅")
     print(f"Failed: {failed_tests} ❌")
     print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%")
     
-    print("\n📋 DETAILED RESULTS:")
+    print("\n📋 FEATURE TEST RESULTS:")
+    for feature_name, success in test_results_summary:
+        status = "✅ PASS" if success else "❌ FAIL"
+        print(f"{status} - {feature_name}")
+    
+    print("\n📋 DETAILED TEST RESULTS:")
     for result in tester.test_results:
         status = "✅ PASS" if result["success"] else "❌ FAIL"
         print(f"{status} - {result['test']}: {result['details']}")
     
-    # Specific analysis for Decimal128 fix
-    print("\n🎯 DECIMAL128 FIX ANALYSIS:")
-    outstanding_test = next((r for r in tester.test_results if "Outstanding Summary" in r["test"]), None)
+    # Feature-specific analysis
+    print("\n🎯 ENHANCED PURCHASE VALUATION ANALYSIS:")
     
-    if outstanding_test:
-        if outstanding_test["success"]:
-            print("✅ DECIMAL128 FIX WORKING:")
-            print("   - Outstanding Summary API returns HTTP 200 (not 520)")
-            print("   - total_customer_due is a number (Decimal128 converted to float)")
-            print("   - top_10_outstanding is an array")
-            print("   - No TypeError: unsupported operand type(s) for +: 'float' and 'Decimal128'")
-            print("   - Dashboard should now display data correctly")
-        else:
-            print("❌ DECIMAL128 FIX FAILED:")
-            print(f"   - {outstanding_test['details']}")
-            if "520" in outstanding_test['details']:
-                print("   - Still getting 520 error - Decimal128 fix not working")
-            elif "TypeError" in outstanding_test['details']:
-                print("   - TypeError still occurring - check lines 2943 and 2951-2953")
-    
-    # Dashboard integration status
-    all_dashboard_working = all(
-        r["success"] for r in tester.test_results 
-        if "Dashboard API" in r["test"] or "Dashboard Decimal128" in r["test"]
-    )
+    all_features_working = all(success for _, success in test_results_summary)
     
     print(f"\n🏆 FINAL RESULT:")
-    if all_dashboard_working:
-        print("✅ DASHBOARD DECIMAL128 FIX SUCCESSFUL")
-        print("   - All 3 dashboard APIs working")
-        print("   - Dashboard should display data instead of zeros")
+    if all_features_working:
+        print("✅ ENHANCED PURCHASE VALUATION IMPLEMENTATION SUCCESSFUL")
+        print("   - All purity adjustment calculations working correctly")
+        print("   - Multiple items support with different purities verified")
+        print("   - Walk-in vendor filtering and search operational")
+        print("   - Stock valuation at 916 purity enforced")
+        print("   - Calculation breakdown included in stock movement notes")
+        print("\n✅ BACKEND IMPLEMENTATION: READY FOR PRODUCTION")
     else:
-        print("❌ DASHBOARD STILL HAS ISSUES")
-        print("   - Check failed API tests above")
-        print("   - May need additional fixes")
+        print("❌ SOME FEATURES HAVE ISSUES")
+        print("   - Check failed tests above for details")
+        print("   - Review backend implementation for failing features")
     
-    return dashboard_success
-    
-    print("\n💡 RECOMMENDATIONS:")
+    print("\n💡 NEXT STEPS:")
     if failed_tests == 0:
-        print("   - All APIs working correctly - check frontend dashboard component")
-        print("   - Verify frontend API calls are using correct endpoints")
-        print("   - Check browser console for JavaScript errors")
+        print("   ✓ All backend tests passed successfully")
+        print("   → Next: Test frontend purchase forms and calculation displays")
+        print("   → Next: Create actual purchases through UI and verify calculations")
+        print("   → Next: End-to-end validation with real user workflows")
     else:
-        print("   - Fix failing API endpoints identified above")
-        print("   - Verify database connectivity and data integrity")
-        print("   - Check user permissions and authentication")
+        print("   → Fix failing backend tests identified above")
+        print("   → Re-run tests after fixes")
+        print("   → Then proceed to frontend testing")
+    
+    return all_features_working
 
 if __name__ == "__main__":
     main()
