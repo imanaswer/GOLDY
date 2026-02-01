@@ -6989,7 +6989,10 @@ async def get_transactions(
         account = account_cache.get(txn['account_id'])
         if account:
             # Convert Decimal128 to float for calculations
-            running_balance = float(account['opening_balance']) if isinstance(account['opening_balance'], Decimal128) else account['opening_balance']
+            if isinstance(account['opening_balance'], Decimal128):
+                running_balance = float(account['opening_balance'].to_decimal())
+            else:
+                running_balance = float(account['opening_balance']) if account['opening_balance'] is not None else 0.0
         else:
             running_balance = 0.0
         
