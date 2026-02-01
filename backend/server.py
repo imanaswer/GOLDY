@@ -4516,6 +4516,10 @@ async def update_purchase(
     # Check if this is a multiple-item purchase or single-item purchase
     has_multiple_items = existing.get("items") is not None and len(existing.get("items", [])) > 0
     
+    print(f"DEBUG update_purchase: purchase_id={purchase_id}, has_multiple_items={has_multiple_items}")
+    print(f"DEBUG existing amount_total: {existing.get('amount_total')} (type: {type(existing.get('amount_total'))})")
+    print(f"DEBUG existing items: {existing.get('items', 'NO ITEMS FIELD')}")
+    
     if has_multiple_items:
         # For multiple-item purchases, only recalculate if items are being updated
         if "items" in updates:
@@ -4525,10 +4529,14 @@ async def update_purchase(
                 item_amount = item.get("calculated_amount", 0)
                 calculated_total += float(item_amount)
             updates["amount_total"] = round(calculated_total, 3)
+            print(f"DEBUG: Recalculated total from items: {calculated_total}")
         else:
             # If items not being updated, use existing amount_total
-            # (user is just updating metadata like vendor_oman_id)
-            calculated_total = float(existing.get("amount_total", 0))
+            # (user is just updating metadata like vendor_oman_id or adding payment)
+            amount_total_value = existing.get("amount_total")
+            if amount_total_value is None:
+                raise HTTPException(status_code=500, detail="Purchase amount_total is missing from database")
+            calculated_total = float(amount_total_value)
             print(f"DEBUG: Multiple-item purchase, using existing amount_total: {calculated_total}")
     else:
         # Single-item purchase - use legacy calculation logic
