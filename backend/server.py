@@ -8053,6 +8053,9 @@ async def view_inventory_report(
     
     movements = await db.stock_movements.find(query, {"_id": 0}).sort(sort_field, sort_direction).to_list(10000)
     
+    # Convert Decimal128 to float for calculations
+    movements = [decimal_to_float(m) for m in movements]
+    
     # Calculate totals
     total_in = sum(m.get('qty_delta', 0) for m in movements if m.get('qty_delta', 0) > 0)
     total_out = sum(abs(m.get('qty_delta', 0)) for m in movements if m.get('qty_delta', 0) < 0)
@@ -8318,6 +8321,10 @@ async def get_inventory_stock_report(
             query['date'] = {"$lte": end_dt}
     
     movements = await db.stock_movements.find(query, {"_id": 0}).sort("date", -1).to_list(10000)
+    
+    # Convert Decimal128 to float for calculations
+    movements = [decimal_to_float(m) for m in movements]
+    header = decimal_to_float(header)
     
     # Calculate stock totals
     total_in = sum(m.get('qty_delta', 0) for m in movements if m.get('qty_delta', 0) > 0)
