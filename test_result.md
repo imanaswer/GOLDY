@@ -1438,6 +1438,7 @@ test_plan:
   current_focus:
     - "Work Types Management Page"
     - "Work Types route and navigation"
+    - "Job Card Form - Custom Work Type Input"
   stuck_tasks: []
   test_all: true
   test_priority: "sequential"
