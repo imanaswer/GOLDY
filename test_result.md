@@ -1389,12 +1389,28 @@ backend:
     status_history:
       - working: false
         agent: "user"
-        comment: "❌ USER REPORT - Failed to save purchase error when trying to edit purchases (changing ID, name, etc.). Update not working at all."
+        comment: "❌ USER REPORT - Failed to save purchase error when trying to edit purchases (changing ID, name, etc.). Error shows 'Paid amount (500.0) cannot exceed total amount (0.0)' when total should be 532.17 OMR. Also reports that after updating, the entry goes missing from the list."
       - working: "needs_testing"
         agent: "main"
-        comment: "✅ FIXED - Root cause: Backend update_purchase endpoint (line 4515+) was always using single-item calculation logic (weight_grams * rate_per_gram) even for multiple-item purchases. Added logic to detect multiple-item purchases (check if items array exists) and handle them differently: (1) For multiple-item purchases: Only recalculate amount_total if items being updated, otherwise preserve existing amount_total. (2) For single-item purchases: Use existing calculation logic. This allows editing metadata fields (vendor_oman_id, walk_in_vendor_name, etc.) without triggering invalid calculations."
+        comment: "✅ FIXED BACKEND - Root cause: Backend update_purchase endpoint (line 4515+) was always using single-item calculation logic even for multiple-item purchases. Added logic to detect multiple-item purchases and handle them differently. For multiple-item purchases: Only recalculate amount_total if items being updated, otherwise preserve existing amount_total. Added debug logging to track amount_total values. Added validation to raise error if amount_total is missing from database."
 
-backend:
+frontend:
+  - task: "Fix Purchase Update - Include calculated_amount in items"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ USER REPORT - When updating purchases, getting 'total amount (0.0)' error. After update, entries disappear from list."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED FRONTEND - Root cause: When submitting purchase updates, frontend was NOT including calculated_amount field in items array (line 512-517). Backend was receiving items without calculated_amount, causing it to calculate total as 0 (since item.get('calculated_amount', 0) returns 0). Added calculated_amount and id fields to items payload. Now frontend sends: {id, description, weight_grams, entered_purity, rate_per_gram_22k, calculated_amount} for each item."
+
+frontend:
   - task: "Fix Customer ID Search - Case-insensitive Partial Match"
     implemented: true
     working: "needs_testing"
