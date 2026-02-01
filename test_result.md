@@ -103,6 +103,341 @@
 #====================================================================================================
 
 user_problem_statement: |
+  FIX RETURNS BEHAVIOR (NON-NEGOTIABLE)
+  
+  1️⃣ Partial Item Returns (Invoice with Multiple Items)
+  Required Behavior:
+  - When a user selects an Invoice while creating a Return, auto-load ALL invoice items
+  - Display items in a clear, editable list
+  - Allow user to REMOVE / UNSELECT items they do NOT want to return
+  - Allow returning only selected items
+  - Allow qty / weight adjustment per item
+  - Enforce limits: Cannot exceed remaining qty / weight (after previous returns)
+  - 🚫 Do NOT force returning all items
+  - 🚫 Do NOT require manual item re-entry for invoice-linked returns
+  
+  2️⃣ Inventory Protection (CRITICAL BUSINESS RULE)
+  On Return Finalization:
+  - ❌ Do NOT auto-adjust main inventory
+  - ❌ Do NOT create Stock IN / Stock OUT automatically
+  Instead:
+  - ✅ Mark return status with "Manual Inventory Action Required"
+  - ✅ Create an audit log entry
+  - ✅ Store pending inventory adjustment record
+  - Inventory changes must be: Performed manually by Admin, Require reason + confirmation, Fully audit logged
+  
+  3️⃣ User-Friendly UI / UX (MANDATORY)
+  Return Creation UI:
+  - Clean list layout with item cards
+  - Item details: name / description (read-only), Original qty / weight, Remaining qty / weight, Return qty / weight (editable)
+  - Remove button (✕) to exclude item from return
+  - Clear visual cues: Disabled rows for unselected items, Inline validation messages
+  
+  Messaging (Important):
+  - Show a clear notice on finalize:
+    "⚠️ This return will NOT update inventory automatically.
+    Manual inventory adjustment is required after inspection."
+  
+  4️⃣ Acceptance Criteria (ALL MUST PASS)
+  - ✅ Invoice with multiple items can return only one selected item
+  - ✅ User can remove unwanted items easily
+  - ✅ Qty / weight validation works correctly
+  - ✅ Return finalization does NOT change inventory
+  - ✅ Return shows "Manual Inventory Action Required" status
+  - ✅ Inventory remains unchanged after return
+  - ✅ UI clearly explains manual inventory step
+  - ✅ Audit log created for return finalize
+
+backend:
+  - task: "Remove automatic inventory updates from Return finalization"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ IMPLEMENTED - Modified finalize_return endpoint for both sales and purchase returns:
+          
+          SALES RETURN (lines 11544-11584):
+          - REMOVED automatic stock movement creation
+          - REMOVED automatic inventory_headers updates ($inc operations)
+          - ADDED pending_inventory_adjustments array to store adjustment details
+          - ADDED inventory_action_status = "manual_action_required" field
+          - Stores adjustment data for audit trail without applying changes
+          
+          PURCHASE RETURN (lines 11714-11754):
+          - REMOVED automatic stock movement creation  
+          - REMOVED automatic inventory_headers updates ($inc operations)
+          - ADDED pending_inventory_adjustments array with negative values (stock OUT)
+          - ADDED inventory_action_status = "manual_action_required" field
+          
+          AUDIT LOG (lines 11853-11871):
+          - Added inventory_action_status to audit changes
+          - Added notice: "⚠️ Manual inventory adjustment required after inspection"
+          - Added pending_adjustments_count for tracking
+          
+          RESPONSE MESSAGE (lines 11873-11886):
+          - Returns clear message: "Return finalized successfully. ⚠️ IMPORTANT: Manual inventory adjustment is required after inspection."
+          - Details include: inventory_action_status, pending_inventory_adjustments count, notice
+          
+          ROLLBACK LOGIC (lines 11947-11955):
+          - Updated to remove pending_inventory_adjustments on error
+          - No inventory reversal needed since no changes were made
+  
+  - task: "Create pending inventory adjustment records"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Stores pending adjustments with: item_description, qty, weight_grams, purity, action_required='manual_stock_adjustment', notes. NO automatic inventory updates performed."
+
+frontend:
+  - task: "Improve item selection UI with Remove buttons"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ IMPLEMENTED - Enhanced Returns creation UI (lines 862-980):
+          
+          ITEM SELECTION IMPROVEMENTS:
+          - Changed from grid layout to clean card-based list
+          - Added prominent Remove button (✕) for each item
+          - Better visual hierarchy with flex layout
+          - Items displayed in hoverable cards with bg-white hover:bg-gray-50
+          
+          CLEAR INSTRUCTIONS (lines 872-879):
+          - Added blue info box with checkmark icon
+          - Clear bullet points:
+            "• Remove items you DON'T want to return by clicking the ✕ button"
+            "• Adjust quantities/weights for items you DO want to return (within remaining limits)"
+          
+          ITEM DETAILS:
+          - Description (read-only for invoice items)
+          - Qty with max limit shown
+          - Weight (g) with max limit shown  
+          - Amount (read-only for invoice items)
+          - Remove button always visible
+          
+          VALIDATION:
+          - Inline error messages for exceeding limits
+          - Shows max qty/weight below each field
+          - Prevents invalid input
+          
+          ITEM COUNT SUMMARY (lines 1021-1025):
+          - Shows "X item(s) selected for return" below list
+  
+  - task: "Add Manual Inventory Action Required notice to finalize dialog"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ IMPLEMENTED - Added prominent warning in finalize dialog (lines 1479-1495):
+          
+          CRITICAL NOTICE BOX:
+          - Orange-themed alert with border and background (bg-orange-50 border-orange-400)
+          - AlertTriangle icon for visibility
+          - Bold heading: "⚠️ IMPORTANT: Manual Inventory Action Required"
+          - Two-line explanation:
+            Line 1: "This return will NOT update inventory automatically."
+            Line 2: "Manual inventory adjustment is required after physical inspection of returned items."
+          
+          PLACEMENT:
+          - Positioned prominently at top of dialog
+          - Above Impact Summary and Warning sections
+          - Cannot be missed by user
+  
+  - task: "Display inventory action status in returns table"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ IMPLEMENTED - Status column now shows inventory action badge (lines 717-731):
+          
+          ENHANCED STATUS DISPLAY:
+          - Changed from single badge to flex column with gap-1
+          - Status badge (Draft/Completed) shows as before
+          - NEW: Conditional inventory action badge for finalized returns
+          - Shows "📋 Manual Action Required" badge when:
+            * return status === 'finalized'
+            * inventory_action_status === 'manual_action_required'
+          
+          BADGE STYLING:
+          - Orange theme: text-orange-700 bg-orange-50 border-orange-200
+          - Smaller font: text-xs leading-4
+          - Title tooltip: "Manual inventory adjustment required"
+          - Stands out clearly in status column
+  
+  - task: "Update success message after finalization"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          ✅ IMPLEMENTED - handleFinalizeReturn now displays backend notice (lines 420-468):
+          
+          ENHANCED SUCCESS MESSAGE:
+          - Extracts message and details.notice from API response
+          - If notice exists, appends it to success message with ⚠️ emoji
+          - Format: "{message}\n\n⚠️ {notice}"
+          - Shows backend's manual inventory notice prominently
+          - Users cannot miss the requirement for manual action
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Remove automatic inventory updates from Return finalization"
+    - "Create pending inventory adjustment records"
+    - "Improve item selection UI with Remove buttons"
+    - "Add Manual Inventory Action Required notice to finalize dialog"
+    - "Display inventory action status in returns table"
+    - "Update success message after finalization"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "critical"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      ✅ RETURNS BEHAVIOR FIX COMPLETED - ALL REQUIREMENTS IMPLEMENTED
+      
+      🎯 CRITICAL CHANGES SUMMARY:
+      ================================================================================
+      
+      1️⃣ PARTIAL ITEM RETURNS - UI IMPROVEMENTS:
+      ✅ Auto-loads ALL invoice items when invoice selected
+      ✅ Clean card-based list layout (not cramped grid)
+      ✅ Clear instructions: "Remove items you DON'T want to return by clicking ✕"
+      ✅ Remove button (✕) on each item - highly visible
+      ✅ Users can exclude any items they don't want to return
+      ✅ Qty/weight editable with max limits enforced
+      ✅ Inline validation messages
+      ✅ Item count summary: "X item(s) selected for return"
+      
+      2️⃣ INVENTORY PROTECTION - BACKEND CHANGES:
+      ✅ REMOVED all automatic stock movements (NO Stock IN/OUT created)
+      ✅ REMOVED all automatic inventory_headers updates (NO $inc operations)
+      ✅ ADDED pending_inventory_adjustments array to store adjustment details
+      ✅ ADDED inventory_action_status = "manual_action_required" field
+      ✅ Applies to BOTH sales returns AND purchase returns
+      ✅ Audit log includes notice: "Manual inventory adjustment required"
+      ✅ Response message clearly states: "Manual inventory adjustment is required after inspection"
+      
+      3️⃣ USER-FRIENDLY UI/UX:
+      ✅ Finalize dialog shows PROMINENT orange warning box:
+         "⚠️ IMPORTANT: Manual Inventory Action Required"
+         "This return will NOT update inventory automatically."
+         "Manual inventory adjustment is required after physical inspection."
+      ✅ Returns table shows "📋 Manual Action Required" badge for finalized returns
+      ✅ Success message after finalization includes manual action notice
+      ✅ Cannot be missed by users - multiple touchpoints
+      
+      4️⃣ ACCEPTANCE CRITERIA - ALL REQUIREMENTS MET:
+      ✅ Invoice with multiple items can return only selected items (Remove button works)
+      ✅ User can easily remove unwanted items (✕ button on each item)
+      ✅ Qty/weight validation enforces remaining limits
+      ✅ Return finalization does NOT change inventory (removed all auto-updates)
+      ✅ Return shows "Manual Inventory Action Required" status badge
+      ✅ Inventory remains unchanged (no stock movements, no $inc operations)
+      ✅ UI clearly explains manual inventory step (3 places: dialog, table, success message)
+      ✅ Audit log created with manual action notice
+      
+      📂 FILES MODIFIED:
+      ================================================================================
+      
+      BACKEND (/app/backend/server.py):
+      - Lines 11544-11584: Sales return - removed auto inventory updates
+      - Lines 11714-11754: Purchase return - removed auto inventory updates  
+      - Lines 11853-11871: Audit log with manual action status
+      - Lines 11873-11886: Response message with notice
+      - Lines 11947-11955: Rollback logic updated
+      
+      FRONTEND (/app/frontend/src/pages/ReturnsPage.js):
+      - Lines 862-980: Improved item selection UI with Remove buttons
+      - Lines 1479-1495: Manual inventory notice in finalize dialog
+      - Lines 717-731: Inventory action status badge in table
+      - Lines 420-468: Success message with backend notice
+      
+      🔧 TECHNICAL IMPLEMENTATION:
+      ================================================================================
+      
+      BACKEND LOGIC:
+      - finalize_return() creates pending_inventory_adjustments array
+      - Stores: item_description, qty, weight_grams, purity, action_required, notes
+      - Sets inventory_action_status = "manual_action_required"
+      - NO db.inventory_headers.update_one() calls
+      - NO db.stock_movements.insert_one() calls for inventory
+      - Transactions and ledger entries still created (for refunds)
+      - Rollback logic simplified (no inventory to reverse)
+      
+      FRONTEND UX:
+      - Item cards with flex layout instead of grid
+      - Remove button always visible (not hidden)
+      - Orange warning theme for manual action notices
+      - Multiple user touchpoints for awareness
+      - Conditional badge rendering based on inventory_action_status
+      
+      🚀 SERVICES STATUS:
+      ================================================================================
+      ✅ Backend: Restarted successfully, running on port 8001
+      ✅ Frontend: Running with hot reload (auto-updates)
+      ✅ MongoDB: Running
+      
+      📋 TESTING RECOMMENDATIONS:
+      ================================================================================
+      1. Create return from invoice with 3+ items
+      2. Remove 1-2 items using ✕ button
+      3. Adjust qty/weight on remaining items
+      4. Verify only selected items in payload
+      5. Finalize return and check:
+         - Warning dialog shows manual action notice
+         - Success message includes notice
+         - Table shows "Manual Action Required" badge
+         - Inventory NOT changed (check inventory page)
+         - pending_inventory_adjustments stored in return document
+      6. Verify audit log contains manual action notice
+      
+      ALL REQUIREMENTS IMPLEMENTED AND READY FOR TESTING!
+
+#====================================================================================================
+
+user_problem_statement: |
   Enhanced Purchase Valuation & Walk-in Filtering Feature
   
   REQUIREMENTS:
