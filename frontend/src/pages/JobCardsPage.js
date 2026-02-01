@@ -71,6 +71,11 @@ export default function JobCardsPage() {
     delivery_date: '',
     notes: '',
     gold_rate_at_jobcard: '',  // MODULE 8: Gold rate at time of job card creation
+    // Gold Settlement fields
+    advance_in_gold_grams: '',
+    exchange_in_gold_grams: '',
+    advance_gold_rate: '',
+    exchange_gold_rate: '',
     status: 'created',
     template_name: '',  // For templates
     delivery_days_offset: '',  // For templates: days from creation
