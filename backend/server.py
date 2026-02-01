@@ -10653,6 +10653,9 @@ async def get_jobcard_delete_impact(jobcard_id: str, current_user: User = Depend
     if not jobcard:
         raise HTTPException(status_code=404, detail="Job card not found")
     
+    # Convert Decimal128 to float for calculations
+    jobcard = decimal_to_float(jobcard)
+    
     # Check if linked to an invoice
     linked_invoice = await db.invoices.find_one({
         "jobcard_id": jobcard_id,
