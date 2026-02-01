@@ -972,15 +972,26 @@ export default function PurchasesPage() {
               </div>
             </div>
 
-            {/* Conversion Factor Display */}
+            {/* Conversion Factor Selection */}
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-blue-900 font-medium">Purchase Conversion Factor:</span>
-                <span className="font-mono font-bold text-blue-700">{conversionFactor}</span>
+              <div className="space-y-2">
+                <Label htmlFor="conversionFactor">Purchase Conversion Factor *</Label>
+                <Select 
+                  value={selectedConversionFactor} 
+                  onValueChange={(value) => setSelectedConversionFactor(value)}
+                >
+                  <SelectTrigger id="conversionFactor" className="bg-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0.920">0.920 (92%)</SelectItem>
+                    <SelectItem value="0.917">0.917 (91.7%)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-blue-700">
+                  All purchases are valued at 22K (916) using formula: Amount = (Weight × Rate) ÷ {selectedConversionFactor}
+                </p>
               </div>
-              <p className="text-xs text-blue-700 mt-1">
-                All purchases are valued at 22K (916) using formula: Amount = (Weight × Rate) ÷ {conversionFactor}
-              </p>
             </div>
 
             {/* Basic Information */}
