@@ -1307,7 +1307,128 @@ agent_communication:
       Dashboard should now display actual data (Categories: 19, Outstanding: 42,386.50 OMR)
       instead of zeros. The TypeError that was causing 520 errors has been resolved.
 
+user_problem_statement: |
+  Add selectable conversion factor in purchase form - Users should be able to select between 0.920 and 0.917 conversion factors when creating a purchase.
+
+backend:
+  - task: "Conversion Factor Selection - Backend Validation"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Modified create_purchase endpoint (line 3742-3756) to accept conversion_factor from request. Added validation to ensure only 0.920 or 0.917 are allowed. Falls back to shop settings if not provided. Stores selected conversion_factor with purchase record."
+
+frontend:
+  - task: "Conversion Factor Selection - Dropdown in Purchase Form"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Replaced read-only conversion factor display with Select dropdown. Users can now choose between 0.920 (92%) and 0.917 (91.7%). Added selectedConversionFactor state. Updated updateItem function to use selected factor in calculations. Added useEffect to recalculate all items when factor changes. Updated handleOpenDialog to load factor from purchase when editing. Modified handleSavePurchase to include conversion_factor in payload for both single and multiple item purchases."
+
+  - task: "Conversion Factor Display - View Dialog"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ IMPLEMENTED - Added conversion factor display in view dialog for both single-item and multiple-item purchases. Shows the conversion factor used when the purchase was created. Helps users understand which factor was applied to historical purchases."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Conversion Factor Selection - Backend Validation"
+    - "Conversion Factor Selection - Dropdown in Purchase Form"
+    - "Conversion Factor Display - View Dialog"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
 agent_communication:
+  - agent: "main"
+    message: |
+      ✅ SELECTABLE CONVERSION FACTOR FEATURE IMPLEMENTED
+      
+      IMPLEMENTATION SUMMARY:
+      ================================================================================
+      
+      📦 BACKEND CHANGES:
+      1. Modified create_purchase endpoint (lines 3742-3756):
+         - Accepts conversion_factor from request if provided
+         - Validates conversion_factor is either 0.920 or 0.917
+         - Returns HTTP 400 error if invalid value provided
+         - Falls back to shop settings if not provided
+         - Stores selected conversion_factor with purchase record
+      
+      🎨 FRONTEND CHANGES:
+      1. Purchase Form (PurchasesPage.js):
+         - Added selectedConversionFactor state (separate from global setting)
+         - Replaced read-only display with Select dropdown
+         - Options: 0.920 (92%) and 0.917 (91.7%)
+         - Formula explanation updates dynamically with selection
+         - Default to 0.920 for new purchases
+         - Loads conversion_factor from purchase when editing
+      
+      2. Calculations:
+         - updateItem function uses selectedConversionFactor
+         - useEffect recalculates all items when factor changes
+         - Calculation: amount = (weight × rate) ÷ selectedConversionFactor
+         - Applied to both single and multiple item purchases
+      
+      3. View Dialog:
+         - Displays conversion factor used in single-item section
+         - Displays conversion factor used in multiple-items total summary
+         - Shows historical conversion factor for existing purchases
+      
+      4. Payload Construction:
+         - Both single and multiple item payloads include conversion_factor
+         - Sent as parseFloat(selectedConversionFactor) to backend
+      
+      🎯 KEY FEATURES:
+      - User can select conversion factor per purchase (not just global setting)
+      - Selection is validated on backend (only 0.920 or 0.917 allowed)
+      - Stored with purchase record for audit trail
+      - Recalculates all items automatically when factor changes
+      - Displays factor used in view dialog
+      - Maintains 3 decimal precision
+      
+      📋 TESTING NEEDED:
+      1. Create new purchase with 0.920 factor - verify calculation correct
+      2. Create new purchase with 0.917 factor - verify calculation correct
+      3. Create multiple items purchase - verify factor applies to all items
+      4. Edit existing purchase - verify factor loads correctly
+      5. Change factor in form - verify all items recalculate
+      6. View purchase details - verify factor displayed
+      7. Backend validation - try sending invalid factor (should return 400 error)
+      
+      📝 EXAMPLE CALCULATION:
+      - Weight: 100g, Rate: 50 OMR/g
+      - With 0.920: Amount = (100 × 50) ÷ 0.920 = 5434.783 OMR
+      - With 0.917: Amount = (100 × 50) ÷ 0.917 = 5452.780 OMR
+      
+      Services restarted successfully:
+      - Backend: RUNNING
+      - Frontend: RUNNING (Compiled with warnings)
+
   - agent: "main"
     message: |
       ✅ PURCHASE MODULE ENHANCEMENTS COMPLETE
