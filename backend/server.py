@@ -5434,28 +5434,18 @@ async def get_returnable_invoices(
     # Format response with party name
     formatted_invoices = []
     for inv in invoices:
+        # Convert all Decimal128 values in the invoice to float
+        inv = decimal_to_float(inv)
+        
         party_name = inv.get("customer_name") or inv.get("walk_in_name") or "Unknown"
-        
-        # Handle Decimal128 conversion for monetary values
-        grand_total = inv.get("grand_total", 0)
-        if isinstance(grand_total, Decimal128):
-            grand_total = float(grand_total.to_decimal())
-        else:
-            grand_total = float(grand_total) if grand_total else 0.0
-        
-        balance_due = inv.get("balance_due", 0)
-        if isinstance(balance_due, Decimal128):
-            balance_due = float(balance_due.to_decimal())
-        else:
-            balance_due = float(balance_due) if balance_due else 0.0
         
         formatted_invoices.append({
             "id": inv["id"],
             "invoice_no": inv["invoice_number"],
             "date": inv["date"].isoformat() if isinstance(inv["date"], datetime) else inv["date"],
             "party_name": party_name,
-            "total_amount": grand_total,
-            "balance_amount": balance_due,
+            "total_amount": float(inv.get("grand_total", 0)) if inv.get("grand_total") else 0.0,
+            "balance_amount": float(inv.get("balance_due", 0)) if inv.get("balance_due") else 0.0,
             "items": inv.get("items", [])
         })
     
