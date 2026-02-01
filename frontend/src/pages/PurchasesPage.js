@@ -757,7 +757,7 @@ export default function PurchasesPage() {
           <CardTitle className="text-lg">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div className="space-y-2">
               <Label>Vendor</Label>
               <Select value={filterVendor} onValueChange={setFilterVendor}>
@@ -786,6 +786,30 @@ export default function PurchasesPage() {
                   <SelectItem value="Paid">Paid</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Vendor Type</Label>
+              <Select value={filterWalkIn} onValueChange={setFilterWalkIn}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="walk_in">Walk-in Only</SelectItem>
+                  <SelectItem value="saved">Saved Vendors Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Customer ID (Oman ID)</Label>
+              <Input
+                type="text"
+                placeholder="Search by Customer ID..."
+                value={searchCustomerId}
+                onChange={(e) => setSearchCustomerId(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Start Date</Label>
