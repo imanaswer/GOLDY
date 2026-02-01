@@ -1170,6 +1170,9 @@ backend:
       - working: "needs_testing"
         agent: "main"
         comment: "Endpoint GET /api/inventory/headers exists (line 2153). Requires 'inventory.view' permission. Returns paginated inventory headers. Need to test if returning data correctly."
+      - working: true
+        agent: "testing"
+        comment: "✅ API VERIFIED - Returns 19 inventory headers correctly with proper pagination."
   
   - task: "Dashboard API - Stock Totals Endpoint"
     implemented: true
@@ -1182,8 +1185,11 @@ backend:
       - working: "needs_testing"
         agent: "main"
         comment: "Endpoint GET /api/inventory/stock-totals exists (line 2542). Requires 'inventory.view' permission. Returns stock totals from inventory headers. Need to test if returning data correctly."
+      - working: true
+        agent: "testing"
+        comment: "✅ API VERIFIED - Returns 19 stock totals with correct structure (Sample: 69.0 qty, 1140.0g weight)."
   
-  - task: "Dashboard API - Outstanding Summary Endpoint"
+  - task: "Dashboard API - Outstanding Summary Endpoint - Decimal128 Fix"
     implemented: true
     working: "needs_testing"
     file: "/app/backend/server.py"
@@ -1191,9 +1197,12 @@ backend:
     priority: "critical"
     needs_retesting: true
     status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL BUG IDENTIFIED - TypeError: unsupported operand type(s) for +: 'float' and 'Decimal128' at line 2942. The sum() operation was mixing float and Decimal128 types causing crashes."
       - working: "needs_testing"
         agent: "main"
-        comment: "Endpoint GET /api/parties/outstanding-summary exists (line 2938). Requires 'parties.view' permission. Returns total outstanding from unpaid invoices. Need to test if returning data correctly."
+        comment: "✅ FIXED - Added Decimal128 to float conversion in outstanding summary endpoint (lines 2943 and 2951-2953). Now converts balance_due to float before sum() operation and accumulation. Fix applied: Line 2943 checks if value is Decimal128 and converts to float; Lines 2951-2953 convert balance_due to float before adding to outstanding total. Backend restarted successfully."
 
 frontend:
   - task: "Dashboard Page Data Loading"
