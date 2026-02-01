@@ -10678,6 +10678,9 @@ async def get_invoice_finalize_impact(invoice_id: str, current_user: User = Depe
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
     
+    # Convert Decimal128 to float for calculations
+    invoice = decimal_to_float(invoice)
+    
     items = invoice.get("items", [])
     # FIX: Invoice items use "weight" field, not "weight_in"
     # Compute total_weight by summing (item.weight * item.qty) for all items
