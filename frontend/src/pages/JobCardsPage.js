@@ -189,6 +189,11 @@ export default function JobCardsPage() {
       const data = {
         ...formData,
         gold_rate_at_jobcard: formData.gold_rate_at_jobcard ? parseFloat(formData.gold_rate_at_jobcard) : null,
+        // Gold Settlement fields
+        advance_in_gold_grams: formData.advance_in_gold_grams ? parseFloat(formData.advance_in_gold_grams) : null,
+        exchange_in_gold_grams: formData.exchange_in_gold_grams ? parseFloat(formData.exchange_in_gold_grams) : null,
+        advance_gold_rate: formData.advance_gold_rate ? parseFloat(formData.advance_gold_rate) : null,
+        exchange_gold_rate: formData.exchange_gold_rate ? parseFloat(formData.exchange_gold_rate) : null,
         delivery_days_offset: formData.delivery_days_offset ? parseInt(formData.delivery_days_offset) : null,
         items: formData.items.map(item => ({
           ...item,
