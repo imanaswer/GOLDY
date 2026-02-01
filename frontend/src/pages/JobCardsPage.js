@@ -1234,27 +1234,26 @@ export default function JobCardsPage() {
                   </div>
                   <div>
                     <Label className="text-xs">Work Type</Label>
-                    <Select value={item.work_type} onValueChange={(val) => updateItem(idx, 'work_type', val)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {workTypes.length > 0 ? (
-                          workTypes.map(wt => (
-                            <SelectItem key={wt.id} value={wt.name.toLowerCase()}>
-                              {wt.name}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <>
-                            <SelectItem value="polish">Polish</SelectItem>
-                            <SelectItem value="resize">Resize</SelectItem>
-                            <SelectItem value="repair">Repair</SelectItem>
-                            <SelectItem value="custom">Custom</SelectItem>
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      list={`work-types-${idx}`}
+                      placeholder="Type or select work type"
+                      value={item.work_type}
+                      onChange={(e) => updateItem(idx, 'work_type', e.target.value)}
+                    />
+                    <datalist id={`work-types-${idx}`}>
+                      {workTypes.length > 0 ? (
+                        workTypes.map(wt => (
+                          <option key={wt.id} value={wt.name} />
+                        ))
+                      ) : (
+                        <>
+                          <option value="Polish" />
+                          <option value="Resize" />
+                          <option value="Repair" />
+                          <option value="Custom" />
+                        </>
+                      )}
+                    </datalist>
                   </div>
                   
                   {/* Making Charge Type */}
