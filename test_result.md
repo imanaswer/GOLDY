@@ -12021,3 +12021,86 @@ agent_communication:
       - Audit trail: Invoice notes include gold settlement breakdown
       
       READY FOR PRODUCTION ✅
+
+user_problem_statement: |
+  Purchase Payment Failed for Walk-in Vendors Bug
+  - User reported "Failed to add payment" error when trying to add payment to purchases with walk-in vendors
+  - Error occurred because backend was trying to fetch vendor from parties collection even for walk-in vendors
+  - Walk-in vendors don't have vendor_party_id, causing "Vendor not found" error
+
+backend:
+  - task: "Fix Add Payment Endpoint - Handle Walk-in Vendors"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "❌ USER REPORT - Failed to add payment error when trying to add payment to purchase with walk-in vendor 'Anaswerrrr'. Screenshot shows payment dialog with all fields filled correctly (73.56 OMR balance due, payment mode, account selected) but clicking 'Add Payment' button shows 'Failed to add payment' error."
+      - working: "needs_testing"
+        agent: "main"
+        comment: "✅ FIXED - Root cause identified at line 4282-4284 in server.py. The add_payment_to_purchase endpoint was trying to fetch vendor from parties collection using vendor_party_id even for walk-in vendors. For walk-in vendors, vendor_party_id is None, causing query to fail and raise 'Vendor not found' HTTPException. FIX APPLIED: Added conditional logic to check purchase.is_walk_in flag. If walk-in vendor: use walk_in_vendor_name directly and set vendor_party_id to None. If saved vendor: fetch from parties collection as before. Updated transaction creation (line 4323-4324) to use the vendor_name and vendor_party_id variables instead of accessing vendor dict directly. Backend restarted successfully. Ready for testing with walk-in vendor purchases."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Fix Add Payment Endpoint - Handle Walk-in Vendors"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "critical"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🐛 PURCHASE PAYMENT BUG FIX - WALK-IN VENDOR SUPPORT
+      
+      PROBLEM ANALYSIS:
+      User reported "Failed to add payment" when adding payment to purchase with walk-in vendor.
+      Screenshot showed:
+      - Purchase #ea933ad2 
+      - Vendor: Anaswerrrr (walk-in vendor)
+      - Balance Due: 73.56 OMR
+      - Payment form correctly filled
+      - Error: "Failed to add payment"
+      
+      ROOT CAUSE IDENTIFIED:
+      Backend endpoint /api/purchases/{purchase_id}/add-payment (line 4282-4284) was:
+      1. Always trying to fetch vendor from parties collection
+      2. Using purchase.vendor_party_id to query parties
+      3. For walk-in vendors, vendor_party_id is None (no party record exists)
+      4. Query returns None, triggering HTTPException "Vendor not found"
+      5. Frontend catches error and displays "Failed to add payment"
+      
+      FIX APPLIED (Lines 4281-4293):
+      ✅ Added conditional check for purchase.is_walk_in
+      ✅ Walk-in vendors: Use walk_in_vendor_name directly, set vendor_party_id to None
+      ✅ Saved vendors: Fetch from parties collection (existing behavior)
+      ✅ Updated transaction creation to use vendor_name and vendor_party_id variables
+      ✅ Maintains proper audit trail for both vendor types
+      
+      CHANGES MADE:
+      1. /app/backend/server.py (lines 4281-4293):
+         - Added walk-in vendor detection and handling
+         - Conditional vendor data fetching
+         
+      2. /app/backend/server.py (lines 4323-4324):
+         - Updated transaction party_id and party_name to use variables
+         - Allows None party_id for walk-in vendors
+      
+      TESTING SCENARIOS:
+      1. ✅ Add payment to walk-in vendor purchase - should succeed
+      2. Add payment to saved vendor purchase - should still work (regression test)
+      3. Verify transaction record has correct vendor name for walk-in vendors
+      4. Verify transaction party_id is None for walk-in vendors
+      5. Verify purchase gets locked when balance reaches 0
+      6. Verify payment appears in Finance page transactions
+      
+      Backend restarted successfully. Ready for user to test the payment flow.
