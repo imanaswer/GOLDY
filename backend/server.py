@@ -4278,10 +4278,18 @@ async def add_payment_to_purchase(
     if not account:
         raise HTTPException(status_code=404, detail="Payment account not found")
     
-    # Fetch vendor
-    vendor = await db.parties.find_one({"id": purchase.vendor_party_id, "is_deleted": False})
-    if not vendor:
-        raise HTTPException(status_code=404, detail="Vendor not found")
+    # Handle vendor information (walk-in vs saved vendor)
+    if purchase.is_walk_in:
+        # For walk-in vendors, use the walk-in vendor name directly
+        vendor_name = purchase.walk_in_vendor_name or "Walk-in Vendor"
+        vendor_party_id = None  # Walk-in vendors don't have party IDs
+    else:
+        # For saved vendors, fetch from parties collection
+        vendor = await db.parties.find_one({"id": purchase.vendor_party_id, "is_deleted": False})
+        if not vendor:
+            raise HTTPException(status_code=404, detail="Vendor not found")
+        vendor_name = vendor["name"]
+        vendor_party_id = purchase.vendor_party_id
     
     # Calculate new amounts
     new_paid_amount = round(purchase.paid_amount_money + payment_amount, 2)
