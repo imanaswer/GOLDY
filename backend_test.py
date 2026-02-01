@@ -909,10 +909,10 @@ class BackendTester:
         print("\n📋 TEST REQUIREMENTS:")
         print("Formula: Amount = (Weight × Rate × (916 / Entered Purity)) ÷ Conversion Factor")
         print("Test Data: Weight=100g, Rate=50 OMR/g, Conversion Factor=0.920")
-        print("Expected Results:")
+        print("Expected Results (PRECISE CALCULATIONS):")
         print("  • Purity 916: (100 × 50 × 1.0) ÷ 0.920 = 5434.783 OMR")
-        print("  • Purity 999: (100 × 50 × 0.917) ÷ 0.920 = 4983.152 OMR")
-        print("  • Purity 875: (100 × 50 × 1.047) ÷ 0.920 = 5688.043 OMR")
+        print("  • Purity 999: (100 × 50 × 0.91691...) ÷ 0.920 = 4983.244 OMR")
+        print("  • Purity 875: (100 × 50 × 1.04685...) ÷ 0.920 = 5689.441 OMR")
         
         try:
             vendor_id = self.get_or_create_test_vendor()
