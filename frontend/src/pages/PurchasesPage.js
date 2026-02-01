@@ -63,6 +63,8 @@ export default function PurchasesPage() {
   // Filters
   const [filterVendor, setFilterVendor] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterWalkIn, setFilterWalkIn] = useState('all'); // all | walk_in | saved
+  const [searchCustomerId, setSearchCustomerId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   
