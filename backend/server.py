@@ -10591,6 +10591,9 @@ async def get_jobcard_complete_impact(jobcard_id: str, current_user: User = Depe
     if not jobcard:
         raise HTTPException(status_code=404, detail="Job card not found")
     
+    # Convert Decimal128 to float for calculations
+    jobcard = decimal_to_float(jobcard)
+    
     items = jobcard.get("items", [])
     total_weight = sum(item.get("weight_in", 0) for item in items)
     # Calculate total making charges based on making_charge_type and making_charge_value
