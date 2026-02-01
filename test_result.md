@@ -103,6 +103,157 @@
 #====================================================================================================
 
 user_problem_statement: |
+  Enhanced Purchase Valuation & Walk-in Filtering Feature
+  
+  REQUIREMENTS:
+  1. Update purchase calculation formula to include purity adjustment:
+     - OLD: Amount = (Weight × Rate) ÷ Conversion Factor
+     - NEW: Amount = (Weight × Rate × (916 / Entered Purity)) ÷ Conversion Factor
+  
+  2. Display detailed calculation breakdown to users showing:
+     - Weight, Rate, Purity, Purity Adjustment, Conversion Factor, Final Amount
+  
+  3. Stock valuation remains at 22K (916) regardless of entered purity
+  
+  4. Apply only to new purchases (no backwards migration)
+  
+  5. Enhanced filtering for purchases:
+     - Filter by vendor type (all/walk-in/saved)
+     - Search by Customer ID (Oman ID)
+
+backend:
+  - task: "Update purchase calculation with purity adjustment"
+    implemented: true
+    working: false  # Needs testing
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: |
+          Updated calculation formula in two places:
+          1. Multiple items: Line ~3825 - Added purity_adjustment = 916 / purity
+          2. Single item: Line ~3869 - Added purity_adjustment = 916 / entered_purity
+          Formula: item_amount = (weight * rate * purity_adjustment) / conversion_factor
+          
+          Also updated notes/breakdown in stock movements to show detailed calculation.
+
+  - task: "Enhanced filtering - Walk-in and Customer ID search"
+    implemented: true
+    working: false  # Needs testing
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Backend already supports walk-in filtering and customer ID search via query parameters"
+
+frontend:
+  - task: "Update purchase calculation with purity adjustment in frontend"
+    implemented: true
+    working: false  # Needs testing
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: |
+          Updated three calculation locations:
+          1. Multiple items updateItem function: Added purity adjustment when weight/rate/purity changes
+          2. Multiple items useEffect (conversion factor): Recalculates with purity adjustment
+          3. Single item useEffect: Added purity adjustment to legacy calculation
+          Formula: ((weight * rate * (916 / purity)) / factor).toFixed(3)
+
+  - task: "Display detailed calculation breakdown"
+    implemented: true
+    working: false  # Needs testing
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: |
+          Added detailed breakdown display showing:
+          - Calculation formula
+          - Weight, Rate, Entered Purity
+          - Purity Adjustment calculation (916 / purity)
+          - Conversion Factor
+          - Stock Valuation Purity (916K)
+          - Final calculated amount
+          
+          For multiple items: Shows formula in small text under calculated amount
+
+  - task: "Enhanced filtering UI - Walk-in and Customer ID search"
+    implemented: true
+    working: false  # Needs testing
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: |
+          Added to filters section:
+          1. Vendor Type dropdown: All Types / Walk-in Only / Saved Vendors Only
+          2. Customer ID search input field
+          Both filters are already wired to the loadPurchases API call
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Purchase calculation with purity 916 (should work same as before)"
+    - "Purchase calculation with purity 999 (should give LOWER amount)"
+    - "Purchase calculation with purity 875 (should give HIGHER amount)"
+    - "Multiple items purchase with different purities"
+    - "Walk-in vendor filtering"
+    - "Customer ID search"
+    - "Calculation breakdown display"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implementation completed for Enhanced Purchase Valuation & Walk-in Filtering:
+      
+      BACKEND CHANGES:
+      - Updated purchase calculation formula to include purity adjustment (916 / entered_purity)
+      - Added detailed calculation breakdown in stock movement notes
+      - Formula: Amount = (Weight × Rate × (916 / Purity)) ÷ Conversion Factor
+      
+      FRONTEND CHANGES:
+      - Updated all three calculation points (single item, multiple items update, multiple items recalc)
+      - Added comprehensive calculation breakdown display
+      - Enhanced filters section with Vendor Type dropdown and Customer ID search
+      
+      TESTING NEEDED:
+      1. Create purchase with purity 916 - verify same result as old formula
+      2. Create purchase with purity 999 - verify LOWER amount (0.917x multiplier)
+      3. Create purchase with purity 875 - verify HIGHER amount (1.047x multiplier)
+      4. Test multiple items with different purities
+      5. Test walk-in filtering (all/walk-in/saved)
+      6. Test Customer ID search
+      7. Verify calculation breakdown display shows correct values
+      8. Verify stock movements still use 916 for inventory
+      
+      Ready for backend testing!
+
+user_problem_statement: |
   Review and fix all date and time handling across the Gold Shop ERP to ensure absolute correctness, consistency, and audit safety.
   
   Requirements:
