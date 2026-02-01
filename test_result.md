@@ -1322,6 +1322,10 @@ backend:
 user_problem_statement: |
   Add ability to enter custom work types instead of being limited to predefined dropdown options.
   User wants to manage their own work types dynamically.
+  
+  UPDATE: User reports they still cannot custom write work type in job card form.
+  Issue: Work type field in Job Card form uses dropdown (Select) which only allows selection, not custom typing.
+  Required: Allow users to type any custom work type directly in the Job Card form.
 
 backend:
   - task: "PurchaseItem model and multiple items support"
