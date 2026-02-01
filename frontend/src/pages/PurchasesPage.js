@@ -255,10 +255,12 @@ export default function PurchasesPage() {
       const updated = items.map(item => {
         const weight = parseFloat(item.weight_grams) || 0;
         const rate = parseFloat(item.rate_per_gram_22k) || 0;
-        if (weight > 0 && rate > 0 && factor > 0) {
+        const purity = parseFloat(item.entered_purity) || 916;
+        if (weight > 0 && rate > 0 && purity > 0 && factor > 0) {
+          const purityAdjustment = 916 / purity;
           return {
             ...item,
-            calculated_amount: parseFloat(((weight * rate) / factor).toFixed(3))
+            calculated_amount: parseFloat(((weight * rate * purityAdjustment) / factor).toFixed(3))
           };
         }
         return item;
