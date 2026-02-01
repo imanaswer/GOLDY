@@ -4513,38 +4513,54 @@ async def update_purchase(
             updates["walk_in_vendor_name"] = None
     
     # ========== CRITICAL VALIDATION: NEVER TRUST FRONTEND ==========
-    # Get current values or updated values
-    weight_grams = updates.get("weight_grams", existing.get("weight_grams", 0))
-    rate_per_gram = updates.get("rate_per_gram", existing.get("rate_per_gram", 0))
+    # Check if this is a multiple-item purchase or single-item purchase
+    has_multiple_items = existing.get("items") is not None and len(existing.get("items", [])) > 0
     
-    # Validate weight if provided
-    if "weight_grams" in updates:
-        try:
-            weight_grams = float(updates["weight_grams"])
-        except (ValueError, TypeError):
-            raise HTTPException(status_code=400, detail="Invalid weight value")
+    if has_multiple_items:
+        # For multiple-item purchases, only recalculate if items are being updated
+        if "items" in updates:
+            # Recalculate from items array
+            calculated_total = 0
+            for item in updates["items"]:
+                item_amount = item.get("calculated_amount", 0)
+                calculated_total += float(item_amount)
+            updates["amount_total"] = round(calculated_total, 3)
+        # If items not being updated, preserve existing amount_total
+        # (user is just updating metadata like vendor_oman_id)
+    else:
+        # Single-item purchase - use legacy calculation logic
+        # Get current values or updated values
+        weight_grams = updates.get("weight_grams", existing.get("weight_grams", 0))
+        rate_per_gram = updates.get("rate_per_gram", existing.get("rate_per_gram", 0))
         
-        if weight_grams <= 0:
-            raise HTTPException(status_code=400, detail="Weight must be greater than 0")
+        # Validate weight if provided
+        if "weight_grams" in updates:
+            try:
+                weight_grams = float(updates["weight_grams"])
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail="Invalid weight value")
+            
+            if weight_grams <= 0:
+                raise HTTPException(status_code=400, detail="Weight must be greater than 0")
+            
+            updates["weight_grams"] = round(weight_grams, 3)
         
-        updates["weight_grams"] = round(weight_grams, 3)
-    
-    # Validate rate if provided
-    if "rate_per_gram" in updates:
-        try:
-            rate_per_gram = float(updates["rate_per_gram"])
-        except (ValueError, TypeError):
-            raise HTTPException(status_code=400, detail="Invalid rate value")
+        # Validate rate if provided
+        if "rate_per_gram" in updates:
+            try:
+                rate_per_gram = float(updates["rate_per_gram"])
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail="Invalid rate value")
+            
+            if rate_per_gram <= 0:
+                raise HTTPException(status_code=400, detail="Rate per gram must be greater than 0")
+            
+            updates["rate_per_gram"] = round(rate_per_gram, 2)
         
-        if rate_per_gram <= 0:
-            raise HTTPException(status_code=400, detail="Rate per gram must be greater than 0")
-        
-        updates["rate_per_gram"] = round(rate_per_gram, 2)
-    
-    # RECALCULATE total_amount on backend (SINGLE SOURCE OF TRUTH)
-    # Never trust client-sent total_amount
-    calculated_total = round(float(weight_grams) * float(rate_per_gram), 2)
-    updates["amount_total"] = calculated_total
+        # RECALCULATE total_amount on backend (SINGLE SOURCE OF TRUTH)
+        # Never trust client-sent total_amount
+        calculated_total = round(float(weight_grams) * float(rate_per_gram), 2)
+        updates["amount_total"] = calculated_total
     
     # Validate paid amount
     paid_amount = updates.get("paid_amount_money", existing.get("paid_amount_money", 0))
