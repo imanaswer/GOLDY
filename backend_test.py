@@ -69,6 +69,30 @@ class BackendTester:
             self.log_result("Authentication", False, f"Authentication error: {str(e)}")
             return False
     
+    def test_job_card_gold_settlement_feature(self):
+        """Test Job Card Gold Settlement feature as requested"""
+        print("\n" + "="*80)
+        print("TESTING JOB CARD GOLD SETTLEMENT FEATURE")
+        print("="*80)
+        
+        # Test 1: Create Job Card with Gold Settlement
+        jobcard_id = self.test_create_jobcard_with_gold_settlement()
+        
+        if jobcard_id:
+            # Test 2: Update Job Card Gold Settlement
+            self.test_update_jobcard_gold_settlement(jobcard_id)
+            
+            # Test 3: Convert Job Card to Invoice with Gold Settlement calculations
+            self.test_convert_jobcard_to_invoice_with_gold_settlement(jobcard_id)
+        
+        print("\n🔍 ADDITIONAL VALIDATIONS:")
+        
+        # Test 4: Precision validation for gold settlement fields
+        self.test_gold_settlement_precision_validation()
+        
+        # Test 5: Edge cases and error handling
+        self.test_gold_settlement_edge_cases()
+
     def test_gold_shop_purchase_module(self):
         """Test complete Gold Shop ERP Purchase Module workflow"""
         print("\n" + "="*80)
