@@ -1498,6 +1498,166 @@ class BackendTester:
         except Exception as e:
             self.log_result("Get/Create Test Worker", False, f"Error: {str(e)}")
             return None
+    
+    def get_or_create_test_vendor(self):
+        """Get existing vendor or create one for testing"""
+        try:
+            # Try to get existing vendors
+            response = self.session.get(f"{BACKEND_URL}/parties?party_type=vendor")
+            
+            if response.status_code == 200:
+                data = response.json()
+                vendors = data.get("data", data.get("items", data if isinstance(data, list) else []))
+                
+                if vendors:
+                    vendor_id = vendors[0].get('id')
+                    self.log_result("Get Test Vendor", True, f"Using existing vendor: {vendors[0].get('name')}")
+                    return vendor_id
+            
+            # Create new vendor
+            vendor_data = {
+                "name": "Al-Dhahab Gold Trading LLC",
+                "oman_id": "12345678",
+                "phone": "+968 2234 5678",
+                "address": "Muscat, Oman",
+                "party_type": "vendor",
+                "notes": "Test vendor for purchase testing"
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/parties", json=vendor_data)
+            
+            if response.status_code == 201:
+                vendor = response.json()
+                vendor_id = vendor.get("id")
+                self.log_result("Create Test Vendor", True, f"Created test vendor: {vendor.get('name')}")
+                return vendor_id
+            else:
+                self.log_result("Create Test Vendor", False, f"Failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.log_result("Get/Create Test Vendor", False, f"Error: {str(e)}")
+            return None
+    
+    def get_or_create_test_customer(self):
+        """Get existing customer or create one for testing"""
+        try:
+            # Try to get existing customers
+            response = self.session.get(f"{BACKEND_URL}/parties?party_type=customer")
+            
+            if response.status_code == 200:
+                data = response.json()
+                customers = data.get("data", data.get("items", data if isinstance(data, list) else []))
+                
+                if customers:
+                    customer_id = customers[0].get('id')
+                    self.log_result("Get Test Customer", True, f"Using existing customer: {customers[0].get('name')}")
+                    return customer_id
+            
+            # Create new customer
+            customer_data = {
+                "name": "Fatima Al-Zahra",
+                "oman_id": "87654321",
+                "phone": "+968 9876 5432",
+                "address": "Salalah, Oman",
+                "party_type": "customer",
+                "notes": "Test customer for job card testing"
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/parties", json=customer_data)
+            
+            if response.status_code == 201:
+                customer = response.json()
+                customer_id = customer.get("id")
+                self.log_result("Create Test Customer", True, f"Created test customer: {customer.get('name')}")
+                return customer_id
+            else:
+                self.log_result("Create Test Customer", False, f"Failed: {response.status_code} - {response.text}")
+                return None
+                
+        except Exception as e:
+            self.log_result("Get/Create Test Customer", False, f"Error: {str(e)}")
+            return None
+    
+    def test_enhanced_purchase_valuation_comprehensive(self):
+        """Run comprehensive Enhanced Purchase Valuation tests"""
+        print("\n" + "="*80)
+        print("🚀 ENHANCED PURCHASE VALUATION - COMPREHENSIVE TESTING")
+        print("="*80)
+        
+        if not self.authenticate():
+            return False
+        
+        # Run all Enhanced Purchase Valuation tests
+        test_results = []
+        
+        print("\n1️⃣ Testing Purity Adjustment Calculations...")
+        purity_test = self.test_enhanced_purchase_valuation_purity_adjustment()
+        test_results.append(("Purity Adjustment Calculations", purity_test))
+        
+        print("\n2️⃣ Testing Multiple Items with Different Purities...")
+        multiple_items_test = self.test_multiple_items_purchase_different_purities()
+        test_results.append(("Multiple Items Different Purities", multiple_items_test))
+        
+        print("\n3️⃣ Testing Walk-in Filtering and Customer ID Search...")
+        filtering_test = self.test_walk_in_filtering_and_customer_id_search()
+        test_results.append(("Walk-in Filtering & Customer ID Search", filtering_test))
+        
+        print("\n4️⃣ Testing Stock Valuation (916 Purity Enforcement)...")
+        stock_valuation_test = self.test_stock_valuation_916_purity()
+        test_results.append(("Stock Valuation 916 Purity", stock_valuation_test))
+        
+        print("\n5️⃣ Testing Calculation Breakdown in Notes...")
+        calculation_notes_test = self.test_calculation_breakdown_in_notes()
+        test_results.append(("Calculation Breakdown in Notes", calculation_notes_test))
+        
+        # Summary
+        passed_tests = sum(1 for _, result in test_results if result)
+        total_tests = len(test_results)
+        success_rate = (passed_tests / total_tests) * 100
+        
+        print(f"\n" + "="*80)
+        print(f"📊 ENHANCED PURCHASE VALUATION TEST SUMMARY")
+        print(f"="*80)
+        print(f"Total Tests: {total_tests}")
+        print(f"Passed: {passed_tests}")
+        print(f"Failed: {total_tests - passed_tests}")
+        print(f"Success Rate: {success_rate:.1f}%")
+        print()
+        
+        for test_name, result in test_results:
+            status = "✅ PASS" if result else "❌ FAIL"
+            print(f"{status} {test_name}")
+        
+        overall_success = passed_tests == total_tests
+        
+        if overall_success:
+            print(f"\n🎉 ALL ENHANCED PURCHASE VALUATION TESTS PASSED!")
+            print(f"✅ Purity adjustment formula working correctly")
+            print(f"✅ Multiple items with different purities supported")
+            print(f"✅ Walk-in filtering and customer ID search functional")
+            print(f"✅ Stock valuation enforces 916 purity")
+            print(f"✅ Calculation breakdown included in notes")
+        else:
+            print(f"\n⚠️  SOME TESTS FAILED - REVIEW REQUIRED")
+            failed_tests = [name for name, result in test_results if not result]
+            for failed_test in failed_tests:
+                print(f"❌ {failed_test}")
+        
+        self.log_result(
+            "Enhanced Purchase Valuation - Comprehensive Test Suite",
+            overall_success,
+            f"Passed: {passed_tests}/{total_tests} tests ({success_rate:.1f}%)",
+            {
+                "total_tests": total_tests,
+                "passed_tests": passed_tests,
+                "failed_tests": total_tests - passed_tests,
+                "success_rate": success_rate,
+                "test_results": dict(test_results)
+            }
+        )
+        
+        return overall_success
         """Test Shop Settings conversion factor GET and UPDATE"""
         print("\n--- Testing Shop Settings Conversion Factor ---")
         
