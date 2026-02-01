@@ -4478,13 +4478,39 @@ async def update_purchase(
             detail="Cannot edit locked purchase. Purchase is finalized and fully paid. Locked purchases are immutable to maintain financial integrity."
         )
     
-    # Validate vendor if being updated
-    if "vendor_party_id" in updates:
-        vendor = await db.parties.find_one({"id": updates["vendor_party_id"], "is_deleted": False})
-        if not vendor:
-            raise HTTPException(status_code=404, detail="Vendor not found")
-        if vendor.get("party_type") != "vendor":
-            raise HTTPException(status_code=400, detail="Party must be a vendor type")
+    # Validate walk-in or saved vendor fields
+    is_walk_in = updates.get("is_walk_in", existing.get("is_walk_in", False))
+    
+    if is_walk_in:
+        # Walk-in vendor validation
+        if "vendor_oman_id" in updates:
+            vendor_oman_id = updates.get("vendor_oman_id", "").strip()
+            if not vendor_oman_id:
+                raise HTTPException(status_code=400, detail="Customer ID (Oman ID) is required for walk-in purchases")
+            updates["vendor_oman_id"] = vendor_oman_id
+        
+        if "walk_in_vendor_name" in updates:
+            walk_in_vendor_name = updates.get("walk_in_vendor_name", "").strip()
+            if not walk_in_vendor_name:
+                raise HTTPException(status_code=400, detail="Vendor Name is required for walk-in purchases")
+            updates["walk_in_vendor_name"] = walk_in_vendor_name
+        
+        # When switching to walk-in, clear vendor_party_id
+        if "is_walk_in" in updates and updates["is_walk_in"]:
+            updates["vendor_party_id"] = None
+    else:
+        # Saved vendor validation
+        if "vendor_party_id" in updates:
+            vendor = await db.parties.find_one({"id": updates["vendor_party_id"], "is_deleted": False})
+            if not vendor:
+                raise HTTPException(status_code=404, detail="Vendor not found")
+            if vendor.get("party_type") != "vendor":
+                raise HTTPException(status_code=400, detail="Party must be a vendor type")
+        
+        # When switching to saved vendor, clear walk-in fields
+        if "is_walk_in" in updates and not updates["is_walk_in"]:
+            updates["vendor_oman_id"] = None
+            updates["walk_in_vendor_name"] = None
     
     # ========== CRITICAL VALIDATION: NEVER TRUST FRONTEND ==========
     # Get current values or updated values
