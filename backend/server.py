@@ -4525,8 +4525,10 @@ async def update_purchase(
                 item_amount = item.get("calculated_amount", 0)
                 calculated_total += float(item_amount)
             updates["amount_total"] = round(calculated_total, 3)
-        # If items not being updated, preserve existing amount_total
-        # (user is just updating metadata like vendor_oman_id)
+        else:
+            # If items not being updated, use existing amount_total
+            # (user is just updating metadata like vendor_oman_id)
+            calculated_total = existing.get("amount_total", 0)
     else:
         # Single-item purchase - use legacy calculation logic
         # Get current values or updated values
