@@ -4023,7 +4023,7 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
             reference_type="purchase",
             reference_id=purchase_id,
             created_by=current_user.username,
-            notes=f"Entered purity: {purchase.entered_purity}, Valuation purity: {purity}"
+            notes=f"Calculation: Weight={purchase.weight_grams}g × Rate={purchase_data.get('rate_per_gram')} OMR/g × (916/{purchase.entered_purity}) ÷ {conversion_factor} = {purchase_data['amount_total']} OMR | Entered purity: {purchase.entered_purity}, Valuation purity: {purity}"
         )
         movement_dict = convert_stock_movement_to_decimal(movement.model_dump())
         await db.stock_movements.insert_one(movement_dict)
