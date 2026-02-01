@@ -1447,6 +1447,71 @@ agent_communication:
   - agent: "main"
     message: |
       ✅ EST. METAL VALUE ISSUE - EXPLANATION PROVIDED
+  
+  - agent: "testing"
+    message: |
+      🔍 GOLD SHOP ERP PAGE LOADING TEST RESULTS
+      
+      COMPREHENSIVE TESTING COMPLETED - 12 pages tested with detailed API monitoring
+      
+      📊 OVERALL RESULTS:
+      ✅ PASSED: 10/12 pages (83.3% success rate)
+      ❌ FAILED: 2/12 pages (16.7% failure rate)
+      
+      ✅ WORKING PAGES (10):
+      • Dashboard - Content: 1 tables, 5 cards ✅
+      • Job Cards - Content: 1 tables, 1 cards ✅  
+      • Parties - Content: 1 tables, 2 cards ✅
+      • Purchases - Content: 1 tables, 7 cards ✅
+      • Finance - Content: 1 tables, 5 cards ✅
+      • Audit Logs - Content: 1 tables, 1 cards ✅
+      • Reports - Content: 0 tables, 1 cards ✅
+      • Settings - Content: 2 tables, 3 cards ✅
+      • Workers - Content: 1 tables, 1 cards ✅
+      • Work Types - Content: 1 tables, 0 cards ✅
+      
+      ❌ FAILED PAGES (2):
+      • Inventory - Shows "Failed to load inventory data" error
+      • Invoices - Shows "Failed to load invoices" error
+      
+      🔍 ROOT CAUSE ANALYSIS:
+      Backend API endpoints returning HTTP 520 errors (server errors):
+      
+      1. INVENTORY PAGE FAILURES:
+         - ❌ GET /api/inventory/movements → 520 error
+         - ✅ GET /api/inventory/headers → 200 OK
+         - ✅ GET /api/inventory/stock-totals → 200 OK  
+         - ✅ GET /api/inventory?page=1&page_size=10 → 200 OK
+      
+      2. INVOICES PAGE FAILURES:
+         - ❌ GET /api/invoices?page=1&page_size=10 → 520 error
+         - ❌ GET /api/accounts → 520 error
+      
+      3. BACKEND LOG ANALYSIS:
+         - TypeError: unsupported operand type(s) for +: 'float' and 'Decimal128'
+         - Error occurs in /api/reports/financial-summary endpoint (line 8381)
+         - Multiple 500 Internal Server Errors for /api/accounts and /api/transactions
+         - Issue appears to be data type mismatch between float and Decimal128 in financial calculations
+      
+      🎯 SPECIFIC ISSUES IDENTIFIED:
+      1. Data type incompatibility in financial calculations (float + Decimal128)
+      2. Backend endpoints failing with 500/520 errors
+      3. Frontend properly handles errors by showing "Failed to load" messages
+      4. Error handling is working correctly - no crashes, graceful degradation
+      
+      📋 IMPACT ASSESSMENT:
+      - CRITICAL: Inventory and Invoices pages cannot load data
+      - MODERATE: Dashboard loads but some financial data may be missing
+      - LOW: Other pages (Job Cards, Parties, Purchases, etc.) working normally
+      
+      🔧 RECOMMENDED FIXES:
+      1. Fix Decimal128/float type conversion in backend financial calculations
+      2. Review and fix /api/accounts endpoint 
+      3. Review and fix /api/inventory/movements endpoint
+      4. Review and fix /api/invoices endpoint
+      5. Add proper error handling for Decimal128 operations
+      
+      The application is partially functional but requires backend fixes for full operation.
       
       USER REPORT: "est metal value isn't changing?"
       
