@@ -7000,7 +7000,11 @@ async def get_transactions(
         balance_before = running_balance
         for pt in prior_txns:
             # Convert Decimal128 to float for calculations
-            amount = float(pt['amount']) if isinstance(pt['amount'], Decimal128) else pt['amount']
+            if isinstance(pt['amount'], Decimal128):
+                amount = float(pt['amount'].to_decimal())
+            else:
+                amount = float(pt['amount']) if pt['amount'] is not None else 0.0
+            
             if pt['transaction_type'] == 'credit':
                 running_balance += amount
             else:
@@ -7009,7 +7013,11 @@ async def get_transactions(
             # If this is the current transaction, capture before and after
             if pt['id'] == txn['id']:
                 # Convert Decimal128 to float for calculations
-                txn_amount = float(txn['amount']) if isinstance(txn['amount'], Decimal128) else txn['amount']
+                if isinstance(txn['amount'], Decimal128):
+                    txn_amount = float(txn['amount'].to_decimal())
+                else:
+                    txn_amount = float(txn['amount']) if txn['amount'] is not None else 0.0
+                
                 if txn['transaction_type'] == 'credit':
                     balance_before = running_balance - txn_amount
                 else:
