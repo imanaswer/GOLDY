@@ -103,28 +103,33 @@ export default function PurchasesPage() {
   // Get current page from URL, default to 1
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
-  // AUTO-CALCULATION: total_amount = weight × rate (SOURCE OF TRUTH)
+  // AUTO-CALCULATION: total_amount = (weight × rate × (916 / purity)) ÷ conversion_factor (SOURCE OF TRUTH)
   useEffect(() => {
-    const weight = parseFloat(formData.weight_grams) || 0;
-    const rate = parseFloat(formData.rate_per_gram) || 0;
-    
-    if (weight > 0 && rate > 0) {
-      const calculatedTotal = (weight * rate).toFixed(2);
-      // Only update if different to avoid infinite loop
-      if (formData.amount_total !== calculatedTotal) {
+    if (!isMultipleItems) {
+      const weight = parseFloat(formData.weight_grams) || 0;
+      const rate = parseFloat(formData.rate_per_gram) || 0;
+      const purity = parseFloat(formData.entered_purity) || 916;
+      const factor = parseFloat(selectedConversionFactor);
+      
+      if (weight > 0 && rate > 0 && purity > 0 && factor > 0) {
+        const purityAdjustment = 916 / purity;
+        const calculatedTotal = ((weight * rate * purityAdjustment) / factor).toFixed(3);
+        // Only update if different to avoid infinite loop
+        if (formData.amount_total !== calculatedTotal) {
+          setFormData(prev => ({
+            ...prev,
+            amount_total: calculatedTotal
+          }));
+        }
+      } else if (formData.amount_total !== '') {
+        // Clear total if weight or rate becomes invalid
         setFormData(prev => ({
           ...prev,
-          amount_total: calculatedTotal
+          amount_total: ''
         }));
       }
-    } else if (formData.amount_total !== '') {
-      // Clear total if weight or rate becomes invalid
-      setFormData(prev => ({
-        ...prev,
-        amount_total: ''
-      }));
     }
-  }, [formData.weight_grams, formData.rate_per_gram]);
+  }, [formData.weight_grams, formData.rate_per_gram, formData.entered_purity, selectedConversionFactor, isMultipleItems]);
 
   useEffect(() => {
     loadInitialData();
