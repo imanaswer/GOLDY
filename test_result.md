@@ -1263,6 +1263,39 @@ agent_communication:
       - Permission checks are blocking data
       - Response format is incorrect
       - Frontend parsing is failing
+  
+  - agent: "testing"
+    message: |
+      🚨 CRITICAL ISSUE IDENTIFIED - Decimal128 Serialization Bug
+      
+      ROOT CAUSE: /api/parties/outstanding-summary endpoint failing with TypeError
+      - Error: unsupported operand type(s) for +: 'float' and 'Decimal128'
+      - Location: Line 2942 in server.py (sum operation)
+      - Also affects: Line 2950 (accumulation operation)
+      
+      STATUS:
+      - 2 out of 3 dashboard APIs working correctly ✅
+      - 1 API failing due to Decimal128/float mixing ❌
+  
+  - agent: "main"
+    message: |
+      ✅ DASHBOARD DECIMAL128 BUG FIXED
+      
+      IMPLEMENTATION:
+      1. Fixed line 2943 (sum operation):
+         - Added isinstance check for Decimal128
+         - Converts to float before sum()
+         - Formula: float(balance_due) if isinstance(balance_due, Decimal128)
+      
+      2. Fixed lines 2951-2953 (accumulation):
+         - Extract balance_due value
+         - Check if Decimal128 and convert to float
+         - Add float value to outstanding total
+      
+      3. Backend service restarted successfully
+      
+      NEXT STEP:
+      - Ready for testing to verify dashboard now displays data correctly
 
 agent_communication:
   - agent: "main"
