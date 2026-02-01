@@ -4024,26 +4024,78 @@ class BackendTester:
         print("="*80)
 
 def main():
-    """Main test execution - Focus on Transactions Endpoint Decimal128 Fix"""
-    print("Starting Transactions Endpoint Decimal128/Float Conversion Fix Testing")
-    print("Testing the specific GET /api/transactions endpoint that was causing HTTP 520 error")
-    print("="*80)
-    
+    """Main function to run dashboard API tests"""
     tester = BackendTester()
     
-    # Authenticate first
+    print("🚀 STARTING DASHBOARD API TESTING")
+    print("="*80)
+    
+    # Step 1: Authenticate
     if not tester.authenticate():
-        print("❌ Authentication failed. Cannot proceed with tests.")
+        print("❌ Authentication failed. Cannot proceed with testing.")
         return
     
-    # Primary Focus: Test Transactions Endpoint Decimal128 Fix
-    success = tester.test_transactions_endpoint_decimal128_fix()
+    # Step 2: Test Dashboard APIs
+    tester.test_dashboard_apis()
     
-    # Print summary
-    tester.print_summary()
+    # Step 3: Generate Summary Report
+    print("\n" + "="*80)
+    print("📊 DASHBOARD API TEST SUMMARY REPORT")
+    print("="*80)
     
-    # Return success status for test result update
-    return success
+    total_tests = len(tester.test_results)
+    passed_tests = sum(1 for result in tester.test_results if result["success"])
+    failed_tests = total_tests - passed_tests
+    
+    print(f"Total Tests: {total_tests}")
+    print(f"Passed: {passed_tests} ✅")
+    print(f"Failed: {failed_tests} ❌")
+    print(f"Success Rate: {(passed_tests/total_tests*100):.1f}%")
+    
+    print("\n📋 DETAILED RESULTS:")
+    for result in tester.test_results:
+        status = "✅ PASS" if result["success"] else "❌ FAIL"
+        print(f"{status} - {result['test']}: {result['details']}")
+    
+    print("\n🔍 CRITICAL FINDINGS:")
+    
+    # Analyze results for dashboard issue
+    dashboard_apis = [r for r in tester.test_results if "Dashboard API" in r["test"]]
+    working_apis = [r for r in dashboard_apis if r["success"]]
+    failing_apis = [r for r in dashboard_apis if not r["success"]]
+    
+    if len(failing_apis) > 0:
+        print("❌ DASHBOARD ISSUE IDENTIFIED:")
+        for api in failing_apis:
+            print(f"   - {api['test']}: {api['details']}")
+    
+    if len(working_apis) == 3:
+        print("✅ All dashboard APIs are working correctly")
+        print("   - Issue may be in frontend data parsing or display logic")
+    elif len(working_apis) > 0:
+        print("⚠️  Partial dashboard API functionality:")
+        for api in working_apis:
+            print(f"   - {api['test']}: Working")
+    
+    # Check for permission issues
+    permission_test = next((r for r in tester.test_results if "Permission" in r["test"]), None)
+    if permission_test and not permission_test["success"]:
+        print("❌ PERMISSION ISSUE: Admin user may not have required permissions")
+    
+    # Check for data issues
+    data_test = next((r for r in tester.test_results if "Database Data" in r["test"]), None)
+    if data_test and not data_test["success"]:
+        print("❌ DATA ISSUE: Database appears to be empty or inaccessible")
+    
+    print("\n💡 RECOMMENDATIONS:")
+    if failed_tests == 0:
+        print("   - All APIs working correctly - check frontend dashboard component")
+        print("   - Verify frontend API calls are using correct endpoints")
+        print("   - Check browser console for JavaScript errors")
+    else:
+        print("   - Fix failing API endpoints identified above")
+        print("   - Verify database connectivity and data integrity")
+        print("   - Check user permissions and authentication")
 
 if __name__ == "__main__":
     main()
