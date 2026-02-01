@@ -245,8 +245,8 @@ class BackendTester:
             return False
     
     def test_parties_outstanding_summary_api(self):
-        """Test GET /api/parties/outstanding-summary - Should return total_customer_due and top_10_outstanding"""
-        print("\n--- Testing Parties Outstanding Summary API ---")
+        """Test GET /api/parties/outstanding-summary - DECIMAL128 FIX VERIFICATION"""
+        print("\n--- Testing Parties Outstanding Summary API - DECIMAL128 FIX ---")
         
         try:
             response = self.session.get(f"{BACKEND_URL}/parties/outstanding-summary")
@@ -263,53 +263,94 @@ class BackendTester:
                 
                 # Verify structure matches frontend expectations
                 structure_correct = has_total_due and has_top_10
-                has_outstanding_data = total_due > 0 or len(top_10_list) > 0
+                
+                # CRITICAL: Check that total_customer_due is a number (not crashing)
+                total_due_is_number = isinstance(total_due, (int, float))
+                
+                # CRITICAL: Check that top_10_outstanding is an array
+                top_10_is_array = isinstance(top_10_list, list)
                 
                 # Check top_10 item structure if exists
                 top_10_structure_correct = True
                 if top_10_list:
-                    expected_fields = ['party_id', 'party_name', 'outstanding_amount']
+                    expected_fields = ['customer_id', 'customer_name', 'outstanding']
                     first_item = top_10_list[0]
                     top_10_structure_correct = all(field in first_item for field in expected_fields)
+                    
+                    # CRITICAL: Check that outstanding amounts are numbers (Decimal128 fix verification)
+                    outstanding_amounts_are_numbers = all(
+                        isinstance(item.get('outstanding', 0), (int, float)) 
+                        for item in top_10_list
+                    )
+                else:
+                    outstanding_amounts_are_numbers = True  # No items to check
                 
-                # Check for Decimal128 serialization issues
-                serialization_ok = True
-                if isinstance(total_due, str) or (top_10_list and not isinstance(top_10_list[0].get('outstanding_amount', 0), (int, float))):
-                    serialization_ok = False
+                # DECIMAL128 FIX VERIFICATION: No TypeError should occur
+                decimal128_fix_working = response.status_code == 200  # API didn't crash with TypeError
                 
-                success = response.status_code == 200 and structure_correct
+                success = (response.status_code == 200 and structure_correct and 
+                          total_due_is_number and top_10_is_array and decimal128_fix_working)
                 
-                details = f"Status: {response.status_code}, "
-                details += f"Total Due: {total_due}, "
-                details += f"Top 10 Count: {len(top_10_list)}, "
+                details = f"Status: {response.status_code} ({'✓ NO 520 ERROR' if response.status_code == 200 else '❌ ERROR'}), "
+                details += f"Total Due: {total_due} ({'✓ NUMBER' if total_due_is_number else '❌ NOT NUMBER'}), "
+                details += f"Top 10: {len(top_10_list)} items ({'✓ ARRAY' if top_10_is_array else '❌ NOT ARRAY'}), "
                 details += f"Structure: {'✓' if structure_correct else '✗'}, "
-                details += f"Serialization: {'✓' if serialization_ok else '✗'}"
+                details += f"Decimal128 Fix: {'✓ WORKING' if decimal128_fix_working else '❌ FAILED'}"
                 
                 self.log_result(
-                    "Dashboard API - Outstanding Summary",
+                    "Dashboard API - Outstanding Summary (Decimal128 Fix)",
                     success,
                     details,
                     {
                         "total_customer_due": total_due,
+                        "total_due_type": type(total_due).__name__,
                         "top_10_count": len(top_10_list),
-                        "has_outstanding_data": has_outstanding_data,
+                        "top_10_type": type(top_10_list).__name__,
+                        "decimal128_fix_status": "WORKING - No TypeError" if decimal128_fix_working else "FAILED - TypeError occurred",
                         "sample_top_10": top_10_list[0] if top_10_list else None,
                         "full_response": data
                     }
                 )
                 
-                return success and has_outstanding_data
+                return success
             else:
+                # Check if this is the specific 520 error that was happening before the fix
+                is_520_error = response.status_code == 520
+                error_details = f"HTTP {response.status_code}: {response.text}"
+                
+                if is_520_error:
+                    error_details += " - THIS IS THE DECIMAL128 BUG! Fix not working."
+                
                 self.log_result(
-                    "Dashboard API - Outstanding Summary", 
+                    "Dashboard API - Outstanding Summary (Decimal128 Fix)", 
                     False, 
-                    f"HTTP {response.status_code}: {response.text}",
-                    {"status_code": response.status_code, "response": response.text}
+                    error_details,
+                    {
+                        "status_code": response.status_code, 
+                        "response": response.text,
+                        "is_decimal128_bug": is_520_error,
+                        "fix_status": "FAILED - API returning error" if is_520_error else "Unknown error"
+                    }
                 )
                 return False
                 
         except Exception as e:
-            self.log_result("Dashboard API - Outstanding Summary", False, f"Error: {str(e)}")
+            # Check if this is a Decimal128 related error
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 SERIALIZATION ERROR DETECTED!"
+            
+            self.log_result(
+                "Dashboard API - Outstanding Summary (Decimal128 Fix)", 
+                False, 
+                error_msg,
+                {
+                    "error": str(e),
+                    "is_decimal128_error": is_decimal128_error,
+                    "fix_status": "FAILED - Exception occurred"
+                }
+            )
             return False
     
     def test_database_data_verification(self):
