@@ -2978,6 +2978,7 @@ async def update_party(party_id: str, party_data: dict, current_user: User = Dep
     # Create a copy with existing values as defaults for partial updates
     update_data = {
         'name': party_data.get('name', existing.get('name')),
+        'oman_id': party_data.get('oman_id', existing.get('oman_id')),
         'phone': party_data.get('phone', existing.get('phone')),
         'address': party_data.get('address', existing.get('address')),
         'party_type': party_data.get('party_type', existing.get('party_type')),
