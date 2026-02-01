@@ -2236,34 +2236,90 @@ export default function JobCardsPage() {
                     </div>
                   </div>
                     
+                  {/* Gold Settlement Deduction Section */}
+                  {(() => {
+                    const advanceGoldGrams = parseFloat(viewJobCard.advance_in_gold_grams) || 0;
+                    const advanceGoldRate = parseFloat(viewJobCard.advance_gold_rate) || 0;
+                    const exchangeGoldGrams = parseFloat(viewJobCard.exchange_in_gold_grams) || 0;
+                    const exchangeGoldRate = parseFloat(viewJobCard.exchange_gold_rate) || 0;
+                    
+                    const advanceDeduction = advanceGoldGrams * advanceGoldRate;
+                    const exchangeDeduction = exchangeGoldGrams * exchangeGoldRate;
+                    const totalGoldDeduction = advanceDeduction + exchangeDeduction;
+                    
+                    if (totalGoldDeduction > 0) {
+                      return (
+                        <div className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-4 mb-4 border-2 border-purple-300">
+                          <div className="text-xs text-purple-800 font-medium uppercase mb-2 flex items-center gap-2">
+                            <span>💰</span> Gold Settlement Deduction
+                          </div>
+                          <div className="space-y-1 text-sm">
+                            {advanceDeduction > 0 && (
+                              <div className="flex justify-between text-purple-800">
+                                <span>Advance Gold ({advanceGoldGrams.toFixed(3)}g × {advanceGoldRate.toFixed(2)})</span>
+                                <span className="font-mono">-{advanceDeduction.toFixed(2)} OMR</span>
+                              </div>
+                            )}
+                            {exchangeDeduction > 0 && (
+                              <div className="flex justify-between text-purple-800">
+                                <span>Exchange Gold ({exchangeGoldGrams.toFixed(3)}g × {exchangeGoldRate.toFixed(2)})</span>
+                                <span className="font-mono">-{exchangeDeduction.toFixed(2)} OMR</span>
+                              </div>
+                            )}
+                            <div className="flex justify-between font-bold text-purple-900 pt-1 border-t border-purple-300">
+                              <span>Total Deduction</span>
+                              <span className="font-mono">-{totalGoldDeduction.toFixed(2)} OMR</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                  
                   {/* Grand Total - Most Prominent */}
                   <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 rounded-xl p-5 shadow-xl border-2 border-indigo-400">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-indigo-100 text-xs font-medium uppercase mb-1">Estimated Job Card Total</div>
                         <div className="font-mono font-black text-4xl text-white">
-                          {(viewJobCard.items || []).reduce((total, item) => {
-                            const goldRate = parseFloat(viewJobCard.gold_rate_at_jobcard) || 0;
-                            const weightIn = parseFloat(item.weight_in) || 0;
-                            const makingValue = parseFloat(item.making_charge_value) || 0;
-                            const inches = parseFloat(item.inches) || 0;
-                            const vatPercent = parseFloat(item.vat_percent) || 0;
+                          {(() => {
+                            // Calculate items total
+                            const itemsTotal = (viewJobCard.items || []).reduce((total, item) => {
+                              const goldRate = parseFloat(viewJobCard.gold_rate_at_jobcard) || 0;
+                              const weightIn = parseFloat(item.weight_in) || 0;
+                              const makingValue = parseFloat(item.making_charge_value) || 0;
+                              const inches = parseFloat(item.inches) || 0;
+                              const vatPercent = parseFloat(item.vat_percent) || 0;
+                              
+                              const metalValue = weightIn * goldRate;
+                              let makingCharges = 0;
+                              if (item.making_charge_type === 'per_gram') {
+                                makingCharges = makingValue * weightIn;
+                              } else if (item.making_charge_type === 'per_inch') {
+                                makingCharges = makingValue * inches;
+                              } else {
+                                makingCharges = makingValue;
+                              }
+                              const subtotal = metalValue + makingCharges;
+                              const vat = (subtotal * vatPercent) / 100;
+                              const itemTotal = subtotal + vat;
+                              
+                              return total + itemTotal;
+                            }, 0);
                             
-                            const metalValue = weightIn * goldRate;
-                            let makingCharges = 0;
-                            if (item.making_charge_type === 'per_gram') {
-                              makingCharges = makingValue * weightIn;
-                            } else if (item.making_charge_type === 'per_inch') {
-                              makingCharges = makingValue * inches;
-                            } else {
-                              makingCharges = makingValue;
-                            }
-                            const subtotal = metalValue + makingCharges;
-                            const vat = (subtotal * vatPercent) / 100;
-                            const itemTotal = subtotal + vat;
+                            // Calculate gold settlement deduction
+                            const advanceGoldGrams = parseFloat(viewJobCard.advance_in_gold_grams) || 0;
+                            const advanceGoldRate = parseFloat(viewJobCard.advance_gold_rate) || 0;
+                            const exchangeGoldGrams = parseFloat(viewJobCard.exchange_in_gold_grams) || 0;
+                            const exchangeGoldRate = parseFloat(viewJobCard.exchange_gold_rate) || 0;
+                            const totalGoldDeduction = (advanceGoldGrams * advanceGoldRate) + (exchangeGoldGrams * exchangeGoldRate);
                             
-                            return total + itemTotal;
-                          }, 0).toFixed(2)} <span className="text-xl text-indigo-200">OMR</span>
+                            // Final total = items total - gold settlement deduction
+                            const finalTotal = itemsTotal - totalGoldDeduction;
+                            
+                            return finalTotal.toFixed(2);
+                          })()} <span className="text-xl text-indigo-200">OMR</span>
                         </div>
                       </div>
                       <svg className="w-16 h-16 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2280,6 +2336,7 @@ export default function JobCardsPage() {
                         <p className="font-semibold mb-1">Important: This is an ESTIMATE only</p>
                         <ul className="list-disc list-inside space-y-0.5 text-amber-800">
                           <li>Based on gold rate: {parseFloat(viewJobCard.gold_rate_at_jobcard).toFixed(2)} OMR/g (at time of job card creation)</li>
+                          <li>Gold settlement (advance & exchange gold) is deducted from total</li>
                           <li>Actual invoice amount may vary based on final weight and current market rates</li>
                           <li>Final costs determined at invoice conversion</li>
                         </ul>
