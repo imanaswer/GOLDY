@@ -3867,8 +3867,13 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
         if rate_per_gram <= 0:
             raise HTTPException(status_code=400, detail="Rate per gram must be greater than 0")
         
-        # ⚠️ MANDATORY VALUATION RULE: amount = (weight × rate) ÷ conversion_factor
-        calculated_total = (weight_grams * rate_per_gram) / conversion_factor
+        # Extract purity for calculation
+        entered_purity = int(purchase_data.get("entered_purity", 916))
+        
+        # ⚠️ ENHANCED VALUATION RULE: amount = (weight × rate × (916 / entered_purity)) ÷ conversion_factor
+        # Purity adjustment ensures accurate valuation based on actual purity
+        purity_adjustment = 916 / entered_purity
+        calculated_total = (weight_grams * rate_per_gram * purity_adjustment) / conversion_factor
         calculated_total = round(calculated_total, 3)  # 3 decimal precision (Oman)
         
         # Set validated and calculated values
