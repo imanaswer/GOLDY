@@ -920,25 +920,26 @@ class BackendTester:
                 return False
             
             # Test scenarios with consistent test data
+            # Using precise calculations: (100 × 50 × (916 / purity)) ÷ 0.920
             test_scenarios = [
                 {
                     "name": "Purity 916 (22K) - Baseline",
                     "purity": 916,
-                    "expected_amount": 5434.783,
+                    "expected_amount": 5434.783,  # (100 × 50 × 1.0) ÷ 0.920 = 5434.783
                     "purity_adjustment": 1.0,
                     "description": "Should work same as old formula"
                 },
                 {
                     "name": "Purity 999 (24K) - Lower Amount", 
                     "purity": 999,
-                    "expected_amount": 4983.152,
+                    "expected_amount": 4983.244,  # (100 × 50 × 0.91691...) ÷ 0.920 = 4983.244 (precise)
                     "purity_adjustment": 0.917,
                     "description": "Should give LOWER amount"
                 },
                 {
                     "name": "Purity 875 (21K) - Higher Amount",
                     "purity": 875, 
-                    "expected_amount": 5688.043,
+                    "expected_amount": 5689.441,  # (100 × 50 × 1.04685...) ÷ 0.920 = 5689.441 (precise)
                     "purity_adjustment": 1.047,
                     "description": "Should give HIGHER amount"
                 }
