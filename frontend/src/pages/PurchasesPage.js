@@ -1635,6 +1635,12 @@ export default function PurchasesPage() {
                         {(viewPurchase.weight_grams || 0).toFixed(3)}g × {(viewPurchase.rate_per_gram || 0).toFixed(2)} OMR/g = {((viewPurchase.weight_grams || 0) * (viewPurchase.rate_per_gram || 0)).toFixed(2)} OMR
                       </span>
                     </div>
+                    <div className="flex justify-between items-center border-t pt-2 border-amber-200">
+                      <span className="text-gray-700">Conversion Factor:</span>
+                      <span className="font-mono font-semibold text-blue-900">
+                        {viewPurchase.conversion_factor || '0.920'}
+                      </span>
+                    </div>
                     {viewPurchase.entered_purity !== 916 && (
                       <div className="text-xs text-amber-700 italic border-t pt-2 border-amber-200">
                         💡 Note: Gold entered as {viewPurchase.entered_purity}K but valued at 916K (22K standard) for inventory purposes
