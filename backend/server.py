@@ -4528,7 +4528,8 @@ async def update_purchase(
         else:
             # If items not being updated, use existing amount_total
             # (user is just updating metadata like vendor_oman_id)
-            calculated_total = existing.get("amount_total", 0)
+            calculated_total = float(existing.get("amount_total", 0))
+            print(f"DEBUG: Multiple-item purchase, using existing amount_total: {calculated_total}")
     else:
         # Single-item purchase - use legacy calculation logic
         # Get current values or updated values
