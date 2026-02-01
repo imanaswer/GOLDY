@@ -1191,11 +1191,11 @@ backend:
   
   - task: "Dashboard API - Outstanding Summary Endpoint - Decimal128 Fix"
     implemented: true
-    working: "needs_testing"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "critical"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
@@ -1203,6 +1203,9 @@ backend:
       - working: "needs_testing"
         agent: "main"
         comment: "✅ FIXED - Added Decimal128 to float conversion in outstanding summary endpoint (lines 2943 and 2951-2953). Now converts balance_due to float before sum() operation and accumulation. Fix applied: Line 2943 checks if value is Decimal128 and converts to float; Lines 2951-2953 convert balance_due to float before adding to outstanding total. Backend restarted successfully."
+      - working: true
+        agent: "testing"
+        comment: "✅ DECIMAL128 FIX VERIFIED WORKING - Outstanding Summary API now returns HTTP 200 (not 520 error). Response structure correct: total_customer_due=42386.498 (number), top_10_outstanding=4 items (array). Each item has customer_id, customer_name, outstanding fields. No more TypeError crashes. Dashboard integration test: All 3 APIs working (Headers ✓, Stock Totals ✓, Outstanding Summary ✓). Dashboard should now display actual data instead of zeros."
 
 frontend:
   - task: "Dashboard Page Data Loading"
