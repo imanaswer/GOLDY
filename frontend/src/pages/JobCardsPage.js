@@ -2241,6 +2241,119 @@ export default function JobCardsPage() {
                 </div>
               )}
 
+              {/* Gold Settlement Section - Display advance and exchange gold info */}
+              {((viewJobCard.advance_in_gold_grams && viewJobCard.advance_gold_rate) || 
+                (viewJobCard.exchange_in_gold_grams && viewJobCard.exchange_gold_rate)) && (
+                <div className="bg-gradient-to-br from-purple-50 to-violet-50 border-2 border-purple-300 rounded-xl p-5 shadow-lg">
+                  <h3 className="font-bold text-lg text-purple-900 flex items-center gap-2 mb-4">
+                    <span className="text-2xl">💰</span>
+                    Gold Settlement
+                  </h3>
+                  <p className="text-xs text-purple-700 mb-4">
+                    Gold to be deducted from invoice total when converted
+                  </p>
+
+                  <div className="space-y-3">
+                    {/* Advance Gold */}
+                    {viewJobCard.advance_in_gold_grams > 0 && viewJobCard.advance_gold_rate > 0 && (
+                      <div className="bg-white rounded-lg p-4 border border-purple-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-purple-900 flex items-center gap-2">
+                            <span className="text-lg">🪙</span> Advance Gold
+                          </span>
+                          <Badge className="bg-purple-100 text-purple-800">Pre-Payment</Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="text-center p-2 bg-purple-50 rounded border border-purple-100">
+                            <div className="text-xs text-purple-600 font-medium">Weight</div>
+                            <div className="font-mono font-bold text-purple-900">
+                              {parseFloat(viewJobCard.advance_in_gold_grams).toFixed(3)} g
+                            </div>
+                          </div>
+                          <div className="text-center p-2 bg-purple-50 rounded border border-purple-100">
+                            <div className="text-xs text-purple-600 font-medium">Rate</div>
+                            <div className="font-mono font-bold text-purple-900">
+                              {parseFloat(viewJobCard.advance_gold_rate).toFixed(2)} OMR/g
+                            </div>
+                          </div>
+                          <div className="text-center p-2 bg-purple-100 rounded border border-purple-300">
+                            <div className="text-xs text-purple-700 font-medium">Value</div>
+                            <div className="font-mono font-bold text-purple-900">
+                              {(parseFloat(viewJobCard.advance_in_gold_grams) * parseFloat(viewJobCard.advance_gold_rate)).toFixed(3)} OMR
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Exchange Gold */}
+                    {viewJobCard.exchange_in_gold_grams > 0 && viewJobCard.exchange_gold_rate > 0 && (
+                      <div className="bg-white rounded-lg p-4 border border-violet-200 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-violet-900 flex items-center gap-2">
+                            <span className="text-lg">🔄</span> Exchange Gold
+                          </span>
+                          <Badge className="bg-violet-100 text-violet-800">Trade-In</Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="text-center p-2 bg-violet-50 rounded border border-violet-100">
+                            <div className="text-xs text-violet-600 font-medium">Weight</div>
+                            <div className="font-mono font-bold text-violet-900">
+                              {parseFloat(viewJobCard.exchange_in_gold_grams).toFixed(3)} g
+                            </div>
+                          </div>
+                          <div className="text-center p-2 bg-violet-50 rounded border border-violet-100">
+                            <div className="text-xs text-violet-600 font-medium">Rate</div>
+                            <div className="font-mono font-bold text-violet-900">
+                              {parseFloat(viewJobCard.exchange_gold_rate).toFixed(2)} OMR/g
+                            </div>
+                          </div>
+                          <div className="text-center p-2 bg-violet-100 rounded border border-violet-300">
+                            <div className="text-xs text-violet-700 font-medium">Value</div>
+                            <div className="font-mono font-bold text-violet-900">
+                              {(parseFloat(viewJobCard.exchange_in_gold_grams) * parseFloat(viewJobCard.exchange_gold_rate)).toFixed(3)} OMR
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Total Deduction Summary */}
+                  <div className="mt-4 bg-gradient-to-r from-purple-600 to-violet-600 rounded-xl p-4 shadow-lg">
+                    <div className="flex items-center justify-between text-white">
+                      <div>
+                        <div className="text-purple-100 text-xs font-medium uppercase mb-1">Total Gold Deduction</div>
+                        <div className="font-mono font-black text-2xl">
+                          {(
+                            (viewJobCard.advance_in_gold_grams && viewJobCard.advance_gold_rate 
+                              ? parseFloat(viewJobCard.advance_in_gold_grams) * parseFloat(viewJobCard.advance_gold_rate) 
+                              : 0) +
+                            (viewJobCard.exchange_in_gold_grams && viewJobCard.exchange_gold_rate 
+                              ? parseFloat(viewJobCard.exchange_in_gold_grams) * parseFloat(viewJobCard.exchange_gold_rate) 
+                              : 0)
+                          ).toFixed(3)} <span className="text-lg text-purple-200">OMR</span>
+                        </div>
+                      </div>
+                      <svg className="w-12 h-12 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mt-4 p-3 bg-purple-100 border-l-4 border-purple-500 rounded">
+                    <div className="flex items-start gap-2">
+                      <Info className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-purple-900">
+                        <p className="font-semibold mb-1">Gold Settlement Info</p>
+                        <p>This gold value will be deducted from the invoice total when this job card is converted to an invoice.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
                 <Button
