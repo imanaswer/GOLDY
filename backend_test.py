@@ -3562,8 +3562,8 @@ class BackendTester:
         print("="*80)
 
 def main():
-    """Main test execution - Focus on Gold Shop ERP Purchase Module"""
-    print("Starting Gold Shop ERP Purchase Module Testing")
+    """Main test execution - Focus on Job Card Gold Settlement Feature"""
+    print("Starting Job Card Gold Settlement Testing")
     print("Testing ALL scenarios documented in test_result.md")
     print("="*80)
     
@@ -3574,8 +3574,8 @@ def main():
         print("❌ Authentication failed. Cannot proceed with tests.")
         return
     
-    # Primary Focus: Test Gold Shop ERP Purchase Module
-    tester.test_gold_shop_purchase_module()
+    # Primary Focus: Test Job Card Gold Settlement Feature
+    tester.test_job_card_gold_settlement_feature()
     
     # Print summary
     tester.print_summary()
