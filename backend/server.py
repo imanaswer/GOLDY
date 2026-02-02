@@ -8464,7 +8464,8 @@ async def view_transactions_report(
     total_credit = sum(safe_float(txn.get('amount', 0)) for txn in transactions if txn.get('transaction_type') == 'credit')
     total_debit = sum(safe_float(txn.get('amount', 0)) for txn in transactions if txn.get('transaction_type') == 'debit')
     
-    return {
+    # CRITICAL FIX: Convert entire response including transactions array to prevent Decimal128 serialization errors
+    return decimal_to_float({
         "transactions": transactions,
         "summary": {
             "total_credit": total_credit,
@@ -8472,7 +8473,7 @@ async def view_transactions_report(
             "net_balance": total_credit - total_debit
         },
         "count": len(transactions)
-    }
+    })
 
 @api_router.get("/reports/invoice/{invoice_id}")
 async def get_invoice_report(invoice_id: str, current_user: User = Depends(require_permission('reports.view'))):
