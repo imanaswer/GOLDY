@@ -122,7 +122,7 @@ export default function FinancePageEnhanced() {
         account_breakdown: []
       });
     }
-  }, [filters, currentPage, setPagination]);
+  }, [filters, currentPage, pageSize, setPagination]);
 
   useEffect(() => {
     loadData();
