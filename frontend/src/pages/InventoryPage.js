@@ -78,7 +78,7 @@ export default function InventoryPage() {
   const loadInventoryData = async () => {
     try {
       const [headersRes, movementsRes, totalsRes, inventoryRes] = await Promise.all([
-        API.get(`/api/inventory/headers`),
+        API.get(`/api/inventory/headers?page_size=1000`),
         API.get(`/api/inventory/movements`),
         API.get(`/api/inventory/stock-totals`),
         API.get(`/api/inventory`, {
