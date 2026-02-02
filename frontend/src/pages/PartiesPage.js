@@ -18,7 +18,7 @@ export default function PartiesPage() {
   const [parties, setParties] = useState([]);
   const [pagination, setPagination] = useState(null);
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
-  const [perPage, setPerPage] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [showDialog, setShowDialog] = useState(false);
   const [showLedgerDialog, setShowLedgerDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -64,7 +64,7 @@ export default function PartiesPage() {
 
   useEffect(() => {
     loadParties();
-  }, [currentPage, perPage, searchTerm, filterType]);
+  }, [currentPage, pageSize, searchTerm, filterType]);
 
   // Validation function for name
   const validateName = (name) => {
@@ -157,7 +157,7 @@ export default function PartiesPage() {
       setLoading(true);
       const params = {
         page: currentPage,
-        page_size: perPage
+        page_size: pageSize
       };
       
       // Add server-side filters
@@ -182,9 +182,9 @@ export default function PartiesPage() {
     setSearchParams({ page: newPage.toString() });
   };
 
-  const handlePerPageChange = (newPerPage) => {
-    setPerPage(newPerPage);
-    setCurrentPage(1); // Reset to first page when changing page size
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setSearchParams({ page: '1' });
   };
 
   const handleCreate = async () => {
