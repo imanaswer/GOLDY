@@ -121,10 +121,15 @@ const ReturnsPage = () => {
         });
         setInvoices(invoicesRes.data || []);
       } else if (returnType === 'purchase_return') {
+        // Get all purchases and filter out drafts on the client side
+        // Note: Backend status values are "Draft", "Finalized (Unpaid)", "Partially Paid", "Paid"
         const purchasesRes = await API.get('/api/purchases', {
-          params: { page: 1, page_size: 100, status: 'finalized' }
+          params: { page: 1, page_size: 100 }
         });
-        setPurchases(purchasesRes.data.items || []);
+        const allPurchases = purchasesRes.data.items || [];
+        // Filter to only include finalized/paid purchases (exclude drafts)
+        const returnablePurchases = allPurchases.filter(p => p.status !== 'Draft');
+        setPurchases(returnablePurchases);
       }
       
       // Load accounts
