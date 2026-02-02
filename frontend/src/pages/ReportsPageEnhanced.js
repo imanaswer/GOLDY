@@ -143,7 +143,7 @@ export default function ReportsPageEnhanced() {
 
   const loadParties = async () => {
     try {
-      const response = await API.get(`/api/parties`);
+      const response = await API.get(`/api/parties?page_size=1000`);
       setParties(response.data.items || []);
     } catch (error) {
       console.error('Failed to load parties');
