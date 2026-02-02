@@ -8406,7 +8406,8 @@ async def view_invoices_report(
     total_paid = sum(safe_float(inv.get('paid_amount', 0)) for inv in invoices)
     total_balance = sum(safe_float(inv.get('balance_due', 0)) for inv in invoices)
     
-    return {
+    # CRITICAL FIX: Convert entire response including invoices array to prevent Decimal128 serialization errors
+    return decimal_to_float({
         "invoices": invoices,
         "summary": {
             "total_amount": total_amount,
@@ -8414,7 +8415,7 @@ async def view_invoices_report(
             "total_balance": total_balance
         },
         "count": len(invoices)
-    }
+    })
 
 @api_router.get("/reports/transactions-view")
 async def view_transactions_report(
