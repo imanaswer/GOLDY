@@ -267,10 +267,12 @@ export default function PurchasesPage() {
         const rate = parseFloat(item.rate_per_gram_22k) || 0;
         const purity = parseFloat(item.entered_purity) || 916;
         if (weight > 0 && rate > 0 && purity > 0 && factor > 0) {
-          const purityAdjustment = 916 / purity;
+          // Formula: Amount = (Weight × Purity ÷ Factor) × Rate
+          const step1 = weight * purity;
+          const step2 = step1 / factor;
           return {
             ...item,
-            calculated_amount: parseFloat(((weight * rate * purityAdjustment) / factor).toFixed(3))
+            calculated_amount: parseFloat((step2 * rate).toFixed(3))
           };
         }
         return item;
