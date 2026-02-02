@@ -189,6 +189,85 @@ const ReturnsPage = () => {
     }
   };
   
+  // Load purchase returnable items when purchase is selected
+  const loadPurchaseReturnableItems = async (purchaseId) => {
+    if (!purchaseId) {
+      setReturnableItems([]);
+      return;
+    }
+    
+    setLoadingItems(true);
+    setError('');
+    try {
+      // Get purchase details to extract items
+      const response = await API.get(`/api/purchases/${purchaseId}`);
+      const purchase = response.data || {};
+      
+      console.log('[Returns] Loaded purchase:', purchase);
+      
+      // Extract items from purchase (either items array or legacy single item)
+      let purchaseItems = [];
+      
+      if (purchase.items && purchase.items.length > 0) {
+        // Multiple items purchase
+        purchaseItems = purchase.items.map(item => ({
+          description: item.description,
+          qty: 1, // Purchases don't have qty, default to 1
+          weight_grams: item.weight_grams,
+          purity: item.entered_purity || purchase.valuation_purity_fixed || 916,
+          amount: item.calculated_amount || 0,
+          // Store as returnable items (no remaining limit for purchases)
+          remaining_qty: 1,
+          remaining_weight_grams: item.weight_grams,
+          item_id: item.id
+        }));
+      } else if (purchase.description) {
+        // Legacy single item purchase
+        purchaseItems = [{
+          description: purchase.description,
+          qty: 1,
+          weight_grams: purchase.weight_grams || 0,
+          purity: purchase.entered_purity || purchase.valuation_purity_fixed || 916,
+          amount: purchase.amount_total || 0,
+          remaining_qty: 1,
+          remaining_weight_grams: purchase.weight_grams || 0,
+          item_id: 'legacy'
+        }];
+      }
+      
+      console.log('[Returns] Loaded purchase items:', purchaseItems.length, purchaseItems);
+      setReturnableItems(purchaseItems);
+      
+      // Auto-populate form items with purchase items
+      if (purchaseItems.length > 0) {
+        const formItems = purchaseItems.map(item => ({
+          description: item.description,
+          qty: item.qty,
+          weight_grams: item.weight_grams,
+          purity: item.purity,
+          amount: item.amount,
+          // Store limits for reference (purchases typically don't have returns tracking)
+          max_qty: item.remaining_qty,
+          max_weight: item.remaining_weight_grams,
+          item_id: item.item_id
+        }));
+        console.log('[Returns] Setting formData.items:', formItems.length, formItems);
+        setFormData(prev => ({ ...prev, items: formItems }));
+        setSuccess(`${purchaseItems.length} item(s) loaded from purchase`);
+      } else {
+        // No items - show message
+        setError('No items found in this purchase.');
+        setFormData(prev => ({ ...prev, items: [{ description: '', qty: 1, weight_grams: 0, purity: 916, amount: 0 }] }));
+      }
+    } catch (err) {
+      console.error('Error loading purchase returnable items:', err);
+      setError(err.response?.data?.detail || 'Failed to load purchase items');
+      setReturnableItems([]);
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+  
   // Handle filter change
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
