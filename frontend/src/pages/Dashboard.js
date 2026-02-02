@@ -60,6 +60,11 @@ export default function Dashboard() {
     setCurrentPage(newPage);
   };
 
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when page size changes
+  };
+
   return (
     <div data-testid="dashboard-page">
       <div className="mb-8">
