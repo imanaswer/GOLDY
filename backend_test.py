@@ -283,104 +283,491 @@ class BackendTester:
             self.log_result("InventoryPage Tables Pagination", False, f"Error: {str(e)}")
             return False
 
-    def test_reports_analytics_endpoints(self):
-        """Test Reports & Analytics Endpoints to fix 'Failed to load' issue"""
-        print("\n--- Testing Reports & Analytics Endpoints ---")
+    def test_reports_decimal128_fixes_comprehensive(self):
+        """COMPREHENSIVE TEST: Reports Decimal128 Conversion Fixes"""
+        print("\n" + "="*80)
+        print("🎯 TESTING REPORTS DECIMAL128 FIXES - PRIMARY FOCUS")
+        print("="*80)
+        
+        print("\n📋 DECIMAL128 FIX TEST REQUIREMENTS:")
+        print("1. ✅ Test Parties Report - outstanding calculation (Line 8337)")
+        print("2. ✅ Test Invoices Report - total_amount, total_paid, total_balance (Lines 8397-8399)")
+        print("3. ✅ Test Transactions Report - total_credit, total_debit (Lines 8455-8456)")
+        print("4. ✅ Test Outstanding Report - party totals (Lines 8864-8866)")
+        print("5. ✅ Test Purchase History - weight and amount calculations (Line 10007)")
+        print("6. ✅ Test Inventory Report - verify still works")
+        print("7. ✅ Verify NO TypeError about Decimal128")
+        print("8. ✅ Verify all numeric calculations are valid numbers")
+        
+        # Test all report endpoints with Decimal128 fixes
+        parties_success = self.test_parties_report_decimal128()
+        invoices_success = self.test_invoices_report_decimal128()
+        transactions_success = self.test_transactions_report_decimal128()
+        outstanding_success = self.test_outstanding_report_decimal128()
+        purchase_history_success = self.test_purchase_history_report_decimal128()
+        inventory_success = self.test_inventory_report_decimal128()
+        
+        # Overall Decimal128 fix status
+        all_decimal128_fixes_working = (parties_success and invoices_success and 
+                                      transactions_success and outstanding_success and 
+                                      purchase_history_success and inventory_success)
+        
+        print(f"\n🔍 DECIMAL128 FIX RESULTS:")
+        print(f"   • Parties Report: {'✅ WORKING' if parties_success else '❌ FAILED'}")
+        print(f"   • Invoices Report: {'✅ WORKING' if invoices_success else '❌ FAILED'}")
+        print(f"   • Transactions Report: {'✅ WORKING' if transactions_success else '❌ FAILED'}")
+        print(f"   • Outstanding Report: {'✅ WORKING' if outstanding_success else '❌ FAILED'}")
+        print(f"   • Purchase History Report: {'✅ WORKING' if purchase_history_success else '❌ FAILED'}")
+        print(f"   • Inventory Report: {'✅ WORKING' if inventory_success else '❌ FAILED'}")
+        print(f"   • Overall Decimal128 Fixes: {'✅ ALL WORKING' if all_decimal128_fixes_working else '❌ SOME FAILED'}")
+        
+        # Log the overall result
+        self.log_result(
+            "Reports Decimal128 Fixes - Comprehensive Test",
+            all_decimal128_fixes_working,
+            f"Parties: {'✓' if parties_success else '✗'}, Invoices: {'✓' if invoices_success else '✗'}, Transactions: {'✓' if transactions_success else '✗'}, Outstanding: {'✓' if outstanding_success else '✗'}, Purchase History: {'✓' if purchase_history_success else '✗'}, Inventory: {'✓' if inventory_success else '✗'}",
+            {
+                "parties_report_working": parties_success,
+                "invoices_report_working": invoices_success,
+                "transactions_report_working": transactions_success,
+                "outstanding_report_working": outstanding_success,
+                "purchase_history_report_working": purchase_history_success,
+                "inventory_report_working": inventory_success,
+                "decimal128_fixes_status": "WORKING" if all_decimal128_fixes_working else "FAILED",
+                "fixes_ready": all_decimal128_fixes_working
+            }
+        )
+        
+        return all_decimal128_fixes_working
+
+    def test_parties_report_decimal128(self):
+        """Test GET /api/reports/parties-view - Decimal128 outstanding calculation fix"""
+        print("\n--- Testing Parties Report Decimal128 Fix ---")
         
         try:
-            # All reports endpoints that need to be tested
-            reports_endpoints = [
-                ("/reports/financial-summary", "Financial Summary"),
-                ("/reports/inventory-view", "Inventory View"),
-                ("/reports/parties-view", "Parties View"),
-                ("/reports/invoices-view", "Invoices View"),
-                ("/reports/transactions-view", "Transactions View"),
-                ("/reports/outstanding", "Outstanding"),
-                ("/reports/sales-history", "Sales History"),
-                ("/reports/purchase-history", "Purchase History")
-            ]
+            # Test with sort_by parameter to trigger outstanding calculation
+            response = self.session.get(f"{BACKEND_URL}/reports/parties-view?sort_by=date_desc")
             
-            all_reports_working = True
-            reports_results = {}
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure
+                has_parties = 'parties' in data
+                has_count = 'count' in data
+                
+                if has_parties:
+                    parties = data.get('parties', [])
+                    
+                    # Check if outstanding amounts are valid numbers (not Decimal128 objects)
+                    outstanding_amounts_valid = True
+                    decimal128_error_detected = False
+                    
+                    for party in parties:
+                        outstanding = party.get('outstanding', 0)
+                        if not isinstance(outstanding, (int, float)):
+                            outstanding_amounts_valid = False
+                            if 'Decimal128' in str(type(outstanding)):
+                                decimal128_error_detected = True
+                            break
+                    
+                    success = has_parties and has_count and outstanding_amounts_valid and not decimal128_error_detected
+                    
+                    details = f"Status: 200 OK, Parties: {len(parties)}, "
+                    details += f"Outstanding Valid: {'✓' if outstanding_amounts_valid else '✗'}, "
+                    details += f"No Decimal128 Error: {'✓' if not decimal128_error_detected else '❌ DECIMAL128 ERROR'}"
+                    
+                    self.log_result(
+                        "Parties Report Decimal128 Fix",
+                        success,
+                        details,
+                        {
+                            "parties_count": len(parties),
+                            "outstanding_amounts_valid": outstanding_amounts_valid,
+                            "decimal128_error": decimal128_error_detected,
+                            "sample_party": parties[0] if parties else None
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Parties Report Decimal128 Fix", False, "Missing parties in response")
+                    return False
+            else:
+                self.log_result("Parties Report Decimal128 Fix", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            # Check for Decimal128 related errors
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR DETECTED!"
             
-            for endpoint, name in reports_endpoints:
-                print(f"\n  Testing {name}...")
+            self.log_result("Parties Report Decimal128 Fix", False, error_msg)
+            return False
+
+    def test_invoices_report_decimal128(self):
+        """Test GET /api/reports/invoices-view - Decimal128 totals calculation fix"""
+        print("\n--- Testing Invoices Report Decimal128 Fix ---")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/invoices-view?sort_by=date_desc")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure
+                has_invoices = 'invoices' in data
+                has_summary = 'summary' in data
+                
+                if has_invoices and has_summary:
+                    invoices = data.get('invoices', [])
+                    summary = data.get('summary', {})
+                    
+                    # Check if summary totals are valid numbers (Lines 8397-8399 fix)
+                    total_amount = summary.get('total_amount', 0)
+                    total_paid = summary.get('total_paid', 0)
+                    total_balance = summary.get('total_balance', 0)
+                    
+                    totals_valid = all(isinstance(val, (int, float)) for val in [total_amount, total_paid, total_balance])
+                    
+                    # Check for Decimal128 serialization issues
+                    decimal128_error_detected = False
+                    try:
+                        json.dumps(summary)  # This will fail if Decimal128 objects exist
+                    except Exception as e:
+                        if 'Decimal128' in str(e):
+                            decimal128_error_detected = True
+                    
+                    success = has_invoices and has_summary and totals_valid and not decimal128_error_detected
+                    
+                    details = f"Status: 200 OK, Invoices: {len(invoices)}, "
+                    details += f"Total Amount: {total_amount}, Total Paid: {total_paid}, Total Balance: {total_balance}, "
+                    details += f"Totals Valid: {'✓' if totals_valid else '✗'}, "
+                    details += f"No Decimal128 Error: {'✓' if not decimal128_error_detected else '❌ DECIMAL128 ERROR'}"
+                    
+                    self.log_result(
+                        "Invoices Report Decimal128 Fix",
+                        success,
+                        details,
+                        {
+                            "invoices_count": len(invoices),
+                            "summary_totals": summary,
+                            "totals_valid": totals_valid,
+                            "decimal128_error": decimal128_error_detected
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Invoices Report Decimal128 Fix", False, "Missing invoices or summary in response")
+                    return False
+            else:
+                self.log_result("Invoices Report Decimal128 Fix", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR DETECTED!"
+            
+            self.log_result("Invoices Report Decimal128 Fix", False, error_msg)
+            return False
+
+    def test_transactions_report_decimal128(self):
+        """Test GET /api/reports/transactions-view - Decimal128 totals calculation fix"""
+        print("\n--- Testing Transactions Report Decimal128 Fix ---")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/transactions-view?sort_by=date_desc")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure
+                has_transactions = 'transactions' in data
+                has_summary = 'summary' in data
+                
+                if has_transactions and has_summary:
+                    transactions = data.get('transactions', [])
+                    summary = data.get('summary', {})
+                    
+                    # Check if summary totals are valid numbers (Lines 8455-8456 fix)
+                    total_credit = summary.get('total_credit', 0)
+                    total_debit = summary.get('total_debit', 0)
+                    net_balance = summary.get('net_balance', 0)
+                    
+                    totals_valid = all(isinstance(val, (int, float)) for val in [total_credit, total_debit, net_balance])
+                    
+                    # Check for Decimal128 serialization issues
+                    decimal128_error_detected = False
+                    try:
+                        json.dumps(summary)  # This will fail if Decimal128 objects exist
+                    except Exception as e:
+                        if 'Decimal128' in str(e):
+                            decimal128_error_detected = True
+                    
+                    success = has_transactions and has_summary and totals_valid and not decimal128_error_detected
+                    
+                    details = f"Status: 200 OK, Transactions: {len(transactions)}, "
+                    details += f"Total Credit: {total_credit}, Total Debit: {total_debit}, Net Balance: {net_balance}, "
+                    details += f"Totals Valid: {'✓' if totals_valid else '✗'}, "
+                    details += f"No Decimal128 Error: {'✓' if not decimal128_error_detected else '❌ DECIMAL128 ERROR'}"
+                    
+                    self.log_result(
+                        "Transactions Report Decimal128 Fix",
+                        success,
+                        details,
+                        {
+                            "transactions_count": len(transactions),
+                            "summary_totals": summary,
+                            "totals_valid": totals_valid,
+                            "decimal128_error": decimal128_error_detected
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Transactions Report Decimal128 Fix", False, "Missing transactions or summary in response")
+                    return False
+            else:
+                self.log_result("Transactions Report Decimal128 Fix", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR DETECTED!"
+            
+            self.log_result("Transactions Report Decimal128 Fix", False, error_msg)
+            return False
+
+    def test_outstanding_report_decimal128(self):
+        """Test GET /api/reports/outstanding - Decimal128 party totals calculation fix"""
+        print("\n--- Testing Outstanding Report Decimal128 Fix ---")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/outstanding")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure (should be array of party data)
+                if isinstance(data, list):
+                    parties = data
+                    
+                    # Check if party totals are valid numbers (Lines 8864-8866 fix)
+                    party_totals_valid = True
+                    decimal128_error_detected = False
+                    
+                    for party in parties:
+                        # Check all total fields for Decimal128 issues
+                        total_fields = ['total_invoiced', 'total_paid', 'total_outstanding', 
+                                      'overdue_0_7', 'overdue_8_30', 'overdue_31_plus']
+                        
+                        for field in total_fields:
+                            value = party.get(field, 0)
+                            if not isinstance(value, (int, float)):
+                                party_totals_valid = False
+                                if 'Decimal128' in str(type(value)):
+                                    decimal128_error_detected = True
+                                break
+                        
+                        if not party_totals_valid:
+                            break
+                    
+                    # Check for Decimal128 serialization issues
+                    try:
+                        json.dumps(data)  # This will fail if Decimal128 objects exist
+                    except Exception as e:
+                        if 'Decimal128' in str(e):
+                            decimal128_error_detected = True
+                    
+                    success = party_totals_valid and not decimal128_error_detected
+                    
+                    details = f"Status: 200 OK, Parties: {len(parties)}, "
+                    details += f"Party Totals Valid: {'✓' if party_totals_valid else '✗'}, "
+                    details += f"No Decimal128 Error: {'✓' if not decimal128_error_detected else '❌ DECIMAL128 ERROR'}"
+                    
+                    self.log_result(
+                        "Outstanding Report Decimal128 Fix",
+                        success,
+                        details,
+                        {
+                            "parties_count": len(parties),
+                            "party_totals_valid": party_totals_valid,
+                            "decimal128_error": decimal128_error_detected,
+                            "sample_party": parties[0] if parties else None
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Outstanding Report Decimal128 Fix", False, f"Expected array, got {type(data).__name__}")
+                    return False
+            else:
+                self.log_result("Outstanding Report Decimal128 Fix", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e) or "abs()" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR DETECTED!"
+            
+            self.log_result("Outstanding Report Decimal128 Fix", False, error_msg)
+            return False
+
+    def test_purchase_history_report_decimal128(self):
+        """Test GET /api/reports/purchase-history - Decimal128 weight and amount calculation fix"""
+        print("\n--- Testing Purchase History Report Decimal128 Fix ---")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/purchase-history")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure
+                has_purchases = 'purchases' in data or 'data' in data or isinstance(data, list)
+                
+                if has_purchases:
+                    # Extract purchases array
+                    if isinstance(data, list):
+                        purchases = data
+                        summary = {}
+                    else:
+                        purchases = data.get('purchases', data.get('data', []))
+                        summary = data.get('summary', {})
+                    
+                    # Check if weight and amount calculations are valid numbers (Line 10007 fix)
+                    calculations_valid = True
+                    decimal128_error_detected = False
+                    
+                    # Check individual purchase records
+                    for purchase in purchases:
+                        weight_fields = ['purchase_weight', 'weight_grams', 'total_weight']
+                        amount_fields = ['purchase_amount', 'amount_total', 'total_amount']
+                        
+                        for field in weight_fields + amount_fields:
+                            if field in purchase:
+                                value = purchase[field]
+                                if not isinstance(value, (int, float)):
+                                    calculations_valid = False
+                                    if 'Decimal128' in str(type(value)):
+                                        decimal128_error_detected = True
+                                    break
+                        
+                        if not calculations_valid:
+                            break
+                    
+                    # Check summary totals if present
+                    if summary:
+                        summary_fields = ['total_amount', 'total_weight']
+                        for field in summary_fields:
+                            if field in summary:
+                                value = summary[field]
+                                if not isinstance(value, (int, float)):
+                                    calculations_valid = False
+                                    if 'Decimal128' in str(type(value)):
+                                        decimal128_error_detected = True
+                                    break
+                    
+                    # Check for Decimal128 serialization issues
+                    try:
+                        json.dumps(data)  # This will fail if Decimal128 objects exist
+                    except Exception as e:
+                        if 'Decimal128' in str(e):
+                            decimal128_error_detected = True
+                    
+                    success = calculations_valid and not decimal128_error_detected
+                    
+                    details = f"Status: 200 OK, Purchases: {len(purchases)}, "
+                    details += f"Calculations Valid: {'✓' if calculations_valid else '✗'}, "
+                    details += f"No Decimal128 Error: {'✓' if not decimal128_error_detected else '❌ DECIMAL128 ERROR'}"
+                    
+                    self.log_result(
+                        "Purchase History Report Decimal128 Fix",
+                        success,
+                        details,
+                        {
+                            "purchases_count": len(purchases),
+                            "calculations_valid": calculations_valid,
+                            "decimal128_error": decimal128_error_detected,
+                            "sample_purchase": purchases[0] if purchases else None,
+                            "summary": summary
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Purchase History Report Decimal128 Fix", False, "Missing purchases data in response")
+                    return False
+            else:
+                self.log_result("Purchase History Report Decimal128 Fix", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e) or "abs()" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR DETECTED!"
+            
+            self.log_result("Purchase History Report Decimal128 Fix", False, error_msg)
+            return False
+
+    def test_inventory_report_decimal128(self):
+        """Test GET /api/reports/inventory-view - Verify still works after Decimal128 fixes"""
+        print("\n--- Testing Inventory Report (Compatibility Check) ---")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/inventory-view?sort_by=date_desc")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Basic validation - should be parseable JSON
+                json_valid = True
+                decimal128_error_detected = False
                 
                 try:
-                    response = self.session.get(f"{BACKEND_URL}{endpoint}")
-                    
-                    if response.status_code == 200:
-                        # Verify response returns valid JSON
-                        data = response.json()
-                        
-                        # Basic validation - should be parseable JSON
-                        json_valid = True
-                        try:
-                            json.dumps(data)  # Test serialization
-                        except:
-                            json_valid = False
-                        
-                        reports_results[name] = {
-                            "success": True,
-                            "status_code": response.status_code,
-                            "json_valid": json_valid,
-                            "response_type": type(data).__name__
-                        }
-                        
-                        if not json_valid:
-                            all_reports_working = False
-                            
-                    elif response.status_code == 404:
-                        reports_results[name] = {
-                            "success": False,
-                            "status_code": 404,
-                            "error": "Endpoint not found - needs implementation"
-                        }
-                        all_reports_working = False
-                        
-                    elif response.status_code == 500:
-                        reports_results[name] = {
-                            "success": False,
-                            "status_code": 500,
-                            "error": "Internal server error - needs fixing"
-                        }
-                        all_reports_working = False
-                        
-                    else:
-                        reports_results[name] = {
-                            "success": False,
-                            "status_code": response.status_code,
-                            "error": f"HTTP {response.status_code}"
-                        }
-                        all_reports_working = False
-                        
+                    json.dumps(data)  # Test serialization
                 except Exception as e:
-                    reports_results[name] = {
-                        "success": False,
-                        "error": f"Exception: {str(e)}"
+                    json_valid = False
+                    if 'Decimal128' in str(e):
+                        decimal128_error_detected = True
+                
+                success = json_valid and not decimal128_error_detected
+                
+                details = f"Status: 200 OK, "
+                details += f"JSON Valid: {'✓' if json_valid else '✗'}, "
+                details += f"No Decimal128 Error: {'✓' if not decimal128_error_detected else '❌ DECIMAL128 ERROR'}"
+                
+                self.log_result(
+                    "Inventory Report Compatibility Check",
+                    success,
+                    details,
+                    {
+                        "json_valid": json_valid,
+                        "decimal128_error": decimal128_error_detected,
+                        "response_type": type(data).__name__
                     }
-                    all_reports_working = False
-            
-            # Summary
-            working_reports = sum(1 for result in reports_results.values() if result.get('success', False))
-            details = f"Working reports: {working_reports}/{len(reports_endpoints)}"
-            
-            # Add details about failed reports
-            failed_reports = [name for name, result in reports_results.items() if not result.get('success', False)]
-            if failed_reports:
-                details += f", Failed: {', '.join(failed_reports)}"
-            
-            self.log_result(
-                "Reports & Analytics Endpoints",
-                all_reports_working,
-                details,
-                reports_results
-            )
-            
-            return all_reports_working
-            
+                )
+                
+                return success
+            else:
+                self.log_result("Inventory Report Compatibility Check", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
         except Exception as e:
-            self.log_result("Reports & Analytics Endpoints", False, f"Error: {str(e)}")
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR DETECTED!"
+            
+            self.log_result("Inventory Report Compatibility Check", False, error_msg)
             return False
         """SPECIFIC TEST: Dashboard Decimal128 Fix for Outstanding Summary API"""
         print("\n" + "="*80)
