@@ -438,7 +438,14 @@ export default function InventoryPage() {
               </table>
             </div>
           </CardContent>
-          {stockTotalsPagination && <Pagination pagination={stockTotalsPagination} onPageChange={setStockTotalsPage} />}
+          {stockTotalsPagination && <Pagination 
+            pagination={stockTotalsPagination} 
+            onPageChange={setStockTotalsPage}
+            onPageSizeChange={(newSize) => {
+              setStockTotalsPageSize(newSize);
+              setStockTotalsPage(1);
+            }}
+          />}
         </Card>
 
         <Card>
