@@ -149,6 +149,23 @@ user_problem_statement: |
   - ✅ Audit log created for return finalize
 
 backend:
+  - task: "Fix Return model validation - Make party_id optional"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Return model party_id validation error (line 1349-1350):
+          - Changed party_id from required str to Optional[str] = None
+          - Changed party_name from required str to Optional[str] = None
+          - This allows creating return drafts without selecting an invoice/purchase first
+          - Fixes validation error: "party_id Input should be a valid string [type=string_type_input_value=None]"
+  
   - task: "Remove automatic inventory updates from Return finalization"
     implemented: true
     working: "needs_testing"
