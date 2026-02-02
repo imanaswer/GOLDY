@@ -1349,9 +1349,9 @@ export default function PurchasesPage() {
                   <div className="space-y-3 text-sm">
                     {/* Calculation Formula */}
                     <div className="p-3 bg-white rounded border border-amber-200">
-                      <div className="font-semibold text-amber-900 mb-2">Calculation Formula:</div>
+                      <div className="font-semibold text-amber-900 mb-2">✅ CORRECT Calculation Formula:</div>
                       <div className="font-mono text-xs text-gray-700 bg-gray-50 p-2 rounded">
-                        Amount = (Weight × Rate × (916 / Purity)) ÷ Conversion Factor
+                        Amount = ((Weight × (Purity / 916)) ÷ Conversion Factor) × Rate
                       </div>
                     </div>
 
@@ -1362,13 +1362,6 @@ export default function PurchasesPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
-                      <span className="text-gray-700">Rate per Gram</span>
-                      <span className="font-mono font-semibold">
-                        {parseFloat(formData.rate_per_gram || 0).toFixed(3)} OMR/g
-                      </span>
-                    </div>
-
                     {/* Purity Info */}
                     <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-200">
                       <span className="text-gray-700">Entered Purity</span>
@@ -1376,15 +1369,36 @@ export default function PurchasesPage() {
                     </div>
 
                     <div className="flex items-center justify-between p-2 bg-purple-50 rounded border border-purple-200">
-                      <span className="text-gray-700">Purity Adjustment (916 / {formData.entered_purity || 916})</span>
+                      <span className="text-gray-700">Purity Ratio ({formData.entered_purity || 916} / 916)</span>
                       <span className="font-mono font-semibold text-purple-700">
-                        {(916 / (parseFloat(formData.entered_purity) || 916)).toFixed(4)}
+                        {((parseFloat(formData.entered_purity) || 916) / 916).toFixed(4)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-indigo-50 rounded border border-indigo-200">
+                      <span className="text-gray-700">Adjusted Weight (Weight × Purity Ratio)</span>
+                      <span className="font-mono font-semibold text-indigo-700">
+                        {(parseFloat(formData.weight_grams || 0) * ((parseFloat(formData.entered_purity) || 916) / 916)).toFixed(3)} g
                       </span>
                     </div>
 
                     <div className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
                       <span className="text-gray-700">Conversion Factor</span>
                       <span className="font-mono font-semibold">{selectedConversionFactor}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-teal-50 rounded border border-teal-200">
+                      <span className="text-gray-700">Converted Weight (Adjusted / Factor)</span>
+                      <span className="font-mono font-semibold text-teal-700">
+                        {((parseFloat(formData.weight_grams || 0) * ((parseFloat(formData.entered_purity) || 916) / 916)) / parseFloat(selectedConversionFactor)).toFixed(3)} g
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2 bg-white rounded border border-amber-200">
+                      <span className="text-gray-700">Rate per Gram</span>
+                      <span className="font-mono font-semibold">
+                        {parseFloat(formData.rate_per_gram || 0).toFixed(3)} OMR/g
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200">
