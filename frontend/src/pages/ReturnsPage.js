@@ -20,7 +20,7 @@ const ReturnsPage = () => {
   
   // Pagination
   const { currentPage, setPage, pagination, setPagination } = useURLPagination();
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
   
   // Delete confirmation dialog
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
