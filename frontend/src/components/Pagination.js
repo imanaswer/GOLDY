@@ -72,11 +72,35 @@ const Pagination = ({ pagination, onPageChange, onPageSizeChange, pageSizeOption
 
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3 bg-white border-t border-gray-200">
-      {/* Left side: Items info */}
-      <div className="text-sm text-gray-700">
-        Showing <span className="font-medium">{startItem}</span> to{' '}
-        <span className="font-medium">{endItem}</span> of{' '}
-        <span className="font-medium">{total_count}</span> entries
+      {/* Left side: Items info and page size selector */}
+      <div className="flex items-center gap-4">
+        <div className="text-sm text-gray-700">
+          Showing <span className="font-medium">{startItem}</span> to{' '}
+          <span className="font-medium">{endItem}</span> of{' '}
+          <span className="font-medium">{total_count}</span> entries
+        </div>
+        
+        {/* Page size selector */}
+        {onPageSizeChange && (
+          <div className="flex items-center gap-2">
+            <label htmlFor="page-size" className="text-sm text-gray-700">
+              Show:
+            </label>
+            <select
+              id="page-size"
+              value={page_size}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {pageSizeOptions.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <span className="text-sm text-gray-700">per page</span>
+          </div>
+        )}
       </div>
 
       {/* Right side: Page navigation */}
