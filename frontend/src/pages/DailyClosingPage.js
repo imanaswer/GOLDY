@@ -16,6 +16,7 @@ export default function DailyClosingPage() {
   const [closings, setClosings] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [showDialog, setShowDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingClosing, setEditingClosing] = useState(null);
@@ -36,11 +37,11 @@ export default function DailyClosingPage() {
 
   useEffect(() => {
     loadClosings();
-  }, [currentPage]);
+  }, [currentPage, pageSize]);
 
   const loadClosings = async () => {
     try {
-      const response = await API.get(`/api/daily-closings?page=${currentPage}&page_size=10`);
+      const response = await API.get(`/api/daily-closings?page=${currentPage}&page_size=${pageSize}`);
       
       // Handle new paginated response format
       if (response.data && response.data.items) {
@@ -60,6 +61,11 @@ export default function DailyClosingPage() {
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
   };
 
   const autoCalculateFromTransactions = async () => {
