@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Response, Request, Cookie
+from fastapi import FastAPI, APIRouter, Depends, HTTPException, status, Response, Request, Cookie, Query
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
