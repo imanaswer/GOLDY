@@ -103,7 +103,8 @@ export default function PurchasesPage() {
   // Get current page from URL, default to 1
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
 
-  // AUTO-CALCULATION: total_amount = (weight × rate × (916 / purity)) ÷ conversion_factor (SOURCE OF TRUTH)
+  // AUTO-CALCULATION: Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate
+  // Step-by-step: step1 = Weight × Purity, step2 = step1 ÷ Factor, Amount = step2 × Rate
   useEffect(() => {
     if (!isMultipleItems) {
       const weight = parseFloat(formData.weight_grams) || 0;
@@ -112,8 +113,10 @@ export default function PurchasesPage() {
       const factor = parseFloat(selectedConversionFactor);
       
       if (weight > 0 && rate > 0 && purity > 0 && factor > 0) {
-        const purityAdjustment = 916 / purity;
-        const calculatedTotal = ((weight * rate * purityAdjustment) / factor).toFixed(3);
+        // Formula: Amount = (Weight × Purity ÷ Factor) × Rate
+        const step1 = weight * purity;
+        const step2 = step1 / factor;
+        const calculatedTotal = (step2 * rate).toFixed(3);
         // Only update if different to avoid infinite loop
         if (formData.amount_total !== calculatedTotal) {
           setFormData(prev => ({
