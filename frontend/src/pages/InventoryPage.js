@@ -80,14 +80,18 @@ export default function InventoryPage() {
 
   useEffect(() => {
     loadInventoryData();
-  }, [currentPage]);
+  }, [currentPage, stockTotalsPage, movementsPage]);
 
   const loadInventoryData = async () => {
     try {
       const [headersRes, movementsRes, totalsRes, inventoryRes] = await Promise.all([
         API.get(`/api/inventory/headers?page_size=1000`),
-        API.get(`/api/inventory/movements`),
-        API.get(`/api/inventory/stock-totals?page=1&page_size=1000`),
+        API.get(`/api/inventory/movements`, {
+          params: { page: movementsPage, page_size: 10 }
+        }),
+        API.get(`/api/inventory/stock-totals`, {
+          params: { page: stockTotalsPage, page_size: 10 }
+        }),
         API.get(`/api/inventory`, {
           params: { page: currentPage, page_size: 10 }
         })
@@ -95,8 +99,23 @@ export default function InventoryPage() {
 
       // inventory/headers now returns paginated response with {items: [], pagination: {}}
       setHeaders(Array.isArray(headersRes.data.items) ? headersRes.data.items : []);
-      setMovements(Array.isArray(movementsRes.data) ? movementsRes.data : []);
-      setStockTotals(Array.isArray(totalsRes.data?.items) ? totalsRes.data.items : []);
+      
+      // Handle movements response - now paginated
+      if (movementsRes.data?.items) {
+        setMovements(Array.isArray(movementsRes.data.items) ? movementsRes.data.items : []);
+        setMovementsPagination(movementsRes.data.pagination);
+      } else {
+        setMovements([]);
+      }
+      
+      // Handle stock totals response
+      if (totalsRes.data?.items) {
+        setStockTotals(Array.isArray(totalsRes.data.items) ? totalsRes.data.items : []);
+        setStockTotalsPagination(totalsRes.data.pagination);
+      } else {
+        setStockTotals([]);
+      }
+      
       setInventory(Array.isArray(inventoryRes.data.items) ? inventoryRes.data.items : []);
       setPagination(inventoryRes.data.pagination);
     } catch (error) {
