@@ -263,6 +263,233 @@ class BackendTester:
         except Exception as e:
             self.log_result("Dashboard API - Stock Totals", False, f"Error: {str(e)}")
             return False
+
+    def test_inventory_stock_totals_pagination(self):
+        """Test GET /api/inventory/stock-totals with pagination parameters"""
+        print("\n--- Testing Inventory Stock Totals Pagination ---")
+        
+        try:
+            # Test 1: Default pagination (page=1, page_size=10)
+            response1 = self.session.get(f"{BACKEND_URL}/inventory/stock-totals?page=1&page_size=10")
+            
+            if response1.status_code == 200:
+                data1 = response1.json()
+                
+                # Check if response has pagination structure
+                has_items = 'items' in data1
+                has_pagination = 'pagination' in data1
+                
+                if has_items and has_pagination:
+                    items = data1.get('items', [])
+                    pagination = data1.get('pagination', {})
+                    
+                    # Verify pagination metadata structure
+                    pagination_fields = ['page', 'page_size', 'total_count', 'total_pages', 'has_next', 'has_prev']
+                    pagination_structure_correct = all(field in pagination for field in pagination_fields)
+                    
+                    # Verify pagination values
+                    page_correct = pagination.get('page') == 1
+                    page_size_correct = pagination.get('page_size') == 10
+                    has_prev_correct = pagination.get('has_prev') == False  # First page should not have previous
+                    items_count_valid = len(items) <= 10  # Should not exceed page_size
+                    
+                    # Test 2: Second page if there are enough items
+                    total_count = pagination.get('total_count', 0)
+                    test_page_2 = total_count > 10
+                    page_2_success = True
+                    
+                    if test_page_2:
+                        response2 = self.session.get(f"{BACKEND_URL}/inventory/stock-totals?page=2&page_size=10")
+                        if response2.status_code == 200:
+                            data2 = response2.json()
+                            if 'pagination' in data2:
+                                pagination2 = data2.get('pagination', {})
+                                page_2_correct = pagination2.get('page') == 2
+                                has_prev_2_correct = pagination2.get('has_prev') == True  # Second page should have previous
+                                page_2_success = page_2_correct and has_prev_2_correct
+                        else:
+                            page_2_success = False
+                    
+                    # Check item structure
+                    item_structure_correct = True
+                    expected_fields = ['header_id', 'header_name', 'total_qty', 'total_weight']
+                    
+                    if items:
+                        first_item = items[0]
+                        item_structure_correct = all(field in first_item for field in expected_fields)
+                    
+                    all_correct = (has_items and has_pagination and pagination_structure_correct and 
+                                 page_correct and page_size_correct and has_prev_correct and 
+                                 items_count_valid and page_2_success and item_structure_correct)
+                    
+                    details = f"Structure: items={'✓' if has_items else '✗'}, pagination={'✓' if has_pagination else '✗'}, "
+                    details += f"Page 1: {len(items)} items ({'✓' if items_count_valid else '✗'}), "
+                    details += f"Metadata: {'✓' if pagination_structure_correct else '✗'}, "
+                    details += f"Page 2: {'✓' if page_2_success else '✗' if test_page_2 else 'N/A'}"
+                    
+                    self.log_result(
+                        "Inventory Stock Totals Pagination",
+                        all_correct,
+                        details,
+                        {
+                            "response_structure": {"has_items": has_items, "has_pagination": has_pagination},
+                            "pagination_metadata": pagination,
+                            "items_count_page_1": len(items),
+                            "total_count": total_count,
+                            "page_2_tested": test_page_2,
+                            "page_2_success": page_2_success,
+                            "sample_item": items[0] if items else None
+                        }
+                    )
+                    
+                    return all_correct
+                else:
+                    # Response format is not paginated - check if it's still array format
+                    is_array = isinstance(data1, list)
+                    self.log_result(
+                        "Inventory Stock Totals Pagination",
+                        False,
+                        f"Response format: {'Array' if is_array else 'Object'}, Expected: Object with items and pagination",
+                        {"response_format": "array" if is_array else "object", "expected": "paginated_object"}
+                    )
+                    return False
+            else:
+                self.log_result(
+                    "Inventory Stock Totals Pagination",
+                    False,
+                    f"HTTP {response1.status_code}: {response1.text}",
+                    {"status_code": response1.status_code, "response": response1.text}
+                )
+                return False
+                
+        except Exception as e:
+            self.log_result("Inventory Stock Totals Pagination", False, f"Error: {str(e)}")
+            return False
+
+    def test_inventory_movements_pagination(self):
+        """Test GET /api/inventory/movements with pagination parameters - NEW RESPONSE FORMAT"""
+        print("\n--- Testing Inventory Movements Pagination (NEW FORMAT) ---")
+        
+        try:
+            # Test 1: Default pagination (page=1, page_size=10)
+            response1 = self.session.get(f"{BACKEND_URL}/inventory/movements?page=1&page_size=10")
+            
+            if response1.status_code == 200:
+                data1 = response1.json()
+                
+                # NEW: Check if response has NEW pagination structure (not array anymore)
+                has_items = 'items' in data1
+                has_pagination = 'pagination' in data1
+                is_old_array_format = isinstance(data1, list)
+                
+                if is_old_array_format:
+                    self.log_result(
+                        "Inventory Movements Pagination - Format Check",
+                        False,
+                        "Response is still array format, expected object with items and pagination",
+                        {"response_format": "array", "expected": "object_with_pagination"}
+                    )
+                    return False
+                
+                if has_items and has_pagination:
+                    items = data1.get('items', [])
+                    pagination = data1.get('pagination', {})
+                    
+                    # Verify pagination metadata structure
+                    pagination_fields = ['page', 'page_size', 'total_count', 'total_pages', 'has_next', 'has_prev']
+                    pagination_structure_correct = all(field in pagination for field in pagination_fields)
+                    
+                    # Verify pagination values
+                    page_correct = pagination.get('page') == 1
+                    page_size_correct = pagination.get('page_size') == 10
+                    has_prev_correct = pagination.get('has_prev') == False  # First page should not have previous
+                    items_count_valid = len(items) <= 10  # Should not exceed page_size
+                    
+                    # Verify items are sorted by date descending (most recent first)
+                    date_sorting_correct = True
+                    if len(items) > 1:
+                        for i in range(len(items) - 1):
+                            current_date = items[i].get('date') or items[i].get('created_at')
+                            next_date = items[i + 1].get('date') or items[i + 1].get('created_at')
+                            if current_date and next_date:
+                                if current_date < next_date:  # Should be descending
+                                    date_sorting_correct = False
+                                    break
+                    
+                    # Test 2: Second page if there are enough items
+                    total_count = pagination.get('total_count', 0)
+                    test_page_2 = total_count > 10
+                    page_2_success = True
+                    
+                    if test_page_2:
+                        response2 = self.session.get(f"{BACKEND_URL}/inventory/movements?page=2&page_size=10")
+                        if response2.status_code == 200:
+                            data2 = response2.json()
+                            if 'pagination' in data2:
+                                pagination2 = data2.get('pagination', {})
+                                page_2_correct = pagination2.get('page') == 2
+                                has_prev_2_correct = pagination2.get('has_prev') == True  # Second page should have previous
+                                page_2_success = page_2_correct and has_prev_2_correct
+                        else:
+                            page_2_success = False
+                    
+                    # Check item structure
+                    item_structure_correct = True
+                    expected_fields = ['id', 'date', 'movement_type', 'header_name', 'qty_delta', 'weight_delta']
+                    
+                    if items:
+                        first_item = items[0]
+                        item_structure_correct = all(field in first_item for field in expected_fields)
+                    
+                    all_correct = (has_items and has_pagination and pagination_structure_correct and 
+                                 page_correct and page_size_correct and has_prev_correct and 
+                                 items_count_valid and page_2_success and item_structure_correct and
+                                 date_sorting_correct)
+                    
+                    details = f"NEW Format: items={'✓' if has_items else '✗'}, pagination={'✓' if has_pagination else '✗'}, "
+                    details += f"Page 1: {len(items)} items ({'✓' if items_count_valid else '✗'}), "
+                    details += f"Sorting: {'✓' if date_sorting_correct else '✗'}, "
+                    details += f"Metadata: {'✓' if pagination_structure_correct else '✗'}, "
+                    details += f"Page 2: {'✓' if page_2_success else '✗' if test_page_2 else 'N/A'}"
+                    
+                    self.log_result(
+                        "Inventory Movements Pagination (NEW FORMAT)",
+                        all_correct,
+                        details,
+                        {
+                            "response_format": "object_with_pagination",
+                            "response_structure": {"has_items": has_items, "has_pagination": has_pagination},
+                            "pagination_metadata": pagination,
+                            "items_count_page_1": len(items),
+                            "total_count": total_count,
+                            "date_sorting_correct": date_sorting_correct,
+                            "page_2_tested": test_page_2,
+                            "page_2_success": page_2_success,
+                            "sample_item": items[0] if items else None
+                        }
+                    )
+                    
+                    return all_correct
+                else:
+                    self.log_result(
+                        "Inventory Movements Pagination (NEW FORMAT)",
+                        False,
+                        f"Missing required structure - items: {'✓' if has_items else '✗'}, pagination: {'✓' if has_pagination else '✗'}",
+                        {"has_items": has_items, "has_pagination": has_pagination, "response_keys": list(data1.keys())}
+                    )
+                    return False
+            else:
+                self.log_result(
+                    "Inventory Movements Pagination (NEW FORMAT)",
+                    False,
+                    f"HTTP {response1.status_code}: {response1.text}",
+                    {"status_code": response1.status_code, "response": response1.text}
+                )
+                return False
+                
+        except Exception as e:
+            self.log_result("Inventory Movements Pagination (NEW FORMAT)", False, f"Error: {str(e)}")
+            return False
     
     def test_parties_outstanding_summary_api(self):
         """Test GET /api/parties/outstanding-summary - DECIMAL128 FIX VERIFICATION"""
