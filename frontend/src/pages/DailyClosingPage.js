@@ -340,6 +340,9 @@ export default function DailyClosingPage() {
               </table>
             </div>
           )}
+          
+          {/* Pagination Component */}
+          {pagination && <Pagination pagination={pagination} onPageChange={handlePageChange} />}
         </CardContent>
       </Card>
 
