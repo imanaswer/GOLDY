@@ -423,7 +423,7 @@ export default function InventoryPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.isArray(movements) && movements.slice(0, 20).map((mov) => (
+                  {Array.isArray(movements) && movements.map((mov) => (
                     <tr key={mov.id} className="border-t hover:bg-muted/30">
                       <td className="px-4 py-3 text-sm">{formatDate(mov.date)}</td>
                       <td className="px-4 py-3">
