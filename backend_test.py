@@ -980,7 +980,7 @@ class BackendTester:
                     parties = data.get('parties', [])
                     
                     # Verify summary structure
-                    required_summary_fields = ['customer_due', 'vendor_payable', 'total_outstanding', 'overdue_0_7', 'overdue_8_30', 'overdue_31_plus']
+                    required_summary_fields = ['customer_due', 'vendor_payable', 'total_outstanding', 'total_overdue_0_7', 'total_overdue_8_30', 'total_overdue_31_plus']
                     summary_structure_valid = all(field in summary for field in required_summary_fields)
                     
                     # Verify parties structure (if any parties exist)
