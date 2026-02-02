@@ -5417,6 +5417,33 @@ class BackendTester:
             return False
 
 def main():
+    """Main function to run NEW Purchase Amount Calculation Formula tests"""
+    tester = BackendTester()
+    
+    print("🎯 NEW PURCHASE AMOUNT CALCULATION FORMULA - COMPREHENSIVE TEST SUITE")
+    print("="*80)
+    print("FOCUS: Test NEW Formula Implementation")
+    print("NEW FORMULA: Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate")
+    print("TEST SCENARIOS:")
+    print("  1. Purity 916 (22K) - Baseline: 100g, 916 purity, 0.917 factor, 50 OMR/g")
+    print("  2. Purity 999 (24K) - Higher: 100g, 999 purity, 0.917 factor, 50 OMR/g")
+    print("  3. Purity 875 (21K) - Lower: 10g, 875 purity, 0.920 factor, 60 OMR/g")
+    print("  4. Multiple Items Purchase with different purities")
+    print("="*80)
+    
+    # Run NEW Purchase Formula Tests
+    success = tester.run_new_purchase_formula_tests()
+    
+    if success:
+        print("\n🎉 ALL NEW PURCHASE FORMULA TESTS PASSED!")
+        print("✅ Backend implementation is working correctly")
+        print("✅ Formula calculations are accurate within 0.001 OMR tolerance")
+        print("✅ Multiple items support verified")
+    else:
+        print("\n❌ SOME NEW PURCHASE FORMULA TESTS FAILED!")
+        print("🔧 Backend implementation needs attention")
+
+def main_old():
     """Main function to run Enhanced Purchase Valuation tests"""
     tester = BackendTester()
     
