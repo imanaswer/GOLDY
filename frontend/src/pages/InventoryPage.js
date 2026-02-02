@@ -402,7 +402,14 @@ export default function InventoryPage() {
               )}
             </div>
           </CardContent>
-          {pagination && <Pagination pagination={pagination} onPageChange={setPage} />}
+          {pagination && <Pagination 
+            pagination={pagination} 
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setInventoryPageSize(newSize);
+              setPage(1);
+            }}
+          />}
         </Card>
 
         <Card>
