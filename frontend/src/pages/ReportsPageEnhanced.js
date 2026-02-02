@@ -184,14 +184,24 @@ export default function ReportsPageEnhanced() {
   const loadOutstandingReport = async () => {
     try {
       setLoading(true);
-      const params = {};
+      const params = {
+        page: outstandingPage,
+        page_size: outstandingPageSize
+      };
       if (selectedPartyId && selectedPartyId !== 'all') params.party_id = selectedPartyId;
       if (partyType && partyType !== 'all') params.party_type = partyType;
       if (startDate) params.start_date = startDate;
       if (endDate) params.end_date = endDate;
       
       const response = await API.get(`/api/reports/outstanding`, { params });
-      setOutstandingData(response.data);
+      // Handle both paginated and non-paginated responses
+      if (response.data && response.data.items) {
+        setOutstandingData({ ...response.data, items: response.data.items });
+        setOutstandingPagination(response.data.pagination);
+      } else {
+        setOutstandingData(response.data);
+        setOutstandingPagination(null);
+      }
     } catch (error) {
       toast.error('Failed to load outstanding report');
     } finally {
@@ -295,14 +305,24 @@ export default function ReportsPageEnhanced() {
   const loadSalesHistoryReport = async () => {
     try {
       setLoading(true);
-      const params = {};
+      const params = {
+        page: salesHistoryPage,
+        page_size: salesHistoryPageSize
+      };
       if (startDate) params.date_from = startDate;
       if (endDate) params.date_to = endDate;
       if (selectedPartyId && selectedPartyId !== 'all') params.party_id = selectedPartyId;
       if (searchQuery) params.search = searchQuery;
       
       const response = await API.get(`/api/reports/sales-history`, { params });
-      setSalesHistoryData(response.data);
+      // Handle both paginated and non-paginated responses
+      if (response.data && response.data.items) {
+        setSalesHistoryData({ ...response.data, items: response.data.items });
+        setSalesHistoryPagination(response.data.pagination);
+      } else {
+        setSalesHistoryData(response.data);
+        setSalesHistoryPagination(null);
+      }
     } catch (error) {
       toast.error('Failed to load sales history report');
     } finally {
@@ -313,14 +333,24 @@ export default function ReportsPageEnhanced() {
   const loadPurchaseHistoryReport = async () => {
     try {
       setLoading(true);
-      const params = {};
+      const params = {
+        page: purchaseHistoryPage,
+        page_size: purchaseHistoryPageSize
+      };
       if (startDate) params.date_from = startDate;
       if (endDate) params.date_to = endDate;
       if (selectedPartyId && selectedPartyId !== 'all') params.vendor_id = selectedPartyId;
       if (purchaseSearchQuery) params.search = purchaseSearchQuery;
       
       const response = await API.get(`/api/reports/purchase-history`, { params });
-      setPurchaseHistoryData(response.data);
+      // Handle both paginated and non-paginated responses
+      if (response.data && response.data.items) {
+        setPurchaseHistoryData({ ...response.data, items: response.data.items });
+        setPurchaseHistoryPagination(response.data.pagination);
+      } else {
+        setPurchaseHistoryData(response.data);
+        setPurchaseHistoryPagination(null);
+      }
     } catch (error) {
       toast.error('Failed to load purchase history report');
     } finally {
@@ -331,7 +361,10 @@ export default function ReportsPageEnhanced() {
   const loadReturnsReport = async () => {
     try {
       setLoading(true);
-      const params = {};
+      const params = {
+        page: returnsPage,
+        page_size: returnsPageSize
+      };
       if (returnsFilters.date_from) params.date_from = returnsFilters.date_from;
       if (returnsFilters.date_to) params.date_to = returnsFilters.date_to;
       if (returnsFilters.return_type && returnsFilters.return_type !== 'all') params.return_type = returnsFilters.return_type;
@@ -341,10 +374,17 @@ export default function ReportsPageEnhanced() {
       if (returnsFilters.search) params.search = returnsFilters.search;
       
       const response = await API.get(`/api/returns`, { params });
-      setReturns(response.data.items || response.data || []);
+      if (response.data && response.data.items) {
+        setReturns(response.data.items || []);
+        setReturnsPagination(response.data.pagination);
+      } else {
+        setReturns(response.data || []);
+        setReturnsPagination(null);
+      }
     } catch (error) {
       toast.error('Failed to load returns report');
       setReturns([]);
+      setReturnsPagination(null);
     } finally {
       setLoading(false);
     }
