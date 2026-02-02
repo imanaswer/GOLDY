@@ -3821,11 +3821,14 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
             except (ValueError, TypeError):
                 raise HTTPException(status_code=400, detail=f"Invalid purity value for item {idx + 1}")
             
-            # ⚠️ ENHANCED VALUATION RULE: amount = (weight × rate × (916 / entered_purity)) ÷ conversion_factor
-            # Purity adjustment ensures accurate valuation based on actual purity
-            # All gold valued at 22K (916) baseline with purity adjustment multiplier
-            purity_adjustment = 916 / purity
-            item_amount = (weight * rate * purity_adjustment) / conversion_factor
+            # ⚠️ PURCHASE AMOUNT FORMULA: Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate
+            # Step-by-step calculation (DO NOT reorder):
+            # step1 = Weight × Entered_Purity
+            # step2 = step1 ÷ Conversion_Factor
+            # Amount = step2 × Rate
+            step1 = weight * purity
+            step2 = step1 / conversion_factor
+            item_amount = step2 * rate
             item_amount = round(item_amount, 3)  # 3 decimal precision (Oman)
             
             validated_item = {
