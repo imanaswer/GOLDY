@@ -14,6 +14,7 @@ import {
   Download, FileSpreadsheet, TrendingUp, DollarSign, Package, 
   Filter, Eye, Search, Calendar, RefreshCw, AlertCircle, ArrowUpCircle, ArrowDownCircle, Wallet, Building2, RotateCcw, TrendingDown, Banknote
 } from 'lucide-react';
+import Pagination from '../components/Pagination';
 
 export default function ReportsPageEnhanced() {
   const [loading, setLoading] = useState(false);
