@@ -234,6 +234,25 @@ frontend:
           - Fixed SyntaxError: "Unexpected token, expected }" at line 1034
           - Frontend now compiles successfully
   
+  - task: "Fix purchases not loading in Returns dropdown"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Purchase loading issue in loadReferenceData function (lines 115-137):
+          - Changed from filtering by status='finalized' to fetching all and client-side filtering
+          - Backend status values are "Draft", "Finalized (Unpaid)", "Partially Paid", "Paid"
+          - Now filters out "Draft" purchases on client side: filter(p => p.status !== 'Draft')
+          - Improved purchase dropdown display to show: ID - Vendor Name - Date - Amount
+          - Shows vendor name correctly for both saved vendors and walk-in purchases
+          - Added empty state message for when no returnable purchases exist
+  
   - task: "Improve item selection UI with Remove buttons"
     implemented: true
     working: "needs_testing"
