@@ -4114,7 +4114,7 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
             reference_type="purchase",
             reference_id=purchase_id,
             created_by=current_user.username,
-            notes=f"Calculation: (Weight={purchase.weight_grams}g × Purity={purchase.entered_purity} ÷ Factor={conversion_factor}) × Rate={purchase_data.get('rate_per_gram')} OMR/g = {purchase_data['amount_total']} OMR | Entered purity: {purchase.entered_purity}, Valuation purity: {purity}"
+            notes=f"Calculation: Purity Ratio=({purchase.entered_purity}/916)={purchase.entered_purity/916:.4f} → Adjusted Weight={purchase.weight_grams}g×{purchase.entered_purity/916:.4f}={purchase.weight_grams*purchase.entered_purity/916:.3f}g → Converted Weight={purchase.weight_grams*purchase.entered_purity/916:.3f}g÷{conversion_factor}={purchase.weight_grams*purchase.entered_purity/916/conversion_factor:.3f}g → Amount={purchase.weight_grams*purchase.entered_purity/916/conversion_factor:.3f}g×{purchase_data.get('rate_per_gram')}OMR/g={purchase_data['amount_total']}OMR | Entered purity: {purchase.entered_purity}, Stock valuation: {purity}"
         )
         movement_dict = convert_stock_movement_to_decimal(movement.model_dump())
         await db.stock_movements.insert_one(movement_dict)
