@@ -510,6 +510,14 @@ def float_to_decimal128(value):
         return None
     return Decimal128(Decimal(str(value)))
 
+def safe_float(value):
+    """Safely convert Decimal128 or any numeric value to float for arithmetic operations"""
+    if value is None:
+        return 0.0
+    if isinstance(value, Decimal128):
+        return float(value.to_decimal())
+    return float(value) if value else 0.0
+
 # ============================================================================
 # DECIMAL128 CONVERSION UTILITIES FOR PRODUCTION PRECISION
 # ============================================================================
