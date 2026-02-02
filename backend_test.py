@@ -919,29 +919,34 @@ class BackendTester:
             if not vendor_id:
                 return False
             
-            # Test scenarios with consistent test data
-            # Using precise calculations: (100 × 50 × (916 / purity)) ÷ 0.920
+            # Test scenarios with NEW FORMULA: Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate
             test_scenarios = [
                 {
-                    "name": "Purity 916 (22K) - Baseline",
+                    "name": "Test Purity 916 (22K) - Baseline",
+                    "weight": 100,
                     "purity": 916,
-                    "expected_amount": 5434.783,  # (100 × 50 × 1.0) ÷ 0.920 = 5434.783
-                    "purity_adjustment": 1.0,
-                    "description": "Should work same as old formula"
+                    "conversion_factor": 0.917,
+                    "rate": 50,
+                    "expected_amount": 4994.547,  # (100 × 916 ÷ 0.917) × 50 = 4,994,547.370 baisa = 4,994.547 OMR
+                    "description": "Baseline test with 22K purity"
                 },
                 {
-                    "name": "Purity 999 (24K) - Lower Amount", 
+                    "name": "Test Purity 999 (24K) - Higher Purity", 
+                    "weight": 100,
                     "purity": 999,
-                    "expected_amount": 4983.244,  # (100 × 50 × 0.91691...) ÷ 0.920 = 4983.244 (precise)
-                    "purity_adjustment": 0.917,
-                    "description": "Should give LOWER amount"
+                    "conversion_factor": 0.917,
+                    "rate": 50,
+                    "expected_amount": 5446.958,  # (100 × 999 ÷ 0.917) × 50 = 5,446,957.539 baisa = 5,446.958 OMR
+                    "description": "MUST be HIGHER than purity 916 result"
                 },
                 {
-                    "name": "Purity 875 (21K) - Higher Amount",
-                    "purity": 875, 
-                    "expected_amount": 5689.441,  # (100 × 50 × 1.04685...) ÷ 0.920 = 5689.441 (precise)
-                    "purity_adjustment": 1.047,
-                    "description": "Should give HIGHER amount"
+                    "name": "Test Purity 875 (21K) - Lower Purity",
+                    "weight": 10,
+                    "purity": 875,
+                    "conversion_factor": 0.920,
+                    "rate": 60,
+                    "expected_amount": 570.652,  # (10 × 875 ÷ 0.920) × 60 = 570,652.174 baisa = 570.652 OMR
+                    "description": "Lower purity test with different parameters"
                 }
             ]
             
