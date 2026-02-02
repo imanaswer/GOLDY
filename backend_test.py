@@ -6453,18 +6453,20 @@ class BackendTester:
             return False
 
 def main():
-    """Main function to run Pagination Implementation tests"""
+    """Main function to run Reports Decimal128 Fixes tests"""
     tester = BackendTester()
     
-    print("🎯 INVENTORY PAGINATION IMPLEMENTATION - COMPREHENSIVE TEST SUITE")
+    print("🎯 REPORTS DECIMAL128 FIXES - COMPREHENSIVE TEST SUITE")
     print("="*80)
-    print("FOCUS: Test newly implemented pagination for Inventory Stock Totals and Recent Movements")
-    print("FEATURES:")
-    print("  1. Stock Totals Pagination (/api/inventory/stock-totals)")
-    print("  2. Recent Movements Pagination (/api/inventory/movements)")
-    print("  3. Response format: {items: [], pagination: {}}")
-    print("  4. Pagination metadata validation")
-    print("  5. Backward compatibility verification")
+    print("FOCUS: Test all Reports page endpoints to ensure Decimal128 conversion issues are fixed")
+    print("FIXED ENDPOINTS:")
+    print("  1. /api/reports/parties-view - Line 8337: outstanding calculation")
+    print("  2. /api/reports/invoices-view - Lines 8397-8399: total_amount, total_paid, total_balance")
+    print("  3. /api/reports/transactions-view - Lines 8455-8456: total_credit, total_debit")
+    print("  4. /api/reports/outstanding - Lines 8864-8866: party totals calculations")
+    print("  5. /api/reports/purchase-history - Line 10007: purchase_weight and purchase_amount")
+    print("  6. /api/reports/inventory-view - Compatibility check")
+    print("EXPECTED: All endpoints return 200 OK with no TypeError about Decimal128")
     print("="*80)
     
     # Authenticate first
@@ -6472,19 +6474,22 @@ def main():
         print("❌ Authentication failed. Cannot proceed with tests.")
         return False
     
-    # Run Pagination Implementation Tests
-    success = tester.test_pagination_implementation_comprehensive()
+    # Run Reports Decimal128 Fixes Tests
+    success = tester.test_reports_decimal128_fixes_comprehensive()
     
     if success:
-        print("\n🎉 ALL PAGINATION IMPLEMENTATION TESTS PASSED!")
-        print("✅ Stock Totals pagination is working correctly")
-        print("✅ Recent Movements pagination is working correctly")
-        print("✅ Response formats are correct: {items: [], pagination: {}}")
-        print("✅ Pagination metadata is accurate")
-        print("✅ Backward compatibility maintained")
+        print("\n🎉 ALL REPORTS DECIMAL128 FIXES TESTS PASSED!")
+        print("✅ Parties Report: Outstanding calculations working correctly")
+        print("✅ Invoices Report: Summary totals (amount, paid, balance) working correctly")
+        print("✅ Transactions Report: Summary totals (credit, debit) working correctly")
+        print("✅ Outstanding Report: Party totals calculations working correctly")
+        print("✅ Purchase History Report: Weight and amount calculations working correctly")
+        print("✅ Inventory Report: Still working after fixes")
+        print("✅ No TypeError exceptions about Decimal128")
+        print("✅ All numeric calculations return valid numbers")
     else:
-        print("\n❌ SOME PAGINATION IMPLEMENTATION TESTS FAILED!")
-        print("🔧 Backend pagination implementation needs attention")
+        print("\n❌ SOME REPORTS DECIMAL128 FIXES TESTS FAILED!")
+        print("🔧 Backend Decimal128 conversion fixes need attention")
         
         # Print detailed results
         print("\n📋 DETAILED TEST RESULTS:")
