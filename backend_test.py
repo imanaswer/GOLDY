@@ -900,19 +900,19 @@ class BackendTester:
             self.log_result("Gold Settlement Precision Validation", False, f"Error: {str(e)}")
             return False
     
-    def test_enhanced_purchase_valuation_purity_adjustment(self):
-        """Test Enhanced Purchase Valuation - Purity Adjustment Calculation"""
+    def test_new_purchase_calculation_formula(self):
+        """Test NEW Purchase Amount Calculation Formula Implementation"""
         print("\n" + "="*80)
-        print("🎯 TESTING ENHANCED PURCHASE VALUATION - PURITY ADJUSTMENT")
+        print("🎯 TESTING NEW PURCHASE AMOUNT CALCULATION FORMULA")
         print("="*80)
         
-        print("\n📋 TEST REQUIREMENTS:")
-        print("Formula: Amount = (Weight × Rate × (916 / Entered Purity)) ÷ Conversion Factor")
-        print("Test Data: Weight=100g, Rate=50 OMR/g, Conversion Factor=0.920")
-        print("Expected Results (PRECISE CALCULATIONS):")
-        print("  • Purity 916: (100 × 50 × 1.0) ÷ 0.920 = 5434.783 OMR")
-        print("  • Purity 999: (100 × 50 × 0.91691...) ÷ 0.920 = 4983.244 OMR")
-        print("  • Purity 875: (100 × 50 × 1.04685...) ÷ 0.920 = 5689.441 OMR")
+        print("\n📋 NEW FORMULA (MUST USE):")
+        print("Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate")
+        print("Step-by-step:")
+        print("- step1 = Weight × Entered_Purity")
+        print("- step2 = step1 ÷ Conversion_Factor")
+        print("- Amount = step2 × Rate")
+        print("\n🎯 TEST SCENARIOS (VERIFY EXACT CALCULATIONS):")
         
         try:
             vendor_id = self.get_or_create_test_vendor()
