@@ -8460,8 +8460,8 @@ async def view_transactions_report(
     transactions = await db.transactions.find(query, {"_id": 0}).sort(sort_field, sort_direction).to_list(10000)
     
     # Calculate totals
-    total_credit = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'credit')
-    total_debit = sum(txn.get('amount', 0) for txn in transactions if txn.get('transaction_type') == 'debit')
+    total_credit = sum(safe_float(txn.get('amount', 0)) for txn in transactions if txn.get('transaction_type') == 'credit')
+    total_debit = sum(safe_float(txn.get('amount', 0)) for txn in transactions if txn.get('transaction_type') == 'debit')
     
     return {
         "transactions": transactions,
