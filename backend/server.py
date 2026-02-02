@@ -8342,7 +8342,7 @@ async def view_parties_report(
             {"customer_id": party['id'], "is_deleted": False},
             {"_id": 0, "balance_due": 1}
         ).to_list(1000)
-        party['outstanding'] = sum(inv.get('balance_due', 0) for inv in invoices)
+        party['outstanding'] = sum(safe_float(inv.get('balance_due', 0)) for inv in invoices)
     
     # Apply sorting
     if sort_by == "outstanding_desc":
