@@ -2,15 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Trash2, X } from 'lucide-react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import Pagination from '../components/Pagination';
+import { useURLPagination } from '../hooks/useURLPagination';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || '';
 
 const WorkTypesPage = () => {
+  const { currentPage, setPage, pagination, setPagination } = useURLPagination();
   const [workTypes, setWorkTypes] = useState([]);
-  const [filteredWorkTypes, setFilteredWorkTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
+  const [pageSize, setPageSize] = useState(10);
   
   // Dialog states
   const [showDialog, setShowDialog] = useState(false);
@@ -26,48 +29,24 @@ const WorkTypesPage = () => {
 
   useEffect(() => {
     loadWorkTypes();
-  }, []);
-
-  useEffect(() => {
-    filterWorkTypes();
-  }, [workTypes, searchQuery, activeFilter]);
+  }, [currentPage, pageSize]);
 
   const loadWorkTypes = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(`${API_URL}/api/work-types`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        params: { page: currentPage, page_size: pageSize }
       });
       setWorkTypes(response.data.items || []);
+      setPagination(response.data.pagination);
     } catch (error) {
       console.error('Error loading work types:', error);
       toast.error('Failed to load work types');
     } finally {
       setLoading(false);
     }
-  };
-
-  const filterWorkTypes = () => {
-    let filtered = [...workTypes];
-
-    // Filter by active status
-    if (activeFilter === 'active') {
-      filtered = filtered.filter(wt => wt.is_active);
-    } else if (activeFilter === 'inactive') {
-      filtered = filtered.filter(wt => !wt.is_active);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(wt =>
-        wt.name.toLowerCase().includes(query) ||
-        (wt.description && wt.description.toLowerCase().includes(query))
-      );
-    }
-
-    setFilteredWorkTypes(filtered);
   };
 
   const openCreateDialog = () => {
