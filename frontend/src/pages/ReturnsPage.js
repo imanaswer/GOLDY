@@ -986,9 +986,11 @@ const ReturnsPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Return Items *</label>
                 
-                {/* Show loading state when loading invoice items */}
+                {/* Show loading state when loading items */}
                 {loadingItems && (
-                  <div className="text-sm text-gray-600 py-2">Loading invoice items...</div>
+                  <div className="text-sm text-gray-600 py-2">
+                    Loading {formData.return_type === 'sale_return' ? 'invoice' : 'purchase'} items...
+                  </div>
                 )}
                 
                 {/* Invoice-linked items: Show selection interface */}
@@ -1000,6 +1002,19 @@ const ReturnsPage = () => {
                     <p className="text-xs text-blue-700">
                       • Remove items you DON'T want to return by clicking the ✕ button<br/>
                       • Adjust quantities/weights for items you DO want to return (within remaining limits)
+                    </p>
+                  </div>
+                )}
+                
+                {/* Purchase-linked items: Show selection interface */}
+                {formData.return_type === 'purchase_return' && formData.reference_id && returnableItems.length > 0 && !loadingItems && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-3">
+                    <p className="text-sm text-blue-800 mb-1">
+                      <span className="font-semibold">✅ Purchase Items Auto-Loaded</span>
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      • Remove items you DON'T want to return by clicking the ✕ button<br/>
+                      • All fields are editable - adjust quantities/weights/amounts as needed
                     </p>
                   </div>
                 )}
