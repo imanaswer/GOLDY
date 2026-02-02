@@ -348,7 +348,13 @@ export default function DailyClosingPage() {
           )}
           
           {/* Pagination Component */}
-          {pagination && <Pagination pagination={pagination} onPageChange={handlePageChange} />}
+          {pagination && (
+            <Pagination 
+              pagination={pagination} 
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          )}
         </CardContent>
       </Card>
 
