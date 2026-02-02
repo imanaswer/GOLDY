@@ -18,6 +18,7 @@ import { useURLPagination } from '../hooks/useURLPagination';
 export default function JobCardsPage() {
   const { user } = useAuth();
   const { currentPage, setPage, pagination, setPagination } = useURLPagination();
+  const [pageSize, setPageSize] = useState(10);
   const [jobcards, setJobcards] = useState([]);
   const [parties, setParties] = useState([]);
   const [workers, setWorkers] = useState([]);
