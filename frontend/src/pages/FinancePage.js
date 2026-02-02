@@ -41,6 +41,7 @@ export default function FinancePageEnhanced() {
   const [showFilters, setShowFilters] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState(null);
   const [deleteReason, setDeleteReason] = useState('');
+  const [pageSize, setPageSize] = useState(10);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -70,7 +71,7 @@ export default function FinancePageEnhanced() {
   const loadData = useCallback(async () => {
     try {
       // Build query params for filters
-      const params = { page: currentPage, page_size: 10 };
+      const params = { page: currentPage, page_size: pageSize };
       if (filters.account_id && filters.account_id !== 'all') params.account_id = filters.account_id;
       if (filters.account_type && filters.account_type !== 'all') params.account_type = filters.account_type;
       if (filters.transaction_type && filters.transaction_type !== 'all') params.transaction_type = filters.transaction_type;
