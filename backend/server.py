@@ -3186,15 +3186,25 @@ def validate_worker_name(name: str) -> tuple[bool, str]:
 async def get_workers(
     request: Request,
     active: Optional[bool] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all workers with optional active filter"""
+    """Get all workers with optional active filter and pagination"""
     query = {"is_deleted": False}
     if active is not None:
         query['active'] = active
     
-    workers = await db.workers.find(query, {"_id": 0}).sort("name", 1).to_list(None)
-    return {"items": workers}
+    # Get total count
+    total_count = await db.workers.count_documents(query)
+    
+    # Calculate skip
+    skip = (page - 1) * page_size
+    
+    # Get paginated workers
+    workers = await db.workers.find(query, {"_id": 0}).sort("name", 1).skip(skip).limit(page_size).to_list(None)
+    
+    return create_pagination_response(workers, total_count, page, page_size)
 
 @api_router.post("/workers", response_model=Worker, status_code=201)
 @limiter.limit("1000/hour")
