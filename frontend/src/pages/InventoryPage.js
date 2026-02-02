@@ -90,13 +90,13 @@ export default function InventoryPage() {
       const [headersRes, movementsRes, totalsRes, inventoryRes] = await Promise.all([
         API.get(`/api/inventory/headers?page_size=1000`),
         API.get(`/api/inventory/movements`, {
-          params: { page: movementsPage, page_size: 10 }
+          params: { page: movementsPage, page_size: movementsPageSize }
         }),
         API.get(`/api/inventory/stock-totals`, {
-          params: { page: stockTotalsPage, page_size: 10 }
+          params: { page: stockTotalsPage, page_size: stockTotalsPageSize }
         }),
         API.get(`/api/inventory`, {
-          params: { page: currentPage, page_size: 10 }
+          params: { page: currentPage, page_size: inventoryPageSize }
         })
       ]);
 
