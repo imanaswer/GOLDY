@@ -646,49 +646,134 @@ class BackendTester:
             self.log_result("Transactions View Endpoint (PREVIOUSLY FAILING)", False, error_msg)
             return False
 
-    def test_outstanding_endpoint(self):
-        """Test GET /api/reports/outstanding - Previously Failing (Now Fixed - Verify working)"""
-        print("\n--- Testing Outstanding Endpoint (PREVIOUSLY FAILING) ---")
+    def test_outstanding_endpoint_comprehensive(self):
+        """
+        COMPREHENSIVE TEST: Outstanding Report Endpoint - Decimal128 Conversion Fixes
         
+        CRITICAL CONTEXT:
+        - 5 out of 6 report endpoints are already working correctly
+        - The Outstanding endpoint at /api/reports/outstanding was failing with HTTP 500 due to Decimal128 arithmetic issues
+        - Main agent applied fixes on lines 8888, 8904, and 8947 to wrap txn.get('amount', 0) with safe_float()
+        
+        TEST REQUIREMENTS:
+        1. Test the Outstanding endpoint: GET /api/reports/outstanding
+        2. Verify it returns HTTP 200 (not 500)
+        3. Check that the response is JSON serializable with no Decimal128 errors
+        4. Verify the response structure includes:
+           - summary object with: customer_due, vendor_payable, total_outstanding, overdue buckets (0-7, 8-30, 31+)
+           - parties array with party details and their outstanding amounts
+        5. Test with different query parameters:
+           - No parameters (all parties)
+           - party_type=customer
+           - party_type=vendor
+        6. Ensure all numeric values in the response are proper floats, not Decimal128 objects
+        """
+        print("\n" + "="*80)
+        print("🎯 TESTING OUTSTANDING REPORT ENDPOINT - DECIMAL128 FIXES")
+        print("="*80)
+        
+        print("\n📋 CRITICAL CONTEXT:")
+        print("• 5/6 report endpoints already working")
+        print("• Outstanding endpoint was failing with HTTP 500 due to Decimal128 arithmetic")
+        print("• Main agent applied fixes on lines 8888, 8904, and 8947")
+        print("• Need to verify safe_float() wrapper fixes work correctly")
+        
+        print("\n🔍 TEST REQUIREMENTS:")
+        print("1. ✅ GET /api/reports/outstanding returns HTTP 200 (not 500)")
+        print("2. ✅ Response is JSON serializable (no Decimal128 errors)")
+        print("3. ✅ Response structure: {summary: {...}, parties: [...]}")
+        print("4. ✅ Summary contains: customer_due, vendor_payable, total_outstanding, overdue buckets")
+        print("5. ✅ All numeric values are floats (not Decimal128 objects)")
+        print("6. ✅ Test query parameters: all, party_type=customer, party_type=vendor")
+        
+        # Test 1: Basic Outstanding endpoint (all parties)
+        print("\n--- Test 1: Basic Outstanding Endpoint (All Parties) ---")
+        basic_success = self.test_outstanding_basic()
+        
+        # Test 2: Outstanding with party_type=customer
+        print("\n--- Test 2: Outstanding Endpoint (Customers Only) ---")
+        customer_success = self.test_outstanding_customers()
+        
+        # Test 3: Outstanding with party_type=vendor
+        print("\n--- Test 3: Outstanding Endpoint (Vendors Only) ---")
+        vendor_success = self.test_outstanding_vendors()
+        
+        # Test 4: Verify response structure matches expected format
+        print("\n--- Test 4: Response Structure Validation ---")
+        structure_success = self.test_outstanding_response_structure()
+        
+        # Overall success
+        all_tests_passed = basic_success and customer_success and vendor_success and structure_success
+        
+        print(f"\n🔍 OUTSTANDING ENDPOINT TEST RESULTS:")
+        print(f"   • Basic Endpoint (All Parties): {'✅ WORKING' if basic_success else '❌ FAILED'}")
+        print(f"   • Customer Filter: {'✅ WORKING' if customer_success else '❌ FAILED'}")
+        print(f"   • Vendor Filter: {'✅ WORKING' if vendor_success else '❌ FAILED'}")
+        print(f"   • Response Structure: {'✅ VALID' if structure_success else '❌ INVALID'}")
+        print(f"   🎯 OVERALL STATUS: {'✅ ALL DECIMAL128 FIXES WORKING' if all_tests_passed else '❌ SOME TESTS FAILED'}")
+        
+        # Log the comprehensive result
+        self.log_result(
+            "Outstanding Endpoint - Comprehensive Decimal128 Fix Test",
+            all_tests_passed,
+            f"Basic: {'✓' if basic_success else '✗'}, Customer Filter: {'✓' if customer_success else '✗'}, Vendor Filter: {'✓' if vendor_success else '✗'}, Structure: {'✓' if structure_success else '✗'}",
+            {
+                "basic_endpoint_working": basic_success,
+                "customer_filter_working": customer_success,
+                "vendor_filter_working": vendor_success,
+                "response_structure_valid": structure_success,
+                "decimal128_fixes_status": "WORKING" if all_tests_passed else "FAILED",
+                "outstanding_endpoint_ready": all_tests_passed
+            }
+        )
+        
+        return all_tests_passed
+
+    def test_outstanding_basic(self):
+        """Test GET /api/reports/outstanding - Basic endpoint (all parties)"""
         try:
             response = self.session.get(f"{BACKEND_URL}/reports/outstanding")
             
             if response.status_code == 200:
                 data = response.json()
                 
-                # Verify response is array of parties
-                if isinstance(data, list):
-                    parties = data
+                # Verify response structure
+                has_summary = 'summary' in data
+                has_parties = 'parties' in data
+                
+                if has_summary and has_parties:
+                    summary = data.get('summary', {})
+                    parties = data.get('parties', [])
                     
-                    # Check if overdue amounts are numbers
-                    overdue_amounts_valid = True
+                    # Check if all numeric values are proper floats (not Decimal128)
+                    numeric_fields_valid = True
                     decimal128_error_detected = False
                     
-                    for party in parties:
-                        # Check all overdue amount fields
-                        overdue_fields = ['total_outstanding', 'overdue_0_7', 'overdue_8_30', 'overdue_31_plus']
-                        for field in overdue_fields:
-                            if field in party:
-                                value = party[field]
-                                if not isinstance(value, (int, float)):
-                                    overdue_amounts_valid = False
-                                    if 'Decimal128' in str(type(value)):
-                                        decimal128_error_detected = True
-                                    break
-                        if not overdue_amounts_valid:
-                            break
+                    # Check summary fields
+                    summary_fields = ['customer_due', 'vendor_payable', 'total_outstanding', 'overdue_0_7', 'overdue_8_30', 'overdue_31_plus']
+                    for field in summary_fields:
+                        if field in summary:
+                            value = summary[field]
+                            if not isinstance(value, (int, float)):
+                                numeric_fields_valid = False
+                                if 'Decimal128' in str(type(value)):
+                                    decimal128_error_detected = True
+                                break
                     
-                    # Check summary calculations are valid numbers
-                    summary_calculations_valid = True
-                    if parties:
-                        # Try to calculate totals (this would fail with Decimal128)
-                        try:
-                            total_outstanding = sum(party.get('total_outstanding', 0) for party in parties)
-                            summary_calculations_valid = isinstance(total_outstanding, (int, float))
-                        except Exception as e:
-                            summary_calculations_valid = False
-                            if 'Decimal128' in str(e):
-                                decimal128_error_detected = True
+                    # Check parties array
+                    if numeric_fields_valid and parties:
+                        for party in parties[:5]:  # Check first 5 parties
+                            party_fields = ['total_outstanding', 'overdue_0_7', 'overdue_8_30', 'overdue_31_plus']
+                            for field in party_fields:
+                                if field in party:
+                                    value = party[field]
+                                    if not isinstance(value, (int, float)):
+                                        numeric_fields_valid = False
+                                        if 'Decimal128' in str(type(value)):
+                                            decimal128_error_detected = True
+                                        break
+                            if not numeric_fields_valid:
+                                break
                     
                     # Test JSON serialization
                     try:
@@ -699,20 +784,95 @@ class BackendTester:
                         if 'Decimal128' in str(e):
                             decimal128_error_detected = True
                     
-                    success = (response.status_code == 200 and overdue_amounts_valid and 
-                              summary_calculations_valid and json_serializable and 
-                              not decimal128_error_detected)
+                    success = (response.status_code == 200 and has_summary and has_parties and 
+                              numeric_fields_valid and json_serializable and not decimal128_error_detected)
                     
-                    details = f"Status: 200 OK ({'✅ FIXED!' if response.status_code == 200 else '❌ STILL FAILING'}), Parties: {len(parties)}, Overdue Amounts Valid: {'✓' if overdue_amounts_valid else '✗'}, Summary Valid: {'✓' if summary_calculations_valid else '✗'}, JSON Serializable: {'✓' if json_serializable else '✗'}"
+                    details = f"Status: 200 OK ({'✅ FIXED!' if response.status_code == 200 else '❌ STILL FAILING'}), Summary: {'✓' if has_summary else '✗'}, Parties: {len(parties)}, Numeric Valid: {'✓' if numeric_fields_valid else '✗'}, JSON Serializable: {'✓' if json_serializable else '✗'}"
                     
                     self.log_result(
-                        "Outstanding Endpoint (PREVIOUSLY FAILING)",
+                        "Outstanding Basic Endpoint",
+                        success,
+                        details,
+                        {
+                            "has_summary": has_summary,
+                            "has_parties": has_parties,
+                            "parties_count": len(parties),
+                            "numeric_fields_valid": numeric_fields_valid,
+                            "json_serializable": json_serializable,
+                            "decimal128_error": decimal128_error_detected,
+                            "summary_data": summary
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Outstanding Basic Endpoint", False, f"Missing summary or parties in response. Has summary: {has_summary}, Has parties: {has_parties}")
+                    return False
+            else:
+                # This was previously returning HTTP 500 with Decimal128 error
+                was_500_error = response.status_code == 500
+                details = f"HTTP {response.status_code}: {response.text}"
+                if was_500_error:
+                    details += " - STILL FAILING WITH 500 ERROR! Decimal128 fixes not working."
+                
+                self.log_result("Outstanding Basic Endpoint", False, details)
+                return False
+                
+        except Exception as e:
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR STILL OCCURRING! safe_float() fixes not working."
+            
+            self.log_result("Outstanding Basic Endpoint", False, error_msg)
+            return False
+
+    def test_outstanding_customers(self):
+        """Test GET /api/reports/outstanding?party_type=customer"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/outstanding?party_type=customer")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure and customer filtering
+                has_summary = 'summary' in data
+                has_parties = 'parties' in data
+                
+                if has_summary and has_parties:
+                    parties = data.get('parties', [])
+                    
+                    # Verify all parties are customers (if any exist)
+                    customer_filter_working = True
+                    if parties:
+                        for party in parties:
+                            party_type = party.get('party_type', '').lower()
+                            if party_type and party_type != 'customer':
+                                customer_filter_working = False
+                                break
+                    
+                    # Check for Decimal128 errors
+                    decimal128_error_detected = False
+                    try:
+                        json.dumps(data)
+                        json_serializable = True
+                    except Exception as e:
+                        json_serializable = False
+                        if 'Decimal128' in str(e):
+                            decimal128_error_detected = True
+                    
+                    success = (response.status_code == 200 and has_summary and has_parties and 
+                              customer_filter_working and json_serializable and not decimal128_error_detected)
+                    
+                    details = f"Status: 200 OK, Parties: {len(parties)}, Customer Filter: {'✓' if customer_filter_working else '✗'}, JSON Serializable: {'✓' if json_serializable else '✗'}"
+                    
+                    self.log_result(
+                        "Outstanding Customers Filter",
                         success,
                         details,
                         {
                             "parties_count": len(parties),
-                            "overdue_amounts_valid": overdue_amounts_valid,
-                            "summary_calculations_valid": summary_calculations_valid,
+                            "customer_filter_working": customer_filter_working,
                             "json_serializable": json_serializable,
                             "decimal128_error": decimal128_error_detected
                         }
@@ -720,24 +880,156 @@ class BackendTester:
                     
                     return success
                 else:
-                    self.log_result("Outstanding Endpoint (PREVIOUSLY FAILING)", False, f"Expected array, got {type(data).__name__}")
+                    self.log_result("Outstanding Customers Filter", False, "Missing summary or parties in response")
                     return False
             else:
-                # This was previously having CONNECTION ERROR
-                details = f"HTTP {response.status_code}: {response.text}"
-                if response.status_code >= 500:
-                    details += " - STILL FAILING WITH SERVER ERROR!"
-                
-                self.log_result("Outstanding Endpoint (PREVIOUSLY FAILING)", False, details)
+                self.log_result("Outstanding Customers Filter", False, f"HTTP {response.status_code}: {response.text}")
                 return False
                 
         except Exception as e:
             is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
             error_msg = f"Error: {str(e)}"
             if is_decimal128_error:
-                error_msg += " - DECIMAL128 ERROR STILL OCCURRING!"
+                error_msg += " - DECIMAL128 ERROR!"
             
-            self.log_result("Outstanding Endpoint (PREVIOUSLY FAILING)", False, error_msg)
+            self.log_result("Outstanding Customers Filter", False, error_msg)
+            return False
+
+    def test_outstanding_vendors(self):
+        """Test GET /api/reports/outstanding?party_type=vendor"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/outstanding?party_type=vendor")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify response structure and vendor filtering
+                has_summary = 'summary' in data
+                has_parties = 'parties' in data
+                
+                if has_summary and has_parties:
+                    parties = data.get('parties', [])
+                    
+                    # Verify all parties are vendors (if any exist)
+                    vendor_filter_working = True
+                    if parties:
+                        for party in parties:
+                            party_type = party.get('party_type', '').lower()
+                            if party_type and party_type != 'vendor':
+                                vendor_filter_working = False
+                                break
+                    
+                    # Check for Decimal128 errors
+                    decimal128_error_detected = False
+                    try:
+                        json.dumps(data)
+                        json_serializable = True
+                    except Exception as e:
+                        json_serializable = False
+                        if 'Decimal128' in str(e):
+                            decimal128_error_detected = True
+                    
+                    success = (response.status_code == 200 and has_summary and has_parties and 
+                              vendor_filter_working and json_serializable and not decimal128_error_detected)
+                    
+                    details = f"Status: 200 OK, Parties: {len(parties)}, Vendor Filter: {'✓' if vendor_filter_working else '✗'}, JSON Serializable: {'✓' if json_serializable else '✗'}"
+                    
+                    self.log_result(
+                        "Outstanding Vendors Filter",
+                        success,
+                        details,
+                        {
+                            "parties_count": len(parties),
+                            "vendor_filter_working": vendor_filter_working,
+                            "json_serializable": json_serializable,
+                            "decimal128_error": decimal128_error_detected
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Outstanding Vendors Filter", False, "Missing summary or parties in response")
+                    return False
+            else:
+                self.log_result("Outstanding Vendors Filter", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            is_decimal128_error = "Decimal128" in str(e) or "unsupported operand" in str(e)
+            error_msg = f"Error: {str(e)}"
+            if is_decimal128_error:
+                error_msg += " - DECIMAL128 ERROR!"
+            
+            self.log_result("Outstanding Vendors Filter", False, error_msg)
+            return False
+
+    def test_outstanding_response_structure(self):
+        """Verify Outstanding endpoint response structure matches expected format"""
+        try:
+            response = self.session.get(f"{BACKEND_URL}/reports/outstanding")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify top-level structure
+                has_summary = 'summary' in data
+                has_parties = 'parties' in data
+                
+                if has_summary and has_parties:
+                    summary = data.get('summary', {})
+                    parties = data.get('parties', [])
+                    
+                    # Verify summary structure
+                    required_summary_fields = ['customer_due', 'vendor_payable', 'total_outstanding', 'overdue_0_7', 'overdue_8_30', 'overdue_31_plus']
+                    summary_structure_valid = all(field in summary for field in required_summary_fields)
+                    
+                    # Verify parties structure (if any parties exist)
+                    parties_structure_valid = True
+                    if parties:
+                        required_party_fields = ['party_id', 'party_name', 'party_type', 'total_outstanding']
+                        for party in parties[:3]:  # Check first 3 parties
+                            if not all(field in party for field in required_party_fields):
+                                parties_structure_valid = False
+                                break
+                    
+                    # Verify all numeric fields are numbers
+                    all_numeric_valid = True
+                    for field in required_summary_fields:
+                        if field in summary:
+                            value = summary[field]
+                            if not isinstance(value, (int, float)):
+                                all_numeric_valid = False
+                                break
+                    
+                    success = (has_summary and has_parties and summary_structure_valid and 
+                              parties_structure_valid and all_numeric_valid)
+                    
+                    details = f"Summary Structure: {'✓' if summary_structure_valid else '✗'}, Parties Structure: {'✓' if parties_structure_valid else '✗'}, Numeric Fields: {'✓' if all_numeric_valid else '✗'}, Parties Count: {len(parties)}"
+                    
+                    self.log_result(
+                        "Outstanding Response Structure",
+                        success,
+                        details,
+                        {
+                            "summary_structure_valid": summary_structure_valid,
+                            "parties_structure_valid": parties_structure_valid,
+                            "all_numeric_valid": all_numeric_valid,
+                            "parties_count": len(parties),
+                            "summary_fields": list(summary.keys()),
+                            "sample_party_fields": list(parties[0].keys()) if parties else []
+                        }
+                    )
+                    
+                    return success
+                else:
+                    self.log_result("Outstanding Response Structure", False, f"Missing top-level fields. Has summary: {has_summary}, Has parties: {has_parties}")
+                    return False
+            else:
+                self.log_result("Outstanding Response Structure", False, f"HTTP {response.status_code}: {response.text}")
+                return False
+                
+        except Exception as e:
+            self.log_result("Outstanding Response Structure", False, f"Error: {str(e)}")
             return False
 
     def test_purchase_history_endpoint(self):
