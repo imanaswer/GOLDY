@@ -3902,6 +3902,15 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
             
             # ⚠️ CORRECT PURCHASE AMOUNT FORMULA (LOCKED):
             # Business Logic: First convert any purity to 22K, then apply conversion factor, then multiply by rate
+            # 
+            # SANITY TEST (NON-NEGOTIABLE):
+            # If purity = 916 and rate = 1 → amount MUST equal (weight ÷ conversion_factor)
+            # Example: weight=5g, purity=916, rate=1, factor=0.920
+            #   → purity_ratio = 916/916 = 1.0
+            #   → adjusted_weight = 5 × 1.0 = 5g
+            #   → converted_weight = 5 ÷ 0.920 = 5.435g
+            #   → amount = 5.435 × 1 = 5.435 OMR ✓
+            #
             # Step 1: Normalize purity to 22K (916)
             purity_ratio = purity / 916.0
             # Step 2: Adjust weight to 22K equivalent
