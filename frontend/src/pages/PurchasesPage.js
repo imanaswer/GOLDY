@@ -247,10 +247,11 @@ export default function PurchasesPage() {
           const purity = parseFloat(newItem.entered_purity) || 916;
           const factor = parseFloat(selectedConversionFactor);
           if (weight > 0 && rate > 0 && purity > 0 && factor > 0) {
-            // Formula: Amount = (Weight × Purity ÷ Factor) × Rate
-            const step1 = weight * purity;
-            const step2 = step1 / factor;
-            newItem.calculated_amount = parseFloat((step2 * rate).toFixed(3));
+            // ⚠️ CORRECT FORMULA (LOCKED): ((weight × (purity/916)) ÷ factor) × rate
+            const purityRatio = purity / 916;
+            const adjustedWeight = weight * purityRatio;
+            const convertedWeight = adjustedWeight / factor;
+            newItem.calculated_amount = parseFloat((convertedWeight * rate).toFixed(3));
           } else {
             newItem.calculated_amount = 0;
           }
