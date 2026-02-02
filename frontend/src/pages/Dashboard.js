@@ -142,7 +142,8 @@ export default function Dashboard() {
           {pagination && (
             <Pagination 
               pagination={pagination} 
-              onPageChange={handlePageChange} 
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
             />
           )}
         </CardContent>
