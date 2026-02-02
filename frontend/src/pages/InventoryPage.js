@@ -488,7 +488,14 @@ export default function InventoryPage() {
               </table>
             </div>
           </CardContent>
-          {movementsPagination && <Pagination pagination={movementsPagination} onPageChange={setMovementsPage} />}
+          {movementsPagination && <Pagination 
+            pagination={movementsPagination} 
+            onPageChange={setMovementsPage}
+            onPageSizeChange={(newSize) => {
+              setMovementsPageSize(newSize);
+              setMovementsPage(1);
+            }}
+          />}
         </Card>
       </div>
     </div>
