@@ -10045,14 +10045,15 @@ async def get_purchase_history_report(
         total_amount += purchase_amount
         total_weight += purchase_weight
     
-    return {
+    # CRITICAL FIX: Convert entire response including purchase_records array to prevent Decimal128 serialization errors
+    return decimal_to_float({
         "purchase_records": purchase_records,
         "summary": {
             "total_amount": round(total_amount, 2),  # FROM TRANSACTIONS
             "total_weight": round(total_weight, 3),  # FROM STOCKMOVEMENTS
             "total_purchases": len(purchase_records)
         }
-    }
+    })
 
 @api_router.get("/reports/purchase-history-export")
 async def export_purchase_history(
