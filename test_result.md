@@ -218,6 +218,22 @@ backend:
         comment: "Stores pending adjustments with: item_description, qty, weight_grams, purity, action_required='manual_stock_adjustment', notes. NO automatic inventory updates performed."
 
 frontend:
+  - task: "Fix ReturnsPage syntax error - Remove duplicate JSX code"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Removed duplicate JSX code at lines 1022-1044:
+          - Cleaned up orphaned JSX code from previous refactoring
+          - Fixed SyntaxError: "Unexpected token, expected }" at line 1034
+          - Frontend now compiles successfully
+  
   - task: "Improve item selection UI with Remove buttons"
     implemented: true
     working: "needs_testing"
