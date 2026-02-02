@@ -20,6 +20,7 @@ export default function InvoicesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [invoices, setInvoices] = useState([]);
   const [pagination, setPagination] = useState(null);
+  const [pageSize, setPageSize] = useState(10);
   const [accounts, setAccounts] = useState([]);
   const [finalizing, setFinalizing] = useState(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -50,12 +51,12 @@ export default function InvoicesPage() {
   useEffect(() => {
     loadInvoices();
     loadAccounts();
-  }, [currentPage]);
+  }, [currentPage, pageSize]);
 
   const loadInvoices = async () => {
     try {
       const response = await API.get(`/api/invoices`, {
-        params: { page: currentPage, page_size: 10 }
+        params: { page: currentPage, page_size: pageSize }
       });
       setInvoices(response.data.items || []);
       setPagination(response.data.pagination);
@@ -66,6 +67,11 @@ export default function InvoicesPage() {
 
   const handlePageChange = (newPage) => {
     setSearchParams({ page: newPage.toString() });
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setSearchParams({ page: '1' });
   };
 
   const loadAccounts = async () => {
@@ -450,6 +456,7 @@ export default function InvoicesPage() {
             <Pagination
               pagination={pagination}
               onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
             />
           )}
         </CardContent>
