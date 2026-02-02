@@ -5754,31 +5754,46 @@ class BackendTester:
             return False
 
 def main():
-    """Main function to run NEW Purchase Amount Calculation Formula tests"""
+    """Main function to run Pagination Implementation tests"""
     tester = BackendTester()
     
-    print("🎯 NEW PURCHASE AMOUNT CALCULATION FORMULA - COMPREHENSIVE TEST SUITE")
+    print("🎯 INVENTORY PAGINATION IMPLEMENTATION - COMPREHENSIVE TEST SUITE")
     print("="*80)
-    print("FOCUS: Test NEW Formula Implementation")
-    print("NEW FORMULA: Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate")
-    print("TEST SCENARIOS:")
-    print("  1. Purity 916 (22K) - Baseline: 100g, 916 purity, 0.917 factor, 50 OMR/g")
-    print("  2. Purity 999 (24K) - Higher: 100g, 999 purity, 0.917 factor, 50 OMR/g")
-    print("  3. Purity 875 (21K) - Lower: 10g, 875 purity, 0.920 factor, 60 OMR/g")
-    print("  4. Multiple Items Purchase with different purities")
+    print("FOCUS: Test newly implemented pagination for Inventory Stock Totals and Recent Movements")
+    print("FEATURES:")
+    print("  1. Stock Totals Pagination (/api/inventory/stock-totals)")
+    print("  2. Recent Movements Pagination (/api/inventory/movements)")
+    print("  3. Response format: {items: [], pagination: {}}")
+    print("  4. Pagination metadata validation")
+    print("  5. Backward compatibility verification")
     print("="*80)
     
-    # Run NEW Purchase Formula Tests
-    success = tester.run_new_purchase_formula_tests()
+    # Authenticate first
+    if not tester.authenticate():
+        print("❌ Authentication failed. Cannot proceed with tests.")
+        return False
+    
+    # Run Pagination Implementation Tests
+    success = tester.test_pagination_implementation_comprehensive()
     
     if success:
-        print("\n🎉 ALL NEW PURCHASE FORMULA TESTS PASSED!")
-        print("✅ Backend implementation is working correctly")
-        print("✅ Formula calculations are accurate within 0.001 OMR tolerance")
-        print("✅ Multiple items support verified")
+        print("\n🎉 ALL PAGINATION IMPLEMENTATION TESTS PASSED!")
+        print("✅ Stock Totals pagination is working correctly")
+        print("✅ Recent Movements pagination is working correctly")
+        print("✅ Response formats are correct: {items: [], pagination: {}}")
+        print("✅ Pagination metadata is accurate")
+        print("✅ Backward compatibility maintained")
     else:
-        print("\n❌ SOME NEW PURCHASE FORMULA TESTS FAILED!")
-        print("🔧 Backend implementation needs attention")
+        print("\n❌ SOME PAGINATION IMPLEMENTATION TESTS FAILED!")
+        print("🔧 Backend pagination implementation needs attention")
+        
+        # Print detailed results
+        print("\n📋 DETAILED TEST RESULTS:")
+        for result in tester.test_results:
+            status = "✅ PASS" if result["success"] else "❌ FAIL"
+            print(f"{status} - {result['test']}: {result['details']}")
+    
+    return success
 
 def main_old():
     """Main function to run Enhanced Purchase Valuation tests"""
