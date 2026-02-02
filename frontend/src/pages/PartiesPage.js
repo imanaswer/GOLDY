@@ -581,7 +581,7 @@ export default function PartiesPage() {
             <Pagination
               pagination={pagination}
               onPageChange={handlePageChange}
-              onPerPageChange={handlePerPageChange}
+              onPageSizeChange={handlePageSizeChange}
             />
           )}
         </CardContent>
