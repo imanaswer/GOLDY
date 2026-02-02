@@ -284,61 +284,73 @@ class BackendTester:
             return False
 
     def test_reports_decimal128_fixes_comprehensive(self):
-        """COMPREHENSIVE TEST: Reports Decimal128 Conversion Fixes"""
+        """COMPREHENSIVE TEST: All 6 Reports Endpoints - Decimal128 Conversion Fixes"""
         print("\n" + "="*80)
-        print("🎯 TESTING REPORTS DECIMAL128 FIXES - PRIMARY FOCUS")
+        print("🎯 TESTING ALL 6 REPORTS ENDPOINTS - DECIMAL128 FIXES")
         print("="*80)
         
-        print("\n📋 DECIMAL128 FIX TEST REQUIREMENTS:")
-        print("1. ✅ Test Parties Report - outstanding calculation (Line 8337)")
-        print("2. ✅ Test Invoices Report - total_amount, total_paid, total_balance (Lines 8397-8399)")
-        print("3. ✅ Test Transactions Report - total_credit, total_debit (Lines 8455-8456)")
-        print("4. ✅ Test Outstanding Report - party totals (Lines 8864-8866)")
-        print("5. ✅ Test Purchase History - weight and amount calculations (Line 10007)")
-        print("6. ✅ Test Inventory Report - verify still works")
-        print("7. ✅ Verify NO TypeError about Decimal128")
-        print("8. ✅ Verify all numeric calculations are valid numbers")
+        print("\n📋 REVIEW REQUEST - DECIMAL128 FIX VERIFICATION:")
+        print("✅ PREVIOUSLY WORKING (Verify still working):")
+        print("   1. GET /api/reports/parties-view - Should return 200 with parties data")
+        print("   2. GET /api/reports/inventory-view - Should return 200 with inventory data")
+        print("")
+        print("❌ PREVIOUSLY FAILING (Now fixed - Verify working):")
+        print("   3. GET /api/reports/invoices-view - Was: HTTP 500, Now: Should return 200")
+        print("   4. GET /api/reports/transactions-view - Was: HTTP 500, Now: Should return 200")
+        print("   5. GET /api/reports/outstanding - Was: CONNECTION ERROR, Now: Should return 200")
+        print("   6. GET /api/reports/purchase-history - Was: MISSING DATA, Now: Should return 200")
+        print("")
+        print("🔍 VERIFICATION CRITERIA:")
+        print("   • All 6 endpoints return HTTP 200")
+        print("   • No Decimal128 serialization errors")
+        print("   • All numeric fields are valid numbers (float or int)")
+        print("   • All arrays contain data (not empty)")
+        print("   • Summary calculations are valid numbers")
         
-        # Test all report endpoints with Decimal128 fixes
-        parties_success = self.test_parties_report_decimal128()
-        invoices_success = self.test_invoices_report_decimal128()
-        transactions_success = self.test_transactions_report_decimal128()
-        outstanding_success = self.test_outstanding_report_decimal128()
-        purchase_history_success = self.test_purchase_history_report_decimal128()
-        inventory_success = self.test_inventory_report_decimal128()
+        # Test all 6 report endpoints
+        parties_success = self.test_parties_view_endpoint()
+        inventory_success = self.test_inventory_view_endpoint()
+        invoices_success = self.test_invoices_view_endpoint()
+        transactions_success = self.test_transactions_view_endpoint()
+        outstanding_success = self.test_outstanding_endpoint()
+        purchase_history_success = self.test_purchase_history_endpoint()
         
-        # Overall Decimal128 fix status
-        all_decimal128_fixes_working = (parties_success and invoices_success and 
-                                      transactions_success and outstanding_success and 
-                                      purchase_history_success and inventory_success)
+        # Calculate results
+        previously_working = parties_success and inventory_success
+        previously_failing = invoices_success and transactions_success and outstanding_success and purchase_history_success
+        all_endpoints_working = previously_working and previously_failing
         
         print(f"\n🔍 DECIMAL128 FIX RESULTS:")
-        print(f"   • Parties Report: {'✅ WORKING' if parties_success else '❌ FAILED'}")
-        print(f"   • Invoices Report: {'✅ WORKING' if invoices_success else '❌ FAILED'}")
-        print(f"   • Transactions Report: {'✅ WORKING' if transactions_success else '❌ FAILED'}")
-        print(f"   • Outstanding Report: {'✅ WORKING' if outstanding_success else '❌ FAILED'}")
-        print(f"   • Purchase History Report: {'✅ WORKING' if purchase_history_success else '❌ FAILED'}")
-        print(f"   • Inventory Report: {'✅ WORKING' if inventory_success else '❌ FAILED'}")
-        print(f"   • Overall Decimal128 Fixes: {'✅ ALL WORKING' if all_decimal128_fixes_working else '❌ SOME FAILED'}")
+        print(f"   ✅ PREVIOUSLY WORKING:")
+        print(f"      • Parties View: {'✅ WORKING' if parties_success else '❌ FAILED'}")
+        print(f"      • Inventory View: {'✅ WORKING' if inventory_success else '❌ FAILED'}")
+        print(f"   ❌ PREVIOUSLY FAILING (NOW FIXED):")
+        print(f"      • Invoices View: {'✅ FIXED' if invoices_success else '❌ STILL FAILING'}")
+        print(f"      • Transactions View: {'✅ FIXED' if transactions_success else '❌ STILL FAILING'}")
+        print(f"      • Outstanding: {'✅ FIXED' if outstanding_success else '❌ STILL FAILING'}")
+        print(f"      • Purchase History: {'✅ FIXED' if purchase_history_success else '❌ STILL FAILING'}")
+        print(f"   🎯 OVERALL STATUS: {'✅ ALL 6 ENDPOINTS WORKING' if all_endpoints_working else '❌ SOME ENDPOINTS FAILING'}")
         
         # Log the overall result
         self.log_result(
-            "Reports Decimal128 Fixes - Comprehensive Test",
-            all_decimal128_fixes_working,
-            f"Parties: {'✓' if parties_success else '✗'}, Invoices: {'✓' if invoices_success else '✗'}, Transactions: {'✓' if transactions_success else '✗'}, Outstanding: {'✓' if outstanding_success else '✗'}, Purchase History: {'✓' if purchase_history_success else '✗'}, Inventory: {'✓' if inventory_success else '✗'}",
+            "All 6 Reports Endpoints - Decimal128 Fixes",
+            all_endpoints_working,
+            f"Previously Working: {2 if previously_working else 'FAILED'}/2, Previously Failing (Fixed): {4 if previously_failing else 'PARTIAL'}/4",
             {
-                "parties_report_working": parties_success,
-                "invoices_report_working": invoices_success,
-                "transactions_report_working": transactions_success,
-                "outstanding_report_working": outstanding_success,
-                "purchase_history_report_working": purchase_history_success,
-                "inventory_report_working": inventory_success,
-                "decimal128_fixes_status": "WORKING" if all_decimal128_fixes_working else "FAILED",
-                "fixes_ready": all_decimal128_fixes_working
+                "parties_view_working": parties_success,
+                "inventory_view_working": inventory_success,
+                "invoices_view_working": invoices_success,
+                "transactions_view_working": transactions_success,
+                "outstanding_working": outstanding_success,
+                "purchase_history_working": purchase_history_success,
+                "previously_working_status": "WORKING" if previously_working else "FAILED",
+                "previously_failing_status": "FIXED" if previously_failing else "STILL_FAILING",
+                "decimal128_fixes_status": "WORKING" if all_endpoints_working else "FAILED",
+                "all_endpoints_ready": all_endpoints_working
             }
         )
         
-        return all_decimal128_fixes_working
+        return all_endpoints_working
 
     def test_parties_report_decimal128(self):
         """Test GET /api/reports/parties-view - Decimal128 outstanding calculation fix"""
