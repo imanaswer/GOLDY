@@ -1023,6 +1023,7 @@ const ReturnsPage = () => {
                 <div className="space-y-2">
                   {formData.items.map((item, index) => {
                     const isInvoiceLinked = formData.return_type === 'sale_return' && formData.reference_id && returnableItems.length > 0;
+                    const isPurchaseLinked = formData.return_type === 'purchase_return' && formData.reference_id && returnableItems.length > 0;
                     const maxQty = item.max_qty || 999;
                     const maxWeight = item.max_weight || 99999;
                     
@@ -1043,6 +1044,9 @@ const ReturnsPage = () => {
                               />
                               {isInvoiceLinked && (
                                 <p className="text-xs text-gray-500 mt-0.5">From invoice</p>
+                              )}
+                              {isPurchaseLinked && (
+                                <p className="text-xs text-blue-500 mt-0.5">From purchase (editable)</p>
                               )}
                             </div>
                             <div>
@@ -1097,7 +1101,7 @@ const ReturnsPage = () => {
                                 onChange={(e) => handleItemChange(index, 'amount', parseFloat(e.target.value) || 0)}
                                 className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 min="0"
-                                disabled={isInvoiceLinked}
+                              />
                               />
                               {isInvoiceLinked && (
                                 <p className="text-xs text-gray-500 mt-0.5">From invoice</p>
