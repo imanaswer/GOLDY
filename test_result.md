@@ -14121,3 +14121,268 @@ agent_communication:
       
       THE OUTSTANDING REPORT ENDPOINT DECIMAL128 FIXES ARE SUCCESSFULLY VERIFIED!
 
+
+#====================================================================================================
+# Testing Data - CRITICAL PURCHASE FORMULA FIX
+#====================================================================================================
+
+user_problem_statement: |
+  CRITICAL FIX: Purchase calculation formula was completely WRONG
+  
+  **The Bug:**
+  - Backend and frontend were multiplying by purity (e.g., weight × 916) instead of dividing
+  - This caused amounts to be ~1000x too high (e.g., 4978 instead of 5.43)
+  - Formula was: step1 = weight × purity, step2 = step1 ÷ factor, amount = step2 × rate
+  
+  **The CORRECT Formula (LOCKED):**
+  Business Logic: First convert any purity to 22K, then apply conversion factor, then multiply by rate
+  
+  Formula: amount = ((weight × (entered_purity / 916)) ÷ conversion_factor) × rate
+  
+  Step-by-step:
+  1. Purity Ratio = entered_purity / 916 (normalize to 22K)
+  2. Adjusted Weight = weight × purity_ratio (convert to 22K equivalent)
+  3. Converted Weight = adjusted_weight ÷ conversion_factor (apply conversion)
+  4. Amount = converted_weight × rate (apply rate per gram)
+  
+  **Sanity Test (NON-NEGOTIABLE):**
+  If purity = 916 and rate = 1 → amount MUST equal (weight ÷ conversion_factor)
+  Example: weight=5g, purity=916, rate=1, factor=0.920 → amount = 5.435 OMR
+
+backend:
+  - task: "Fix purchase calculation formula - Multiple items"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Lines 3903-3923 (Multiple items purchase):
+          WRONG: step1 = weight × purity (multiplying by 916!)
+          CORRECT: purity_ratio = purity / 916.0
+          
+          New calculation:
+          1. purity_ratio = purity / 916.0
+          2. adjusted_weight = weight * purity_ratio
+          3. converted_weight = adjusted_weight / conversion_factor
+          4. item_amount = converted_weight * rate
+          
+          Added sanity test comment with example calculation.
+  
+  - task: "Fix purchase calculation formula - Single item (legacy)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Lines 3956-3973 (Legacy single-item purchase):
+          WRONG: step1 = weight_grams × entered_purity
+          CORRECT: purity_ratio = entered_purity / 916.0
+          
+          New calculation matches multiple items logic.
+          Added sanity test comment with example.
+  
+  - task: "Fix stock movement notes with correct calculation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Lines 4073 and 4117:
+          Updated notes to show correct calculation breakdown:
+          "Purity Ratio=(purity/916)=X.XXXX → Adjusted Weight=Xg → Converted Weight=Xg → Amount=X OMR"
+
+frontend:
+  - task: "Fix purchase calculation - Single item useEffect"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Lines 108-125 (Single item calculation useEffect):
+          WRONG: step1 = weight × purity
+          CORRECT: 
+          1. purityRatio = purity / 916
+          2. adjustedWeight = weight * purityRatio
+          3. convertedWeight = adjustedWeight / factor
+          4. calculatedTotal = convertedWeight * rate
+  
+  - task: "Fix purchase calculation - Multiple items updateItem"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Lines 244-256 (Multiple items per-item calculation):
+          Applied same correct formula when user updates item fields.
+  
+  - task: "Fix purchase calculation - Multiple items conversion factor change"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ FIXED - Lines 270-280 (Recalculate all items when factor changes):
+          Applied same correct formula for batch recalculation.
+  
+  - task: "Update UI breakdown to show CORRECT calculation steps"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: |
+          ✅ UPDATED - Lines 1340-1475 (Purchase Cost Breakdown UI):
+          
+          Changed formula display:
+          OLD: "Amount = (Weight × Rate × (916 / Purity)) ÷ Conversion Factor"
+          NEW: "Amount = ((Weight × (Purity / 916)) ÷ Conversion Factor) × Rate"
+          
+          Added intermediate calculation displays:
+          1. Purity Ratio (purity / 916)
+          2. Adjusted Weight (weight × purity_ratio)
+          3. Converted Weight (adjusted_weight / factor)
+          4. Final Amount (converted_weight × rate)
+          
+          All values now show ACTUAL intermediate calculations, not wrong formula.
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Verify formula with purity=916 gives correct baseline"
+    - "Verify formula with purity=999 gives HIGHER amount (not LOWER)"
+    - "Verify formula with purity=875 gives LOWER amount (not HIGHER)"
+    - "Sanity test: purity=916, rate=1 → amount = weight/factor"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "critical"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🚨 CRITICAL PURCHASE FORMULA BUG FIXED - COMPLETE REWRITE
+      
+      ❌ THE BUG (CATASTROPHIC):
+      ================================================================================
+      Backend and frontend were using COMPLETELY WRONG formula:
+      
+      WRONG FORMULA (multiplying by purity!):
+        step1 = weight × purity          # ❌ This gives weight × 916 = huge number!
+        step2 = step1 ÷ conversion_factor
+        amount = step2 × rate
+      
+      Example with weight=5g, purity=916, rate=1, factor=0.920:
+        step1 = 5 × 916 = 4580           # ❌ Already wrong!
+        step2 = 4580 ÷ 0.920 = 4978.26   # ❌ Way too high!
+        amount = 4978.26 × 1 = 4978.26 OMR  # ❌ Should be 5.435!
+      
+      ✅ THE FIX (CORRECT FORMULA - LOCKED):
+      ================================================================================
+      Business Logic: First convert any purity to 22K, then apply conversion factor, then multiply by rate
+      
+      CORRECT FORMULA:
+        purity_ratio = purity / 916.0              # Normalize to 22K
+        adjusted_weight = weight × purity_ratio    # Convert to 22K equivalent
+        converted_weight = adjusted_weight / conversion_factor  # Apply conversion
+        amount = converted_weight × rate           # Apply rate
+      
+      Example with same inputs (weight=5g, purity=916, rate=1, factor=0.920):
+        purity_ratio = 916 / 916 = 1.0
+        adjusted_weight = 5 × 1.0 = 5.0g
+        converted_weight = 5.0 ÷ 0.920 = 5.435g
+        amount = 5.435 × 1 = 5.435 OMR  ✅ CORRECT!
+      
+      📂 FILES FIXED:
+      ================================================================================
+      
+      BACKEND (/app/backend/server.py):
+      - Lines 3903-3923: Multiple items purchase calculation
+      - Lines 3956-3973: Single item (legacy) purchase calculation
+      - Line 4073: Stock movement notes for multiple items
+      - Line 4117: Stock movement notes for single item
+      - Added sanity test comments in both calculation blocks
+      
+      FRONTEND (/app/frontend/src/pages/PurchasesPage.js):
+      - Lines 108-125: Single item calculation (useEffect)
+      - Lines 244-256: Multiple items per-item calculation (updateItem)
+      - Lines 270-280: Multiple items batch recalculation (conversion factor change)
+      - Lines 1340-1475: UI breakdown display with correct intermediate values
+      
+      🧪 VALIDATION TEST:
+      ================================================================================
+      Created /app/test_purchase_formula.py with comprehensive tests:
+      
+      ✅ SANITY TEST PASSED:
+         Purity=916, Rate=1 → Amount = 5.435 OMR (exactly weight ÷ factor)
+      
+      ✅ DIFFERENT PURITIES TEST PASSED:
+         - 916 (22K): 5.435 OMR (baseline)
+         - 999 (24K): 5.927 OMR (HIGHER, correct!)
+         - 875 (21K): 5.192 OMR (LOWER, correct!)
+         - 750 (18K): 4.450 OMR (much lower, correct!)
+      
+      ✅ REAL-WORLD SCENARIO PASSED:
+         All calculations match expected values
+      
+      🔒 FORMULA NOW LOCKED:
+      ================================================================================
+      The formula is now CORRECT and documented with:
+      1. Clear step-by-step comments
+      2. Sanity test specification (non-negotiable)
+      3. Example calculations in comments
+      4. No reordering or shortcuts allowed
+      
+      📊 IMPACT:
+      ================================================================================
+      - All NEW purchases will use correct formula
+      - Old purchases remain unchanged (no backward migration)
+      - UI now shows honest calculation breakdown
+      - Amount values will be ~1000x smaller (correct!)
+      
+      🚀 SERVICES STATUS:
+      ================================================================================
+      ✅ Backend: Restarted with fixed formula
+      ✅ Frontend: Hot reload active, changes applied
+      ✅ MongoDB: Running
+      ✅ Test suite: All tests passing
+      
+      CRITICAL BUG FIXED - FORMULA IS NOW CORRECT AND VALIDATED!
+
