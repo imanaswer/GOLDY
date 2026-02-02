@@ -471,6 +471,7 @@ export default function InventoryPage() {
               </table>
             </div>
           </CardContent>
+          {movementsPagination && <Pagination pagination={movementsPagination} onPageChange={setMovementsPage} />}
         </Card>
       </div>
     </div>
