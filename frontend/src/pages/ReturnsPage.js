@@ -873,6 +873,10 @@ const ReturnsPage = () => {
                     <p className="text-xs text-red-600 mt-1">
                       ⚠️ No finalized or paid invoices available for return
                     </p>
+                  ) : formData.return_type === 'purchase_return' && purchases.length === 0 ? (
+                    <p className="text-xs text-red-600 mt-1">
+                      ⚠️ No finalized or paid purchases available for return
+                    </p>
                   ) : (
                     <p className="text-xs text-gray-500 mt-1">
                       ℹ️ Only finalized or paid {formData.return_type === 'sale_return' ? 'invoices' : 'purchases'} are shown. Draft items cannot be returned.
