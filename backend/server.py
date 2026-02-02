@@ -3900,14 +3900,16 @@ async def create_purchase(request: Request, purchase_data: dict, current_user: U
             except (ValueError, TypeError):
                 raise HTTPException(status_code=400, detail=f"Invalid purity value for item {idx + 1}")
             
-            # ⚠️ PURCHASE AMOUNT FORMULA: Amount = (Weight × Entered_Purity ÷ Conversion_Factor) × Rate
-            # Step-by-step calculation (DO NOT reorder):
-            # step1 = Weight × Entered_Purity
-            # step2 = step1 ÷ Conversion_Factor
-            # Amount = step2 × Rate
-            step1 = weight * purity
-            step2 = step1 / conversion_factor
-            item_amount = step2 * rate
+            # ⚠️ CORRECT PURCHASE AMOUNT FORMULA (LOCKED):
+            # Business Logic: First convert any purity to 22K, then apply conversion factor, then multiply by rate
+            # Step 1: Normalize purity to 22K (916)
+            purity_ratio = purity / 916.0
+            # Step 2: Adjust weight to 22K equivalent
+            adjusted_weight = weight * purity_ratio
+            # Step 3: Apply conversion factor
+            converted_weight = adjusted_weight / conversion_factor
+            # Step 4: Apply rate per gram
+            item_amount = converted_weight * rate
             item_amount = round(item_amount, 3)  # 3 decimal precision (Oman)
             
             validated_item = {
