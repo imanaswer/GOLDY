@@ -83,7 +83,7 @@ export default function InventoryPage() {
 
   useEffect(() => {
     loadInventoryData();
-  }, [currentPage, stockTotalsPage, movementsPage]);
+  }, [currentPage, stockTotalsPage, movementsPage, inventoryPageSize, stockTotalsPageSize, movementsPageSize]);
 
   const loadInventoryData = async () => {
     try {
