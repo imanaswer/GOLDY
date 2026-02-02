@@ -70,7 +70,318 @@ class BackendTester:
             self.log_result("Authentication", False, f"Authentication error: {str(e)}")
             return False
     
-    def test_dashboard_decimal128_fix(self):
+    def test_pagination_enhancements_comprehensive(self):
+        """COMPREHENSIVE TEST: Enhanced Pagination for Dashboard and InventoryPage"""
+        print("\n" + "="*80)
+        print("🎯 TESTING PAGINATION ENHANCEMENTS - PRIMARY FOCUS")
+        print("="*80)
+        
+        print("\n📋 PAGINATION ENHANCEMENT TEST REQUIREMENTS:")
+        print("1. ✅ Dashboard Stock Summary Pagination (different page_size values)")
+        print("2. ✅ InventoryPage Tables Pagination (inventory, stock-totals, movements)")
+        print("3. ✅ Reports & Analytics Endpoints (Fix 'Failed to load' issue)")
+        print("4. ✅ Verify response format: {items: [], pagination: {}}")
+        print("5. ✅ Verify pagination metadata accuracy")
+        
+        # Test Dashboard Stock Summary Pagination
+        print("\n--- Testing Dashboard Stock Summary Pagination ---")
+        dashboard_success = self.test_dashboard_stock_summary_pagination()
+        
+        # Test InventoryPage Tables Pagination
+        print("\n--- Testing InventoryPage Tables Pagination ---")
+        inventory_success = self.test_inventory_page_tables_pagination()
+        
+        # Test Reports & Analytics Endpoints
+        print("\n--- Testing Reports & Analytics Endpoints ---")
+        reports_success = self.test_reports_analytics_endpoints()
+        
+        # Overall pagination enhancement status
+        all_enhancements_working = dashboard_success and inventory_success and reports_success
+        
+        print(f"\n🔍 PAGINATION ENHANCEMENT RESULTS:")
+        print(f"   • Dashboard Stock Summary: {'✅ WORKING' if dashboard_success else '❌ FAILED'}")
+        print(f"   • InventoryPage Tables: {'✅ WORKING' if inventory_success else '❌ FAILED'}")
+        print(f"   • Reports & Analytics: {'✅ WORKING' if reports_success else '❌ FAILED'}")
+        print(f"   • Overall Enhancement: {'✅ ALL WORKING' if all_enhancements_working else '❌ SOME FAILED'}")
+        
+        # Log the overall result
+        self.log_result(
+            "Pagination Enhancements - Comprehensive Test",
+            all_enhancements_working,
+            f"Dashboard: {'✓' if dashboard_success else '✗'}, Inventory: {'✓' if inventory_success else '✗'}, Reports: {'✓' if reports_success else '✗'}",
+            {
+                "dashboard_stock_summary_working": dashboard_success,
+                "inventory_page_tables_working": inventory_success,
+                "reports_analytics_working": reports_success,
+                "pagination_enhancements_status": "WORKING" if all_enhancements_working else "FAILED",
+                "enhancement_ready": all_enhancements_working
+            }
+        )
+        
+        return all_enhancements_working
+
+    def test_dashboard_stock_summary_pagination(self):
+        """Test Dashboard Stock Summary Pagination with different page_size values"""
+        print("\n--- Testing Dashboard Stock Summary Pagination ---")
+        
+        try:
+            # Test different page_size values: 10, 25, 50, 100
+            page_sizes = [10, 25, 50, 100]
+            all_tests_passed = True
+            test_results = {}
+            
+            for page_size in page_sizes:
+                print(f"\n  Testing page_size={page_size}...")
+                
+                # Test page 1
+                response1 = self.session.get(f"{BACKEND_URL}/inventory/stock-totals?page=1&page_size={page_size}")
+                
+                if response1.status_code == 200:
+                    data1 = response1.json()
+                    
+                    # Verify response format: {items: [], pagination: {}}
+                    has_items = 'items' in data1
+                    has_pagination = 'pagination' in data1
+                    
+                    if has_items and has_pagination:
+                        items = data1.get('items', [])
+                        pagination = data1.get('pagination', {})
+                        
+                        # Verify pagination metadata
+                        required_fields = ['page', 'page_size', 'total_count', 'total_pages', 'has_next', 'has_prev']
+                        metadata_complete = all(field in pagination for field in required_fields)
+                        
+                        # Verify correct number of items returned
+                        items_count_correct = len(items) <= page_size
+                        page_correct = pagination.get('page') == 1
+                        page_size_correct = pagination.get('page_size') == page_size
+                        
+                        # Test page 2 if there are enough items
+                        total_count = pagination.get('total_count', 0)
+                        page_2_success = True
+                        
+                        if total_count > page_size:
+                            response2 = self.session.get(f"{BACKEND_URL}/inventory/stock-totals?page=2&page_size={page_size}")
+                            if response2.status_code == 200:
+                                data2 = response2.json()
+                                if 'pagination' in data2:
+                                    pagination2 = data2.get('pagination', {})
+                                    page_2_success = (pagination2.get('page') == 2 and 
+                                                    pagination2.get('has_prev') == True)
+                            else:
+                                page_2_success = False
+                        
+                        page_size_test_passed = (has_items and has_pagination and metadata_complete and 
+                                               items_count_correct and page_correct and page_size_correct and page_2_success)
+                        
+                        test_results[f"page_size_{page_size}"] = {
+                            "success": page_size_test_passed,
+                            "items_count": len(items),
+                            "total_count": total_count,
+                            "metadata_complete": metadata_complete,
+                            "page_2_tested": total_count > page_size
+                        }
+                        
+                        if not page_size_test_passed:
+                            all_tests_passed = False
+                    else:
+                        test_results[f"page_size_{page_size}"] = {
+                            "success": False,
+                            "error": "Missing items or pagination in response"
+                        }
+                        all_tests_passed = False
+                else:
+                    test_results[f"page_size_{page_size}"] = {
+                        "success": False,
+                        "error": f"HTTP {response1.status_code}"
+                    }
+                    all_tests_passed = False
+            
+            # Summary of all page_size tests
+            passed_count = sum(1 for result in test_results.values() if result.get('success', False))
+            details = f"Passed: {passed_count}/{len(page_sizes)} page_size tests"
+            
+            self.log_result(
+                "Dashboard Stock Summary Pagination",
+                all_tests_passed,
+                details,
+                test_results
+            )
+            
+            return all_tests_passed
+            
+        except Exception as e:
+            self.log_result("Dashboard Stock Summary Pagination", False, f"Error: {str(e)}")
+            return False
+
+    def test_inventory_page_tables_pagination(self):
+        """Test InventoryPage Tables Pagination for all three endpoints"""
+        print("\n--- Testing InventoryPage Tables Pagination ---")
+        
+        try:
+            # Test all three inventory endpoints with pagination
+            endpoints = [
+                ("/inventory", "Inventory Items"),
+                ("/inventory/stock-totals", "Stock Totals"),
+                ("/inventory/movements", "Inventory Movements")
+            ]
+            
+            all_endpoints_working = True
+            endpoint_results = {}
+            
+            for endpoint, name in endpoints:
+                print(f"\n  Testing {name} pagination...")
+                
+                # Test with page_size variations: 10, 25, 50
+                page_sizes = [10, 25, 50]
+                endpoint_success = True
+                
+                for page_size in page_sizes:
+                    response = self.session.get(f"{BACKEND_URL}{endpoint}?page=1&page_size={page_size}")
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        
+                        # Verify proper pagination metadata
+                        has_items = 'items' in data
+                        has_pagination = 'pagination' in data
+                        
+                        if has_items and has_pagination:
+                            pagination = data.get('pagination', {})
+                            required_fields = ['total_count', 'total_pages', 'has_next', 'has_prev']
+                            metadata_correct = all(field in pagination for field in required_fields)
+                            
+                            if not metadata_correct:
+                                endpoint_success = False
+                        else:
+                            endpoint_success = False
+                    else:
+                        endpoint_success = False
+                
+                endpoint_results[name] = {
+                    "success": endpoint_success,
+                    "endpoint": endpoint
+                }
+                
+                if not endpoint_success:
+                    all_endpoints_working = False
+            
+            # Summary
+            passed_endpoints = sum(1 for result in endpoint_results.values() if result.get('success', False))
+            details = f"Working endpoints: {passed_endpoints}/{len(endpoints)}"
+            
+            self.log_result(
+                "InventoryPage Tables Pagination",
+                all_endpoints_working,
+                details,
+                endpoint_results
+            )
+            
+            return all_endpoints_working
+            
+        except Exception as e:
+            self.log_result("InventoryPage Tables Pagination", False, f"Error: {str(e)}")
+            return False
+
+    def test_reports_analytics_endpoints(self):
+        """Test Reports & Analytics Endpoints to fix 'Failed to load' issue"""
+        print("\n--- Testing Reports & Analytics Endpoints ---")
+        
+        try:
+            # All reports endpoints that need to be tested
+            reports_endpoints = [
+                ("/reports/financial-summary", "Financial Summary"),
+                ("/reports/inventory-view", "Inventory View"),
+                ("/reports/parties-view", "Parties View"),
+                ("/reports/invoices-view", "Invoices View"),
+                ("/reports/transactions-view", "Transactions View"),
+                ("/reports/outstanding", "Outstanding"),
+                ("/reports/sales-history", "Sales History"),
+                ("/reports/purchase-history", "Purchase History")
+            ]
+            
+            all_reports_working = True
+            reports_results = {}
+            
+            for endpoint, name in reports_endpoints:
+                print(f"\n  Testing {name}...")
+                
+                try:
+                    response = self.session.get(f"{BACKEND_URL}{endpoint}")
+                    
+                    if response.status_code == 200:
+                        # Verify response returns valid JSON
+                        data = response.json()
+                        
+                        # Basic validation - should be parseable JSON
+                        json_valid = True
+                        try:
+                            json.dumps(data)  # Test serialization
+                        except:
+                            json_valid = False
+                        
+                        reports_results[name] = {
+                            "success": True,
+                            "status_code": response.status_code,
+                            "json_valid": json_valid,
+                            "response_type": type(data).__name__
+                        }
+                        
+                        if not json_valid:
+                            all_reports_working = False
+                            
+                    elif response.status_code == 404:
+                        reports_results[name] = {
+                            "success": False,
+                            "status_code": 404,
+                            "error": "Endpoint not found - needs implementation"
+                        }
+                        all_reports_working = False
+                        
+                    elif response.status_code == 500:
+                        reports_results[name] = {
+                            "success": False,
+                            "status_code": 500,
+                            "error": "Internal server error - needs fixing"
+                        }
+                        all_reports_working = False
+                        
+                    else:
+                        reports_results[name] = {
+                            "success": False,
+                            "status_code": response.status_code,
+                            "error": f"HTTP {response.status_code}"
+                        }
+                        all_reports_working = False
+                        
+                except Exception as e:
+                    reports_results[name] = {
+                        "success": False,
+                        "error": f"Exception: {str(e)}"
+                    }
+                    all_reports_working = False
+            
+            # Summary
+            working_reports = sum(1 for result in reports_results.values() if result.get('success', False))
+            details = f"Working reports: {working_reports}/{len(reports_endpoints)}"
+            
+            # Add details about failed reports
+            failed_reports = [name for name, result in reports_results.items() if not result.get('success', False)]
+            if failed_reports:
+                details += f", Failed: {', '.join(failed_reports)}"
+            
+            self.log_result(
+                "Reports & Analytics Endpoints",
+                all_reports_working,
+                details,
+                reports_results
+            )
+            
+            return all_reports_working
+            
+        except Exception as e:
+            self.log_result("Reports & Analytics Endpoints", False, f"Error: {str(e)}")
+            return False
         """SPECIFIC TEST: Dashboard Decimal128 Fix for Outstanding Summary API"""
         print("\n" + "="*80)
         print("🎯 TESTING DASHBOARD DECIMAL128 FIX - PRIMARY FOCUS")
