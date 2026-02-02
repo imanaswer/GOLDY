@@ -897,6 +897,10 @@ const ReturnsPage = () => {
                 <Pagination
                   pagination={pagination}
                   onPageChange={setPage}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(1);
+                  }}
                 />
               </div>
             )}
