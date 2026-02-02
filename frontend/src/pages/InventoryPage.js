@@ -23,6 +23,13 @@ export default function InventoryPage() {
   const [showAddMovement, setShowAddMovement] = useState(false);
   const [newHeader, setNewHeader] = useState('');
   const [categoryNameError, setCategoryNameError] = useState('');
+  
+  // Pagination states for Stock Totals and Recent Movements
+  const [stockTotalsPage, setStockTotalsPage] = useState(1);
+  const [stockTotalsPagination, setStockTotalsPagination] = useState(null);
+  const [movementsPage, setMovementsPage] = useState(1);
+  const [movementsPagination, setMovementsPagination] = useState(null);
+  
   const [movementForm, setMovementForm] = useState({
     movement_type: 'Stock IN',
     header_id: '',
