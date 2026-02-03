@@ -14386,3 +14386,522 @@ agent_communication:
       
       CRITICAL BUG FIXED - FORMULA IS NOW CORRECT AND VALIDATED!
 
+
+#====================================================================================================
+# Testing Data - Comprehensive System Verification
+#====================================================================================================
+
+user_problem_statement: |
+  Comprehensive Backend and Frontend Testing - Full System Verification
+  
+  The Gold Shop ERP system has been cloned from repository and all services are now running.
+  Need to verify all features are working correctly before production use.
+  
+  **Context:**
+  - All services running: Backend (port 8001), Frontend (port 3000), MongoDB (port 27017)
+  - Dependencies installed for both backend and frontend
+  - Database initialized with default users (admin/admin123, staff/staff123)
+  - Backend health endpoint verified: PASSING
+  - Frontend compiled successfully
+  
+  **Testing Requirements:**
+  
+  1. **Backend API Testing (Comprehensive):**
+     - Authentication & User Management APIs
+     - Inventory Management APIs (with pagination)
+     - Parties (Customers/Vendors) APIs
+     - Workers & Work Types APIs
+     - Gold Ledger APIs
+     - Purchases APIs (with new payment features)
+     - Job Cards APIs
+     - Invoices APIs (with discount and gold exchange)
+     - Returns APIs (sales and purchase returns)
+     - Finance & Accounting APIs
+     - Reports & Export APIs
+     - Audit Logs APIs
+     - Settings APIs
+  
+  2. **Frontend UI Testing (Comprehensive):**
+     - Login/Authentication flow
+     - Dashboard display
+     - Inventory management UI (with pagination)
+     - Parties management UI
+     - Workers & Work Types UI
+     - Purchases UI (with payment workflows)
+     - Job Cards UI (status transitions)
+     - Invoices UI (creation, payment, finalization)
+     - Returns UI (partial returns, manual inventory workflow)
+     - Finance & Transactions UI
+     - Reports & Export UI
+     - Settings UI
+  
+  3. **Critical Workflows to Test:**
+     - Complete purchase workflow (create → add payment → finalize)
+     - Complete job card workflow (create → complete → deliver → convert to invoice)
+     - Complete invoice workflow (create → finalize → add payment)
+     - Returns workflow (create return → select items → finalize with manual inventory notice)
+     - Gold ledger tracking
+     - Inventory pagination
+  
+  4. **Data Integrity Checks:**
+     - Timestamp handling (UTC backend, Asia/Muscat frontend)
+     - Audit logs creation
+     - Permission-based access control
+     - Validation rules
+     - Error handling
+
+backend:
+  - task: "Authentication & User Management API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - POST /api/auth/register
+          - POST /api/auth/login
+          - GET /api/auth/me
+          - POST /api/auth/logout
+          - POST /api/auth/request-password-reset
+          - POST /api/auth/reset-password
+          - GET /api/users
+          - PUT /api/users/{user_id}
+          - DELETE /api/users/{user_id}
+          - POST /api/users/{user_id}/change-password
+          
+          Default credentials available:
+          - admin/admin123 (admin role)
+          - staff/staff123 (staff role)
+
+  - task: "Inventory Management API with Pagination"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - GET /api/inventory/headers
+          - POST /api/inventory/headers
+          - PUT /api/inventory/headers/{header_id}
+          - DELETE /api/inventory/headers/{header_id}
+          - GET /api/inventory/movements?page=1&page_size=10
+          - POST /api/inventory/movements
+          - DELETE /api/inventory/movements/{movement_id}
+          - GET /api/inventory/stock-totals?page=1&page_size=10
+          
+          Pagination verified in previous tests (100% success).
+          Need to verify full CRUD operations.
+
+  - task: "Parties (Customers/Vendors) API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - GET /api/parties
+          - POST /api/parties
+          - GET /api/parties/{party_id}
+          - PUT /api/parties/{party_id}
+          - DELETE /api/parties/{party_id}
+          - GET /api/parties/outstanding-summary
+          - GET /api/parties/{party_id}/impact
+          - GET /api/parties/{party_id}/gold-summary
+          - GET /api/parties/{party_id}/summary
+
+  - task: "Gold Ledger API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - POST /api/gold-ledger
+          - GET /api/gold-ledger
+          - DELETE /api/gold-ledger/{entry_id}
+          - POST /api/gold-deposits
+          - GET /api/gold-deposits
+
+  - task: "Purchases API with Payment Features"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - POST /api/purchases (with draft status support)
+          - GET /api/purchases (with walk-in filtering, customer ID search)
+          - PUT /api/purchases/{purchase_id}
+          - DELETE /api/purchases/{purchase_id}
+          - POST /api/purchases/{purchase_id}/finalize
+          - POST /api/purchases/{purchase_id}/add-payment (NEW)
+          - GET /api/purchases/{purchase_id}/impact
+          
+          Test scenarios:
+          - Create purchase with purity adjustment calculation
+          - Add partial payment
+          - Add full payment (should lock purchase)
+          - Verify walk-in vendor filtering
+          - Verify customer ID search
+
+  - task: "Job Cards API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - POST /api/jobcards
+          - GET /api/jobcards
+          - GET /api/jobcards/{jobcard_id}
+          - PUT /api/jobcards/{jobcard_id}
+          - DELETE /api/jobcards/{jobcard_id}
+          - POST /api/jobcards/{jobcard_id}/convert-to-invoice
+          - GET /api/jobcards/{jobcard_id}/complete-impact
+          - GET /api/jobcards/{jobcard_id}/deliver-impact
+          - GET /api/jobcard-templates
+          
+          Test timestamp tracking (completed_at, delivered_at).
+
+  - task: "Invoices API with Discount & Gold Exchange"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - POST /api/invoices
+          - GET /api/invoices
+          - GET /api/invoices/{invoice_id}
+          - PUT /api/invoices/{invoice_id}
+          - DELETE /api/invoices/{invoice_id}
+          - POST /api/invoices/{invoice_id}/finalize
+          - POST /api/invoices/{invoice_id}/add-payment
+          - GET /api/invoices/{invoice_id}/impact
+          - GET /api/invoices/returnable
+          - GET /api/invoices/{invoice_id}/returnable-items
+          
+          Test invoice discount and gold exchange payment mode.
+
+  - task: "Returns API with Manual Inventory Workflow"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - POST /api/returns
+          - GET /api/returns
+          - GET /api/returns/{return_id}
+          - PUT /api/returns/{return_id}
+          - DELETE /api/returns/{return_id}
+          - POST /api/returns/{return_id}/finalize
+          - GET /api/returns/{return_id}/finalize-impact
+          
+          Critical tests:
+          - Create return with partial items (sales return)
+          - Create return with partial items (purchase return)
+          - Finalize return and verify NO inventory updates
+          - Verify pending_inventory_adjustments created
+          - Verify inventory_action_status = "manual_action_required"
+
+  - task: "Finance & Accounting API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - GET /api/accounts
+          - POST /api/accounts
+          - PUT /api/accounts/{account_id}
+          - DELETE /api/accounts/{account_id}
+          - GET /api/transactions
+          - POST /api/transactions
+          - DELETE /api/transactions/{transaction_id}
+          - GET /api/transactions/summary
+          - GET /api/daily-closings
+          - POST /api/daily-closings
+          - PUT /api/daily-closings/{closing_id}
+          - GET /api/daily-closings/calculate/{date}
+
+  - task: "Reports & Export API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - GET /api/dashboard
+          - GET /api/reports/list
+          - GET /api/reports/financial-summary
+          - GET /api/reports/outstanding
+          - GET /api/reports/sales-history
+          - GET /api/reports/purchase-history
+          - GET /api/reports/returns-summary
+          - GET /api/export/* (various export endpoints)
+
+  - task: "Audit Logs API"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Endpoints to test:
+          - GET /api/audit-logs
+          - GET /api/auth/audit-logs
+
+frontend:
+  - task: "Login & Authentication UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/LoginPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - Login with admin/admin123
+          - Login with staff/staff123
+          - Login with invalid credentials
+          - Logout functionality
+          - Session persistence
+
+  - task: "Dashboard UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/Dashboard.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Test dashboard displays correctly with metrics and charts"
+
+  - task: "Inventory Management UI with Pagination"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/InventoryPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - View inventory headers
+          - Create new inventory category
+          - View stock movements with pagination
+          - Navigate between pages
+          - View stock totals with pagination
+
+  - task: "Purchases UI with Payment Workflow"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/PurchasesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - Create purchase (draft status)
+          - Add payment to purchase
+          - Add full payment (verify lock)
+          - Filter by walk-in vendors
+          - Search by customer ID
+          - Verify purity adjustment calculation display
+          - Edit purchase when not locked
+
+  - task: "Returns UI with Manual Inventory Workflow"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReturnsPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - Create sales return from invoice
+          - Auto-load invoice items
+          - Remove unwanted items with ✕ button
+          - Finalize return and verify manual inventory warning displays
+          - Verify "Manual Action Required" badge shows in table
+          - Create purchase return with auto-loaded items
+          - Verify all fields editable for purchase returns
+
+  - task: "Job Cards UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/JobCardsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - Create job card
+          - Update status (in_progress → completed → delivered)
+          - Convert to invoice
+          - Verify timestamps display correctly
+
+  - task: "Invoices UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/InvoicesPage.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - Create invoice
+          - Add discount
+          - Finalize invoice
+          - Add payment (cash, bank, gold exchange)
+          - View returnable invoices
+
+  - task: "Finance & Transactions UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/FinancePage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: |
+          Test scenarios:
+          - View accounts
+          - Create transaction
+          - View transaction summary
+          - Verify date/time displays in Asia/Muscat timezone
+
+  - task: "Reports UI"
+    implemented: true
+    working: "needs_testing"
+    file: "/app/frontend/src/pages/ReportsPageEnhanced.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "needs_testing"
+        agent: "main"
+        comment: "Test various reports display and export functionality"
+
+metadata:
+  created_by: "main_agent"
+  version: "2.0"
+  test_sequence: 1
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Authentication & User Management API"
+    - "Purchases API with Payment Features"
+    - "Returns API with Manual Inventory Workflow"
+    - "Invoices API with Discount & Gold Exchange"
+    - "Inventory Management API with Pagination"
+  stuck_tasks: []
+  test_all: true
+  test_priority: "critical"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      🚀 COMPREHENSIVE SYSTEM TESTING REQUEST
+      
+      System has been successfully started with all services running:
+      ✅ Backend (FastAPI) on port 8001
+      ✅ Frontend (React) on port 3000
+      ✅ MongoDB on port 27017
+      ✅ Health check passing
+      ✅ Dependencies installed
+      ✅ Database initialized with default users
+      
+      DEFAULT CREDENTIALS:
+      - Admin: admin / admin123
+      - Staff: staff / staff123
+      
+      TESTING SCOPE:
+      1. Backend: All API endpoints across all modules
+      2. Frontend: All UI workflows and user interactions
+      
+      CRITICAL AREAS TO FOCUS:
+      1. Recently implemented features (pagination, returns, purchase payments)
+      2. Core workflows (purchase, job card, invoice, returns)
+      3. Authentication and authorization
+      4. Data integrity (timestamps, audit logs)
+      
+      Please test backend first comprehensively, then we'll proceed with frontend testing.
+
