@@ -6,6 +6,10 @@
   "installCommand": "cd frontend && yarn install",
   "framework": null,
   "regions": ["iad1"],
+  "env": {
+    "DISABLE_ESLINT_PLUGIN": "true",
+    "GENERATE_SOURCEMAP": "false"
+  },
   "routes": [
     {
       "src": "/api/(.*)",
